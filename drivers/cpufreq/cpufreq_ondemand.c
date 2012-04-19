@@ -677,7 +677,6 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	cpufreq_notify_utilization(policy, dbs_tuners_ins.cpu_utilization);
 #endif
 
-	/* Check for frequency increase *//*increasing by freq_step*/
 	if (max_load_freq > dbs_tuners_ins.up_threshold * policy->cur) {
 		int inc = (policy->max * dbs_tuners_ins.freq_step) / 100;
 		int target = min(policy->max, policy->cur + inc);
