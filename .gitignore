@@ -59,6 +59,7 @@ scripts/kconfig/lex.zconf.c
 scripts/kconfig/zconf.hash.c
 scripts/kconfig/zconf.tab.c
 scripts/mod/elfconfig.h
+scripts/genksyms/genksyms
 arch/arm/boot/compressed/piggy.gzip
 kernel/config_data.h
 scripts/recordmcount
