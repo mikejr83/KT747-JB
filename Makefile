@@ -245,8 +245,8 @@ CONFIG_SHELL := $(shell if [ -x "$$BASH" ]; then echo $$BASH; \
 
 HOSTCC       = gcc
 HOSTCXX      = g++
-HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O2 -fomit-frame-pointer
-HOSTCXXFLAGS = -O2
+HOSTCFLAGS   = -Wall -Wmissing-prototypes -Wstrict-prototypes -O3 -fomit-frame-pointer
+HOSTCXXFLAGS = -O3
 
 # Decide whether to build built-in, modular, or both.
 # Normally, just do built-in.
@@ -357,6 +357,10 @@ LDFLAGS_MODULE  =
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
+XX_A9		= -marm -mtune=cortex-a9 -mfpu=neon -march=armv7-a
+XX_GRAPHITE	= -fgraphite-identity -floop-block -ftree-loop-linear \
+		  -floop-strip-mine -ftree-loop-distribution
+XX_MODULO	= -fmodulo-sched -fmodulo-sched-allow-regmoves
 
 
 # Use LINUXINCLUDE when you must reference the include/ directory.
@@ -373,7 +377,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -D_$(TARGET_PRODUCT)_
+		   -funswitch-loops -fpredictive-commoning \
+		    $(XX_A9) $(XX_GRAPHITE) $(XX_MODULO)
 
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
