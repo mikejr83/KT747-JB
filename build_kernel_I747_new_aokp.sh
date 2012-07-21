@@ -9,6 +9,7 @@ export ARCH=arm
 # export CROSS_COMPILE=$PARENT_DIR/linaro4.5/bin/arm-eabi-
 # export CROSS_COMPILE=/home/ktoonsez/kernel/siyah/arm-2011.03/bin/arm-none-eabi-
 # export CROSS_COMPILE=/home/ktoonsez/android/system/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
+# export CROSS_COMPILE=/home/ktoonsez/androidjb/system/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-
 export CROSS_COMPILE=$PARENT_DIR/linaro4.7/bin/arm-eabi-
 
 echo "Remove old Package Files"
@@ -16,6 +17,7 @@ rm -rf ./Package/*
 
 echo "Setup Package Directory"
 mkdir -p Package/system/lib/modules
+mkdir -p Package/system/etc/init.d
 
 echo "Create initramfs dir"
 mkdir -p $INITRAMFS_DEST
@@ -38,6 +40,7 @@ make -j`grep 'processor' /proc/cpuinfo | wc -l`
 echo "Copy modules to Package"
 # cp ../lib/modules/* ./Package/system/lib/modules/
 cp -a $(find . -name *.ko -print |grep -v initramfs) Package/system/lib/modules/
+cp 00post-init ./Package/system/etc/init.d/00post-init
 
 echo "Copy zImage to Package"
 cp arch/arm/boot/zImage Package/zImage
