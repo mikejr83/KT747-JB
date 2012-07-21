@@ -64,7 +64,7 @@ arch/arm/boot/compressed/piggy.gzip
 kernel/config_data.h
 scripts/recordmcount
 kernel/usr/*
-
+Package/*
 #
 # Top-level generic files
 #
