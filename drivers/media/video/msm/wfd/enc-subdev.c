@@ -1243,7 +1243,7 @@ err:
 	return rc;
 }
 static long venc_set_max_perf_level(struct video_client_ctx *client_ctx,
-		__s32 val)
+		__s32 value)
 {
 	int rc = 0;
 	struct vcd_property_hdr vcd_property_hdr;

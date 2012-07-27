@@ -613,10 +613,14 @@ static void dhd_set_packet_filter(int value, dhd_pub_t *dhd)
 static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 {
 	char iovbuf[32];
+#ifndef CUSTOMER_HW_SAMSUNG
 	int power_mode = PM_MAX;
 	/* wl_pkt_filter_enable_t	enable_parm; */
 	int bcn_li_dtim = 3;
 	uint roamvar = 1;
+#ifdef BCM4334_CHIP
+	int bcn_li_bcn;
+#endif
 #ifdef BCM4334_CHIP
 	int bcn_li_bcn;
 #endif
@@ -674,6 +678,12 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 				4, iovbuf, sizeof(iovbuf));
 			dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0);
 #endif
+#ifdef BCM4334_CHIP
+			bcn_li_bcn = 0;
+			bcm_mkiovar("bcn_li_bcn", (char *)&bcn_li_bcn,
+				4, iovbuf, sizeof(iovbuf));
+			dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0);
+#endif
 		} else {
 
 #ifdef PKT_FILTER_SUPPORT
@@ -710,6 +720,12 @@ static int dhd_set_suspend(int value, dhd_pub_t *dhd)
 			bcm_mkiovar("roam_off", (char *)&roamvar, 4, iovbuf,
 				sizeof(iovbuf));
 			dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0);
+#ifdef BCM4334_CHIP
+			bcn_li_bcn = 1;
+			bcm_mkiovar("bcn_li_bcn", (char *)&bcn_li_bcn,
+				4, iovbuf, sizeof(iovbuf));
+			dhd_wl_ioctl_cmd(dhd, WLC_SET_VAR, iovbuf, sizeof(iovbuf), TRUE, 0);
+#endif
 #ifdef BCM4334_CHIP
 			bcn_li_bcn = 1;
 			bcm_mkiovar("bcn_li_bcn", (char *)&bcn_li_bcn,
