@@ -57,5 +57,5 @@ echo "Make CPIO initramfs"
 # MSM8960
 echo "Make boot.img"
 ./mkbootfs $INITRAMFS_DEST | gzip > ./Package/ramdisk.gz
-./mkbootimg --cmdline 'console = null androidboot.hardware=qcom user_debug = 31' --kernel Package/zImage --ramdisk Package/ramdisk.gz --base 0x80200000 --ramdiskaddr 0x81500000 --output Package/boot.img 
+./mkbootimg --cmdline 'console = null androidboot.hardware=qcom user_debug = 31' --kernel Package/zImage --ramdisk Package/ramdisk.gz --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81500000 --output Package/boot.img 
 
