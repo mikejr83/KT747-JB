@@ -3,6 +3,7 @@ export KERNELDIR=`readlink -f .`
 export PARENT_DIR=`readlink -f ..`
 export INITRAMFS_DEST=$KERNELDIR/kernel/usr/initramfs
 export INITRAMFS_SOURCE=`readlink -f ..`/initramfs_aokp
+export CONFIG_AOSP_BUILD=y
 #Enable FIPS mode
 export USE_SEC_FIPS_MODE=true
 export ARCH=arm
