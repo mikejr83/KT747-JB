@@ -341,8 +341,8 @@ static struct msm_gpiomux_config msm8960_sec_ts_configs[] = {
 };
 
 
-#define MSM_PMEM_ADSP_SIZE         0x7800000 /* 120 Mbytes */
-#define MSM_PMEM_ADSP_SIZE_FOR_2GB         0x8400000 /* 132 Mbytes */
+#define MSM_PMEM_ADSP_SIZE                 0x9600000 /* 150 Mbytes */
+#define MSM_PMEM_ADSP_SIZE_FOR_2GB         0x9600000 /* 150 Mbytes */
 #define MSM_PMEM_AUDIO_SIZE        0x160000 /* 1.375 Mbytes */
 #define MSM_PMEM_SIZE 0x2800000 /* 40 Mbytes */
 #define MSM_LIQUID_PMEM_SIZE 0x4000000 /* 64 Mbytes */
@@ -354,7 +354,7 @@ static struct msm_gpiomux_config msm8960_sec_ts_configs[] = {
 #define MSM_ION_SF_SIZE_FOR_2GB		0x6400000 /* 100MB */
 #define MSM_ION_MM_FW_SIZE	0x200000 /* (2MB) */
 #define MSM_ION_MM_SIZE		MSM_PMEM_ADSP_SIZE
-#define MSM_ION_QSECOM_SIZE	0x600000 /* (6MB) */
+#define MSM_ION_QSECOM_SIZE	0x1700000 /* (24MB) */
 #define MSM_ION_MFC_SIZE	SZ_8K
 #define MSM_ION_AUDIO_SIZE	0x1000 /* 4KB */
 #define MSM_ION_HEAP_NUM	8
@@ -4564,13 +4564,6 @@ static struct msm_rpmrs_level msm_rpmrs_levels[] = {
 
 	{
 		MSM_PM_SLEEP_MODE_POWER_COLLAPSE,
-		MSM_RPMRS_LIMITS(ON, GDHS, MAX, ACTIVE),
-		false,
-		8500, 51, 1122000, 8500,
-	},
-
-	{
-		MSM_PM_SLEEP_MODE_POWER_COLLAPSE,
 		MSM_RPMRS_LIMITS(ON, HSFS_OPEN, MAX, ACTIVE),
 		false,
 		9000, 51, 1130300, 9000,
@@ -4580,13 +4573,6 @@ static struct msm_rpmrs_level msm_rpmrs_levels[] = {
 		MSM_RPMRS_LIMITS(ON, HSFS_OPEN, ACTIVE, RET_HIGH),
 		false,
 		10000, 51, 1130300, 10000,
-	},
-
-	{
-		MSM_PM_SLEEP_MODE_POWER_COLLAPSE,
-		MSM_RPMRS_LIMITS(OFF, GDHS, MAX, ACTIVE),
-		false,
-		12000, 14, 2205900, 12000,
 	},
 
 	{

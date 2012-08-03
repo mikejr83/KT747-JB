@@ -318,9 +318,8 @@ static struct msm_gpiomux_config msm8960_sec_ts_configs[] = {
 	},
 };
 
-
-#define MSM_PMEM_ADSP_SIZE         0x7800000 /* 120 Mbytes */
-#define MSM_PMEM_ADSP_SIZE_FOR_2GB         0x8400000 /* 132 Mbytes */
+#define MSM_PMEM_ADSP_SIZE                 0x9600000 /* 150 Mbytes */
+#define MSM_PMEM_ADSP_SIZE_FOR_2GB         0x9600000 /* 150 Mbytes */
 #define MSM_PMEM_AUDIO_SIZE        0x160000 /* 1.375 Mbytes */
 #define MSM_PMEM_SIZE 0x2800000 /* 40 Mbytes */
 #define MSM_LIQUID_PMEM_SIZE 0x4000000 /* 64 Mbytes */
@@ -332,7 +331,7 @@ static struct msm_gpiomux_config msm8960_sec_ts_configs[] = {
 #define MSM_ION_SF_SIZE_FOR_2GB		0x6400000 /* 100MB */
 #define MSM_ION_MM_FW_SIZE	0x200000 /* (2MB) */
 #define MSM_ION_MM_SIZE		MSM_PMEM_ADSP_SIZE
-#define MSM_ION_QSECOM_SIZE	0x600000 /* (6MB) */
+#define MSM_ION_QSECOM_SIZE	0x1700000 /* (24MB) */
 #define MSM_ION_MFC_SIZE	SZ_8K
 #define MSM_ION_AUDIO_SIZE	0x1000 /* 4KB */
 #define MSM_ION_HEAP_NUM	8
@@ -4072,7 +4071,7 @@ static struct sec_jack_zone jack_zones[] = {
 		.jack_type	= SEC_HEADSET_3POLE,
 	},
 	[2] = {
-		.adc_high	= 1600,
+		.adc_high	= 1720,
 		.delay_ms	= 10,
 		.check_count	= 10,
 		.jack_type	= SEC_HEADSET_4POLE,
@@ -4441,13 +4440,6 @@ static struct msm_pm_platform_data msm_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
 		.suspend_enabled = 0,
 	},
 
-	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE)] = {
-		.idle_supported = 1,
-		.suspend_supported = 1,
-		.idle_enabled = 0,
-		.suspend_enabled = 0,
-	},
-
 	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_WAIT_FOR_INTERRUPT)] = {
 		.idle_supported = 1,
 		.suspend_supported = 1,
@@ -4457,13 +4449,6 @@ static struct msm_pm_platform_data msm_pm_data[MSM_PM_SLEEP_MODE_NR * 2] = {
 
 	[MSM_PM_MODE(1, MSM_PM_SLEEP_MODE_POWER_COLLAPSE)] = {
 		.idle_supported = 0,
-		.suspend_supported = 1,
-		.idle_enabled = 0,
-		.suspend_enabled = 0,
-	},
-
-	[MSM_PM_MODE(1, MSM_PM_SLEEP_MODE_POWER_COLLAPSE_STANDALONE)] = {
-		.idle_supported = 1,
 		.suspend_supported = 1,
 		.idle_enabled = 0,
 		.suspend_enabled = 0,
