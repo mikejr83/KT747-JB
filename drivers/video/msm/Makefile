@@ -3,6 +3,8 @@ obj-y := msm_fb.o
 obj-$(CONFIG_FB_MSM_LOGO) += logo.o
 obj-$(CONFIG_FB_BACKLIGHT) += msm_fb_bl.o
 
+ifeq ($(CONFIG_FB_MSM_MDP_HW),y)
+
 # MDP
 obj-y += mdp.o
 
@@ -77,6 +79,7 @@ obj-$(CONFIG_FB_MSM_MIPI_DSI) += msm_mipi.o
 # MIPI manufacture
 obj-$(CONFIG_FB_MSM_MIPI_DSI_TOSHIBA) += mipi_toshiba.o
 obj-$(CONFIG_FB_MSM_MIPI_DSI_NOVATEK) += mipi_novatek.o
+obj-$(CONFIG_FB_MSM_MIPI_DSI_ORISE) += mipi_orise.o
 obj-$(CONFIG_FB_MSM_MIPI_DSI_RENESAS) += mipi_renesas.o
 obj-$(CONFIG_FB_MSM_MIPI_DSI_SAMSUNG_OLED) += mipi_samsung_oled.o
 obj-$(CONFIG_FB_MSM_MIPI_DSI_TRULY) += mipi_truly.o
@@ -122,6 +125,7 @@ obj-$(CONFIG_MIPI_SAMSUNG_ESD_REFRESH) += mipi_samsung_esd_refresh.o
 ifeq ($(CONFIG_FB_MSM_MIPI_PANEL_DETECT),y)
 obj-y += mipi_toshiba_video_wvga_pt.o mipi_toshiba_video_wsvga_pt.o mipi_toshiba_video_wuxga.o
 obj-y += mipi_novatek_video_qhd_pt.o mipi_novatek_cmd_qhd_pt.o
+obj-y += mipi_orise_video_720p_pt.o mipi_orise_cmd_720p_pt.o
 obj-y += mipi_renesas_video_fwvga_pt.o mipi_renesas_cmd_fwvga_pt.o
 obj-y += mipi_chimei_wxga_pt.o
 obj-y += mipi_truly_video_wvga_pt.o
@@ -133,6 +137,8 @@ obj-$(CONFIG_FB_MSM_MIPI_TOSHIBA_VIDEO_WSVGA_PT) += mipi_toshiba_video_wsvga_pt.
 obj-$(CONFIG_FB_MSM_MIPI_NOVATEK_CMD_WVGA_PT) += mipi_novatek_cmd_wvga_pt.o
 obj-$(CONFIG_FB_MSM_MIPI_NOVATEK_BOE_CMD_WVGA_PT) += mipi_novatek_boe_hydis_cmd_wvga_pt.o
 obj-$(CONFIG_FB_MSM_MIPI_NOVATEK_VIDEO_QHD_PT) += mipi_novatek_video_qhd_pt.o
+obj-$(CONFIG_FB_MSM_MIPI_ORISE_VIDEO_720P_PT) += mipi_orise_video_720p_pt.o
+obj-$(CONFIG_FB_MSM_MIPI_ORISE_CMD_720P_PT) += mipi_orise_cmd_720p_pt.o
 obj-$(CONFIG_FB_MSM_MIPI_NOVATEK_CMD_QHD_PT) += mipi_novatek_cmd_qhd_pt.o
 obj-$(CONFIG_FB_MSM_MIPI_RENESAS_VIDEO_FWVGA_PT) += mipi_renesas_video_fwvga_pt.o
 obj-$(CONFIG_FB_MSM_MIPI_RENESAS_CMD_FWVGA_PT) += mipi_renesas_cmd_fwvga_pt.o
@@ -179,6 +185,12 @@ obj-$(CONFIG_MSM_VIDC_1080P) += vidc/
 obj-$(CONFIG_MSM_VIDC_720P) += vidc/
 obj-$(CONFIG_VIDEO_MHL_V1) += mhl_v1/
 obj-$(CONFIG_VIDEO_MHL_V2) += mhl_v2/
+else
+obj-$(CONFIG_FB_MSM_EBI2) += ebi2_host.o
+obj-$(CONFIG_FB_MSM_EBI2) += ebi2_lcd.o
+obj-y += msm_fb_panel.o
+obj-$(CONFIG_FB_MSM_EBI2_EPSON_S1D_QVGA_PANEL) += ebi2_epson_s1d_qvga.o
+endif
 
 clean:
 	rm *.o .*cmd

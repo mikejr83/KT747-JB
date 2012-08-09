@@ -60,6 +60,7 @@ struct msmfb_writeback_data_list {
 	struct list_head registered_entry;
 	struct list_head active_entry;
 	void *addr;
+	struct ion_handle *ihdl;
 	struct file *pmem_file;
 	struct msmfb_data buf_info;
 	struct msmfb_img img;
@@ -79,6 +80,7 @@ struct msm_fb_data_type {
 	DISP_TARGET dest;
 	struct fb_info *fbi;
 
+	struct device *dev;
 	boolean op_enable;
 	uint32 fb_imgType;
 	boolean sw_currently_refreshing;
@@ -131,6 +133,7 @@ struct msm_fb_data_type {
 			      struct fb_cmap *cmap);
 	int (*do_histogram) (struct fb_info *info,
 			      struct mdp_histogram_data *hist);
+	void (*vsync_ctrl) (int enable);
 	void *cursor_buf;
 	void *cursor_buf_phys;
 
@@ -172,6 +175,8 @@ struct msm_fb_data_type {
 	struct list_head writeback_register_queue;
 	wait_queue_head_t wait_q;
 	struct ion_client *iclient;
+	unsigned long display_iova;
+	unsigned long rotator_iova;
 	struct mdp_buf_type *ov0_wb_buf;
 	struct mdp_buf_type *ov1_wb_buf;
 	u32 ov_start;
@@ -213,7 +218,7 @@ void unfill_black_screen(void);
 extern boolean mdp4_overlay_used(void);
 #ifdef CONFIG_FB_MSM_LOGO
 #define INIT_IMAGE_FILE "/initlogo.rle"
-extern int load_565rle_image(char *filename);
+int load_565rle_image(char *filename, bool bf_supported);
 extern int draw_rgb888_screen(void);
 #endif
 int msm_fb_check_frame_rate(struct msm_fb_data_type *mfd,

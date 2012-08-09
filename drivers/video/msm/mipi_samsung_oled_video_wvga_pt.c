@@ -1025,8 +1025,8 @@ static int __init mipi_video_samsung_oled_wvga_pt_init(void)
 	 * include dummy(pad) data of 200 clk in addition to
 	 * width and porch/sync width values
 	 */
-	pinfo.mipi.xres_pad = 0;
-	pinfo.mipi.yres_pad = 2;
+	pinfo.lcdc.xres_pad = 0;
+	pinfo.lcdc.yres_pad = 2;
 
 	pinfo.type = MIPI_VIDEO_PANEL;
 	pinfo.pdest = DISPLAY_1;
@@ -1077,6 +1077,7 @@ static int __init mipi_video_samsung_oled_wvga_pt_init(void)
 	pinfo.mipi.frame_rate = 60;
 #endif
 	pinfo.mipi.dsi_phy_db = &dsi_video_mode_phy_db;
+	pinfo.mipi.esc_byte_ratio = 4;
 
 
 	ret = mipi_samsung_device_register(&pinfo, MIPI_DSI_PRIM,
