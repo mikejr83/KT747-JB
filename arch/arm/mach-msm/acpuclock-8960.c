@@ -39,6 +39,7 @@
 #if defined(CONFIG_SEC_DEBUG_DCVS_LOG) || defined(CONFIG_SEC_L1_DCACHE_PANIC_CHK)
 #include <mach/sec_debug.h>
 #endif
+#include "pm.h"
 
 /*
  * Source IDs.
@@ -352,11 +353,12 @@ static struct scalable scalable_8627[] = {
 		},
 };
 
-static struct scalable *scalable;
 static struct l2_level *l2_freq_tbl;
 static struct acpu_level *acpu_freq_tbl;
 static int l2_freq_tbl_size;
 uint32_t global_pvs; /*  This code is temporary code */
+static struct scalable *scalable;
+#define SCALABLE_TO_CPU(sc) ((sc) - scalable)
 
 /* Instantaneous bandwidth requests in MB/s. */
 #define BW_MBPS(_bw) \
@@ -710,16 +712,16 @@ static struct acpu_level acpu_freq_tbl_8960_kraitv2_slow[] = {
 	{ 1, {   918000, HFPLL, 1, 0, 0x22 }, L2(7),  1100000 },
 	{ 1, {   972000, HFPLL, 1, 0, 0x24 }, L2(7),  1125000 },
 	{ 1, {  1026000, HFPLL, 1, 0, 0x26 }, L2(7),  1125000 },
-	{ 1, {  1080000, HFPLL, 1, 0, 0x28 }, L2(16), 1175000 },
-	{ 1, {  1134000, HFPLL, 1, 0, 0x2A }, L2(16), 1175000 },
-	{ 1, {  1188000, HFPLL, 1, 0, 0x2C }, L2(16), 1200000 },
-	{ 1, {  1242000, HFPLL, 1, 0, 0x2E }, L2(16), 1200000 },
-	{ 1, {  1296000, HFPLL, 1, 0, 0x30 }, L2(16), 1225000 },
-	{ 1, {  1350000, HFPLL, 1, 0, 0x32 }, L2(16), 1225000 },
-	{ 1, {  1404000, HFPLL, 1, 0, 0x34 }, L2(16), 1237500 },
-	{ 1, {  1458000, HFPLL, 1, 0, 0x36 }, L2(16), 1237500 },
-	{ 1, {  1512000, HFPLL, 1, 0, 0x38 }, L2(18), 1250000 },
-	{ 1, {  1674000, HFPLL, 1, 0, 0x3A }, L2(18), 1250000 },
+	{ 1, {  1080000, HFPLL, 1, 0, 0x28 }, L2(19), 1175000 },
+	{ 1, {  1134000, HFPLL, 1, 0, 0x2A }, L2(19), 1175000 },
+	{ 1, {  1188000, HFPLL, 1, 0, 0x2C }, L2(19), 1200000 },
+	{ 1, {  1242000, HFPLL, 1, 0, 0x2E }, L2(19), 1200000 },
+	{ 1, {  1296000, HFPLL, 1, 0, 0x30 }, L2(19), 1225000 },
+	{ 1, {  1350000, HFPLL, 1, 0, 0x32 }, L2(19), 1225000 },
+	{ 1, {  1404000, HFPLL, 1, 0, 0x34 }, L2(19), 1237500 },
+	{ 1, {  1458000, HFPLL, 1, 0, 0x36 }, L2(19), 1237500 },
+	{ 1, {  1512000, HFPLL, 1, 0, 0x38 }, L2(19), 1250000 },
+	{ 1, {  1674000, HFPLL, 1, 0, 0x3A }, L2(19), 1250000 },
 	{ 1, {  1728000, HFPLL, 1, 0, 0x3C }, L2(19), 1262500 },
 	{ 1, {  1809000, HFPLL, 1, 0, 0x3E }, L2(19), 1262500 },
 	{ 1, {  1890000, HFPLL, 1, 0, 0x40 }, L2(19), 1300000 },
@@ -741,16 +743,16 @@ static struct acpu_level acpu_freq_tbl_8960_kraitv2_nom[] = {
 	{ 1, {   918000, HFPLL, 1, 0, 0x22 }, L2(7),  1050000 },
 	{ 1, {   972000, HFPLL, 1, 0, 0x24 }, L2(7),  1075000 },
 	{ 1, {  1026000, HFPLL, 1, 0, 0x26 }, L2(7),  1075000 },
-	{ 1, {  1080000, HFPLL, 1, 0, 0x28 }, L2(16), 1125000 },
-	{ 1, {  1134000, HFPLL, 1, 0, 0x2A }, L2(16), 1125000 },
-	{ 1, {  1188000, HFPLL, 1, 0, 0x2C }, L2(16), 1150000 },
-	{ 1, {  1242000, HFPLL, 1, 0, 0x2E }, L2(16), 1150000 },
-	{ 1, {  1296000, HFPLL, 1, 0, 0x30 }, L2(16), 1175000 },
-	{ 1, {  1350000, HFPLL, 1, 0, 0x32 }, L2(16), 1175000 },
-	{ 1, {  1404000, HFPLL, 1, 0, 0x34 }, L2(16), 1187500 },
-	{ 1, {  1458000, HFPLL, 1, 0, 0x36 }, L2(16), 1187500 },
-	{ 1, {  1512000, HFPLL, 1, 0, 0x38 }, L2(18), 1200000 },
-	{ 1, {  1674000, HFPLL, 1, 0, 0x3A }, L2(18), 1200000 },
+	{ 1, {  1080000, HFPLL, 1, 0, 0x28 }, L2(19), 1125000 },
+	{ 1, {  1134000, HFPLL, 1, 0, 0x2A }, L2(19), 1125000 },
+	{ 1, {  1188000, HFPLL, 1, 0, 0x2C }, L2(19), 1150000 },
+	{ 1, {  1242000, HFPLL, 1, 0, 0x2E }, L2(19), 1150000 },
+	{ 1, {  1296000, HFPLL, 1, 0, 0x30 }, L2(19), 1175000 },
+	{ 1, {  1350000, HFPLL, 1, 0, 0x32 }, L2(19), 1175000 },
+	{ 1, {  1404000, HFPLL, 1, 0, 0x34 }, L2(19), 1187500 },
+	{ 1, {  1458000, HFPLL, 1, 0, 0x36 }, L2(19), 1187500 },
+	{ 1, {  1512000, HFPLL, 1, 0, 0x38 }, L2(19), 1200000 },
+	{ 1, {  1674000, HFPLL, 1, 0, 0x3A }, L2(19), 1200000 },
 	{ 1, {  1728000, HFPLL, 1, 0, 0x3C }, L2(19), 1250000 },
 	{ 1, {  1809000, HFPLL, 1, 0, 0x3E }, L2(19), 1275000 },
 	{ 1, {  1890000, HFPLL, 1, 0, 0x40 }, L2(19), 1300000 },
@@ -772,16 +774,16 @@ static struct acpu_level acpu_freq_tbl_8960_kraitv2_fast[] = {
 	{ 1, {   918000, HFPLL, 1, 0, 0x22 }, L2(7),  1000000 },
 	{ 1, {   972000, HFPLL, 1, 0, 0x24 }, L2(7),  1025000 },
 	{ 1, {  1026000, HFPLL, 1, 0, 0x26 }, L2(7),  1025000 },
-	{ 1, {  1080000, HFPLL, 1, 0, 0x28 }, L2(16), 1075000 },
-	{ 1, {  1134000, HFPLL, 1, 0, 0x2A }, L2(16), 1075000 },
-	{ 1, {  1188000, HFPLL, 1, 0, 0x2C }, L2(16), 1100000 },
-	{ 1, {  1242000, HFPLL, 1, 0, 0x2E }, L2(16), 1100000 },
-	{ 1, {  1296000, HFPLL, 1, 0, 0x30 }, L2(16), 1125000 },
-	{ 1, {  1350000, HFPLL, 1, 0, 0x32 }, L2(16), 1125000 },
-	{ 1, {  1404000, HFPLL, 1, 0, 0x34 }, L2(16), 1137500 },
-	{ 1, {  1458000, HFPLL, 1, 0, 0x36 }, L2(16), 1137500 },
-	{ 1, {  1512000, HFPLL, 1, 0, 0x38 }, L2(18), 1175000 },
-	{ 1, {  1674000, HFPLL, 1, 0, 0x3A }, L2(18), 1175000 },
+	{ 1, {  1080000, HFPLL, 1, 0, 0x28 }, L2(19), 1075000 },
+	{ 1, {  1134000, HFPLL, 1, 0, 0x2A }, L2(19), 1075000 },
+	{ 1, {  1188000, HFPLL, 1, 0, 0x2C }, L2(19), 1100000 },
+	{ 1, {  1242000, HFPLL, 1, 0, 0x2E }, L2(19), 1100000 },
+	{ 1, {  1296000, HFPLL, 1, 0, 0x30 }, L2(19), 1125000 },
+	{ 1, {  1350000, HFPLL, 1, 0, 0x32 }, L2(19), 1125000 },
+	{ 1, {  1404000, HFPLL, 1, 0, 0x34 }, L2(19), 1137500 },
+	{ 1, {  1458000, HFPLL, 1, 0, 0x36 }, L2(19), 1137500 },
+	{ 1, {  1512000, HFPLL, 1, 0, 0x38 }, L2(19), 1175000 },
+	{ 1, {  1674000, HFPLL, 1, 0, 0x3A }, L2(19), 1175000 },
 	{ 1, {  1728000, HFPLL, 1, 0, 0x3C }, L2(19), 1200000 },
 	{ 1, {  1809000, HFPLL, 1, 0, 0x3E }, L2(19), 1250000 },
 	{ 1, {  1890000, HFPLL, 1, 0, 0x40 }, L2(19), 1300000 },
@@ -1118,28 +1120,37 @@ static void set_speed(struct scalable *sc, struct core_speed *tgt_s,
 		set_pri_clk_src(sc, tgt_s->pri_src_sel);
 	} else if (strt_s->src == HFPLL && tgt_s->src != HFPLL) {
 		/*
-		 * If responding to CPU_DEAD we must be running on another
-		 * CPU.  Therefore, we can't access the downed CPU's CP15
-		 * clock MUX registers from here and can't change clock sources.
-		 * Just turn off the PLL- since the CPU is down already, halting
-		 * its clock should be safe.
+		 * If responding to CPU_DEAD we must be running on another CPU.
+		 * Therefore, we can't access the downed CPU's clock MUX CP15
+		 * registers from here and can't change clock sources. If the
+		 * CPU is collapsed, however, it is still safe to turn off the
+		 * PLL without switching the MUX away from it.
 		 */
 		if (reason != SETRATE_HOTPLUG || sc == &scalable[L2]) {
 			set_sec_clk_src(sc, tgt_s->sec_src_sel);
 			set_pri_clk_src(sc, tgt_s->pri_src_sel);
+			hfpll_disable(sc);
+		} else if (reason == SETRATE_HOTPLUG
+			   && msm_pm_verify_cpu_pc(SCALABLE_TO_CPU(sc))) {
+			hfpll_disable(sc);
 		}
-		hfpll_disable(sc);
 	} else if (strt_s->src != HFPLL && tgt_s->src == HFPLL) {
-		hfpll_set_rate(sc, tgt_s);
-		hfpll_enable(sc);
 		/*
 		 * If responding to CPU_UP_PREPARE, we can't change CP15
 		 * registers for the CPU that's coming up since we're not
 		 * running on that CPU.  That's okay though, since the MUX
 		 * source was not changed on the way down, either.
 		 */
-		if (reason != SETRATE_HOTPLUG || sc == &scalable[L2])
+		if (reason != SETRATE_HOTPLUG || sc == &scalable[L2]) {
+			hfpll_set_rate(sc, tgt_s);
+			hfpll_enable(sc);
 			set_pri_clk_src(sc, tgt_s->pri_src_sel);
+		} else if (reason == SETRATE_HOTPLUG
+			   && msm_pm_verify_cpu_pc(SCALABLE_TO_CPU(sc))) {
+			/* PLL was disabled during hot-unplug. Re-enable it. */
+			hfpll_set_rate(sc, tgt_s);
+			hfpll_enable(sc);
+		}
 	} else {
 		if (reason != SETRATE_HOTPLUG || sc == &scalable[L2])
 			set_sec_clk_src(sc, tgt_s->sec_src_sel);

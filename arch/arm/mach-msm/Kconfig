@@ -168,6 +168,7 @@ config ARCH_MSM8960
 	select MULTI_IRQ_HANDLER
 	select MSM_PM8X60 if PM
 	select HOLES_IN_ZONE if SPARSEMEM
+	select MSM_KRAIT_WFE_FIXUP
 
 config ARCH_MSM8930
 	bool "MSM8930"
@@ -205,6 +206,7 @@ config ARCH_MSM8930
 	select MULTI_IRQ_HANDLER
 	select MSM_PM8X60 if PM
 	select HOLES_IN_ZONE if SPARSEMEM
+	select MSM_KRAIT_WFE_FIXUP
 
 config ARCH_APQ8064
 	bool "APQ8064"
@@ -222,6 +224,7 @@ config ARCH_APQ8064
 	select MULTI_IRQ_HANDLER
 	select MSM_PM8X60 if PM
 	select HOLES_IN_ZONE if SPARSEMEM
+	select MSM_KRAIT_WFE_FIXUP
 
 config ARCH_MSMCOPPER
 	bool "MSM Copper"
@@ -247,6 +250,7 @@ config ARCH_FSM9XXX
 config ARCH_MSM9615
 	bool "MSM9615"
 	select ARM_GIC
+	select GIC_SECURE
 	select ARCH_MSM_CORTEX_A5
 	select CPU_V7
 	select MSM_V2_TLMM
@@ -306,6 +310,9 @@ config  ARCH_MSM_SCORPIONMP
 config  ARCH_MSM_KRAITMP
 	select ARCH_MSM_KRAIT
 	select MSM_SMP
+	bool
+
+config  MSM_KRAIT_WFE_FIXUP
 	bool
 
 config  ARCH_MSM_CORTEX_A5
@@ -1795,6 +1802,12 @@ config MSM_PIL_TZAPPS
 	  used to decrypt data and perform secure operations on the behalf of
 	  the kernel.
 
+config MSM_PIL_VIDC
+	tristate "Video Core Boot Support"
+	depends on MSM_PIL
+	help
+	  Support for authenticating the video core image.
+
 config MSM_SCM
 	bool "Secure Channel Manager (SCM) support"
 	default n
@@ -2023,6 +2036,10 @@ config MSM_SLEEP_STATS
 
 config MSM_SLEEP_STATS_DEVICE
 	bool "Enable exporting of MSM sleep device stats to userspace"
+
+config MSM_RUN_QUEUE_STATS
+	bool "Enable collection and exporting of MSM Run Queue stats to userspace"
+	default y
 
 config MSM_STANDALONE_POWER_COLLAPSE
        bool "Enable standalone power collapse"

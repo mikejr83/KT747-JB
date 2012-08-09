@@ -31,6 +31,7 @@
 #include <mach/msm_bus_board.h>
 #include <mach/msm_memtypes.h>
 #include <mach/msm_xo.h>
+#include <mach/msm_dcvs.h>
 #include <sound/msm-dai-q6.h>
 #include <sound/apr_audio.h>
 #include <mach/msm_tsif.h>
@@ -43,6 +44,7 @@
 #include "pil-q6v4.h"
 #include "scm-pas.h"
 #include <mach/msm_dcvs.h>
+#include <mach/iommu_domains.h>
 
 #ifdef CONFIG_MSM_MPM
 #include "mpm.h"
@@ -667,6 +669,7 @@ struct msm_vidc_platform_data vidc_platform_data = {
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 	.memtype = ION_CP_MM_HEAP_ID,
 	.enable_ion = 1,
+	.cp_enabled = 1,
 #else
 	.memtype = MEMTYPE_EBI1,
 	.enable_ion = 0,
@@ -1051,6 +1054,11 @@ struct platform_device msm_8960_riva = {
 
 struct platform_device msm_pil_tzapps = {
 	.name = "pil_tzapps",
+	.id = -1,
+};
+
+struct platform_device msm_pil_vidc = {
+	.name = "pil_vidc",
 	.id = -1,
 };
 
@@ -1980,7 +1988,88 @@ struct platform_device *msm_footswitch_devices[] = {
 };
 unsigned msm_num_footswitch_devices = ARRAY_SIZE(msm_footswitch_devices);
 
+
 #ifdef CONFIG_MSM_ROTATOR
+static struct msm_bus_vectors rotator_init_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab = 0,
+		.ib = 0,
+	},
+};
+
+static struct msm_bus_vectors rotator_ui_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = (1024 * 600 * 4 * 2 * 60),
+		.ib  = (1024 * 600 * 4 * 2 * 60 * 1.5),
+	},
+};
+
+static struct msm_bus_vectors rotator_vga_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = (640 * 480 * 2 * 2 * 30),
+		.ib  = (640 * 480 * 2 * 2 * 30 * 1.5),
+	},
+};
+static struct msm_bus_vectors rotator_720p_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = (1280 * 736 * 2 * 2 * 30),
+		.ib  = (1280 * 736 * 2 * 2 * 30 * 1.5),
+	},
+};
+
+static struct msm_bus_vectors rotator_1080p_vectors[] = {
+	{
+		.src = MSM_BUS_MASTER_ROTATOR,
+		.dst = MSM_BUS_SLAVE_EBI_CH0,
+		.ab  = (1920 * 1088 * 2 * 2 * 30),
+		.ib  = (1920 * 1088 * 2 * 2 * 30 * 1.5),
+	},
+};
+
+static struct msm_bus_paths rotator_bus_scale_usecases[] = {
+	{
+		ARRAY_SIZE(rotator_init_vectors),
+		rotator_init_vectors,
+	},
+	{
+		ARRAY_SIZE(rotator_ui_vectors),
+		rotator_ui_vectors,
+	},
+	{
+		ARRAY_SIZE(rotator_vga_vectors),
+		rotator_vga_vectors,
+	},
+	{
+		ARRAY_SIZE(rotator_720p_vectors),
+		rotator_720p_vectors,
+	},
+	{
+		ARRAY_SIZE(rotator_1080p_vectors),
+		rotator_1080p_vectors,
+	},
+};
+
+struct msm_bus_scale_pdata rotator_bus_scale_pdata = {
+	rotator_bus_scale_usecases,
+	ARRAY_SIZE(rotator_bus_scale_usecases),
+	.name = "rotator",
+};
+
+void __init msm_rotator_update_bus_vectors(unsigned int xres,
+	unsigned int yres)
+{
+	rotator_ui_vectors[0].ab = xres * yres * 4 * 2 * 60;
+	rotator_ui_vectors[0].ib = xres * yres * 4 * 2 * 60 * 3 / 2;
+}
+
 #define ROTATOR_HW_BASE         0x04E00000
 static struct resource resources_msm_rotator[] = {
 	{
@@ -2027,6 +2116,11 @@ struct platform_device msm_rotator_device = {
 		.platform_data = &rotator_pdata,
 	},
 };
+
+void __init msm_rotator_set_split_iommu_domain(void)
+{
+	rotator_pdata.rot_iommu_split_domain = 1;
+}
 #endif
 
 #define MIPI_DSI_HW_BASE        0x04700000
@@ -2509,6 +2603,49 @@ struct platform_device msm_slim_ctrl = {
 	},
 };
 
+static struct msm_dcvs_freq_entry grp3d_freq[] = {
+	{0, 0, 333932},
+	{0, 0, 497532},
+	{0, 0, 707610},
+	{0, 0, 844545},
+};
+
+static struct msm_dcvs_freq_entry grp2d_freq[] = {
+	{0, 0, 86000},
+	{0, 0, 200000},
+};
+
+static struct msm_dcvs_core_info grp3d_core_info = {
+	.freq_tbl = &grp3d_freq[0],
+	.core_param = {
+		.max_time_us = 100000,
+		.num_freq = ARRAY_SIZE(grp3d_freq),
+	},
+	.algo_param = {
+		.slack_time_us = 39000,
+		.disable_pc_threshold = 86000,
+		.ss_window_size = 1000000,
+		.ss_util_pct = 95,
+		.em_max_util_pct = 97,
+		.ss_iobusy_conv = 100,
+	},
+};
+
+static struct msm_dcvs_core_info grp2d_core_info = {
+	.freq_tbl = &grp2d_freq[0],
+	.core_param = {
+		.max_time_us = 100000,
+		.num_freq = ARRAY_SIZE(grp2d_freq),
+	},
+	.algo_param = {
+		.slack_time_us = 39000,
+		.disable_pc_threshold = 90000,
+		.ss_window_size = 1000000,
+		.ss_util_pct = 90,
+		.em_max_util_pct = 95,
+	},
+};
+
 #ifdef CONFIG_MSM_BUS_SCALING
 static struct msm_bus_vectors grp3d_init_vectors[] = {
 	{
@@ -2696,6 +2833,20 @@ static struct resource kgsl_3d0_resources[] = {
 	},
 };
 
+static const struct kgsl_iommu_ctx kgsl_3d0_iommu_ctxs[] = {
+	{ "gfx3d_user", 0 },
+	{ "gfx3d_priv", 1 },
+};
+
+static struct kgsl_device_iommu_data kgsl_3d0_iommu_data[] = {
+	{
+		.iommu_ctxs = kgsl_3d0_iommu_ctxs,
+		.iommu_ctx_count = ARRAY_SIZE(kgsl_3d0_iommu_ctxs),
+		.physstart = 0x07C00000,
+		.physend = 0x07C00000 + SZ_1M - 1,
+	},
+};
+
 static struct kgsl_device_platform_data kgsl_3d0_pdata = {
 	.pwrlevel = {
 		{
@@ -2724,7 +2875,7 @@ static struct kgsl_device_platform_data kgsl_3d0_pdata = {
 		},
 	},
 	.init_level = 1,
-	.num_levels = 5,
+	.num_levels = ARRAY_SIZE(grp3d_freq) + 1,
 	.set_grp_async = NULL,
 	.idle_timeout = HZ/12,
 	.nap_allowed = true,
@@ -2732,8 +2883,9 @@ static struct kgsl_device_platform_data kgsl_3d0_pdata = {
 #ifdef CONFIG_MSM_BUS_SCALING
 	.bus_scale_table = &grp3d_bus_scale_pdata,
 #endif
-	.iommu_user_ctx_name = "gfx3d_user",
-	.iommu_priv_ctx_name = NULL,
+	.iommu_data = kgsl_3d0_iommu_data,
+	.iommu_count = ARRAY_SIZE(kgsl_3d0_iommu_data),
+	.core_info = &grp3d_core_info,
 };
 
 struct platform_device msm_kgsl_3d0 = {
@@ -2761,6 +2913,19 @@ static struct resource kgsl_2d0_resources[] = {
 	},
 };
 
+static const struct kgsl_iommu_ctx kgsl_2d0_iommu_ctxs[] = {
+	{ "gfx2d0_2d0", 0 },
+};
+
+static struct kgsl_device_iommu_data kgsl_2d0_iommu_data[] = {
+	{
+		.iommu_ctxs = kgsl_2d0_iommu_ctxs,
+		.iommu_ctx_count = ARRAY_SIZE(kgsl_2d0_iommu_ctxs),
+		.physstart = 0x07D00000,
+		.physend = 0x07D00000 + SZ_1M - 1,
+	},
+};
+
 static struct kgsl_device_platform_data kgsl_2d0_pdata = {
 	.pwrlevel = {
 		{
@@ -2777,7 +2942,7 @@ static struct kgsl_device_platform_data kgsl_2d0_pdata = {
 		},
 	},
 	.init_level = 0,
-	.num_levels = 3,
+	.num_levels = ARRAY_SIZE(grp2d_freq) + 1,
 	.set_grp_async = NULL,
 	.idle_timeout = HZ/5,
 	.nap_allowed = true,
@@ -2785,8 +2950,9 @@ static struct kgsl_device_platform_data kgsl_2d0_pdata = {
 #ifdef CONFIG_MSM_BUS_SCALING
 	.bus_scale_table = &grp2d0_bus_scale_pdata,
 #endif
-	.iommu_user_ctx_name = "gfx2d0_2d0",
-	.iommu_priv_ctx_name = NULL,
+	.iommu_data = kgsl_2d0_iommu_data,
+	.iommu_count = ARRAY_SIZE(kgsl_2d0_iommu_data),
+	.core_info = &grp2d_core_info,
 };
 
 struct platform_device msm_kgsl_2d0 = {
@@ -2796,6 +2962,19 @@ struct platform_device msm_kgsl_2d0 = {
 	.resource = kgsl_2d0_resources,
 	.dev = {
 		.platform_data = &kgsl_2d0_pdata,
+	},
+};
+
+static const struct kgsl_iommu_ctx kgsl_2d1_iommu_ctxs[] = {
+	{ "gfx2d1_2d1", 0 },
+};
+
+static struct kgsl_device_iommu_data kgsl_2d1_iommu_data[] = {
+	{
+		.iommu_ctxs = kgsl_2d1_iommu_ctxs,
+		.iommu_ctx_count = ARRAY_SIZE(kgsl_2d1_iommu_ctxs),
+		.physstart = 0x07E00000,
+		.physend = 0x07E00000 + SZ_1M - 1,
 	},
 };
 
@@ -2830,7 +3009,7 @@ static struct kgsl_device_platform_data kgsl_2d1_pdata = {
 		},
 	},
 	.init_level = 0,
-	.num_levels = 3,
+	.num_levels = ARRAY_SIZE(grp2d_freq) + 1,
 	.set_grp_async = NULL,
 	.idle_timeout = HZ/5,
 	.nap_allowed = true,
@@ -2838,8 +3017,9 @@ static struct kgsl_device_platform_data kgsl_2d1_pdata = {
 #ifdef CONFIG_MSM_BUS_SCALING
 	.bus_scale_table = &grp2d1_bus_scale_pdata,
 #endif
-	.iommu_user_ctx_name = "gfx2d1_2d1",
-	.iommu_priv_ctx_name = NULL,
+	.iommu_data = kgsl_2d1_iommu_data,
+	.iommu_count = ARRAY_SIZE(kgsl_2d1_iommu_data),
+	.core_info = &grp2d_core_info,
 };
 
 struct platform_device msm_kgsl_2d1 = {
@@ -3184,5 +3364,163 @@ struct platform_device msm8960_msm_gov_device = {
 	.id = -1,
 	.dev = {
 		.platform_data = &msm8960_core_info,
+	},
+};
+
+struct msm_iommu_domain_name msm8960_iommu_ctx_names[] = {
+	/* Camera */
+	{
+		.name = "vpe_src",
+		.domain = CAMERA_DOMAIN,
+	},
+	/* Camera */
+	{
+		.name = "vpe_dst",
+		.domain = CAMERA_DOMAIN,
+	},
+	/* Camera */
+	{
+		.name = "vfe_imgwr",
+		.domain = CAMERA_DOMAIN,
+	},
+	/* Camera */
+	{
+		.name = "vfe_misc",
+		.domain = CAMERA_DOMAIN,
+	},
+	/* Camera */
+	{
+		.name = "ijpeg_src",
+		.domain = CAMERA_DOMAIN,
+	},
+	/* Camera */
+	{
+		.name = "ijpeg_dst",
+		.domain = CAMERA_DOMAIN,
+	},
+	/* Camera */
+	{
+		.name = "jpegd_src",
+		.domain = CAMERA_DOMAIN,
+	},
+	/* Camera */
+	{
+		.name = "jpegd_dst",
+		.domain = CAMERA_DOMAIN,
+	},
+	/* Rotator */
+	{
+		.name = "rot_src",
+		.domain = ROTATOR_SRC_DOMAIN,
+	},
+	/* Rotator */
+	{
+		.name = "rot_dst",
+		.domain = ROTATOR_SRC_DOMAIN,
+	},
+	/* Video */
+	{
+		.name = "vcodec_a_mm1",
+		.domain = VIDEO_DOMAIN,
+	},
+	/* Video */
+	{
+		.name = "vcodec_b_mm2",
+		.domain = VIDEO_DOMAIN,
+	},
+	/* Video */
+	{
+		.name = "vcodec_a_stream",
+		.domain = VIDEO_DOMAIN,
+	},
+};
+
+static struct mem_pool msm8960_video_pools[] =  {
+	/*
+	 * Video hardware has the following requirements:
+	 * 1. All video addresses used by the video hardware must be at a higher
+	 *    address than video firmware address.
+	 * 2. Video hardware can only access a range of 256MB from the base of
+	 *    the video firmware.
+	*/
+	[VIDEO_FIRMWARE_POOL] =
+	/* Low addresses, intended for video firmware */
+		{
+			.paddr	= SZ_128K,
+			.size	= SZ_16M - SZ_128K,
+		},
+	[VIDEO_MAIN_POOL] =
+	/* Main video pool */
+		{
+			.paddr	= SZ_16M,
+			.size	= SZ_256M - SZ_16M,
+		},
+	[GEN_POOL] =
+	/* Remaining address space up to 2G */
+		{
+			.paddr	= SZ_256M,
+			.size	= SZ_2G - SZ_256M,
+		},
+};
+
+static struct mem_pool msm8960_camera_pools[] =  {
+	[GEN_POOL] =
+	/* One address space for camera */
+		{
+			.paddr	= SZ_128K,
+			.size	= SZ_2G - SZ_128K,
+		},
+};
+
+static struct mem_pool msm8960_display_read_pools[] =  {
+	[GEN_POOL] =
+	/* One address space for display reads */
+		{
+			.paddr	= SZ_128K,
+			.size	= SZ_2G - SZ_128K,
+		},
+};
+
+static struct mem_pool msm8960_rotator_src_pools[] =  {
+	[GEN_POOL] =
+	/* One address space for rotator src */
+		{
+			.paddr	= SZ_128K,
+			.size	= SZ_2G - SZ_128K,
+		},
+};
+
+static struct msm_iommu_domain msm8960_iommu_domains[] = {
+		[VIDEO_DOMAIN] = {
+			.iova_pools = msm8960_video_pools,
+			.npools = ARRAY_SIZE(msm8960_video_pools),
+		},
+		[CAMERA_DOMAIN] = {
+			.iova_pools = msm8960_camera_pools,
+			.npools = ARRAY_SIZE(msm8960_camera_pools),
+		},
+		[DISPLAY_READ_DOMAIN] = {
+			.iova_pools = msm8960_display_read_pools,
+			.npools = ARRAY_SIZE(msm8960_display_read_pools),
+		},
+		[ROTATOR_SRC_DOMAIN] = {
+			.iova_pools = msm8960_rotator_src_pools,
+			.npools = ARRAY_SIZE(msm8960_rotator_src_pools),
+		},
+};
+
+struct iommu_domains_pdata msm8960_iommu_domain_pdata = {
+	.domains = msm8960_iommu_domains,
+	.ndomains = ARRAY_SIZE(msm8960_iommu_domains),
+	.domain_names = msm8960_iommu_ctx_names,
+	.nnames = ARRAY_SIZE(msm8960_iommu_ctx_names),
+	.domain_alloc_flags = 0,
+};
+
+struct platform_device msm8960_iommu_domain_device = {
+	.name = "iommu_domains",
+	.id = -1,
+	.dev = {
+		.platform_data = &msm8960_iommu_domain_pdata,
 	},
 };

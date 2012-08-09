@@ -99,7 +99,6 @@ static struct platform_device cmc624_i2c_gpio_device = {
 #define OLED_ESD	PM8921_GPIO_PM_TO_SYS(PMIC_GPIO_VGH_ESD_DET)
 #endif
 
-
 #if defined(CONFIG_MIPI_SAMSUNG_ESD_REFRESH)
 static struct sec_esd_platform_data esd_pdata;
 static struct platform_device samsung_mipi_esd_refresh_device = {
@@ -138,47 +137,8 @@ static struct platform_device samsung_mipi_esd_refresh_device = {
 #endif
 #endif
 
-#if defined(CONFIG_FB_MSM_MIPI_DSI)
-#if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_WVGA_PT_PANEL)
-/* 480 x 800 x 3 x 2 */
-#define MIPI_DSI_WRITEBACK_SIZE (roundup((480 * 800 * 3), 4096) * 2)
-#elif defined(CONFIG_FB_MSM_MIPI_SAMSUNG_TFT_VIDEO_WXGA_PT_PANEL)
-/* 1280 x 800 x 3 x 2 */
-#define MIPI_DSI_WRITEBACK_SIZE (roundup((1280 * 800 * 3), 4096) * 2)
-#elif defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_CMD_QHD_PT_PANEL)
-/* 540 x 960 x 3 x 2 */
-#define MIPI_DSI_WRITEBACK_SIZE (roundup((544 * 960 * 3), 4096) * 2)
-#elif defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT_PANEL)
-/*1280 x732 x 3 x 2 */
-#define MIPI_DSI_WRITEBACK_SIZE (roundup((1280 * 736 * 3), 4096) * 2)
-#endif
-#else
-#define MIPI_DSI_WRITEBACK_SIZE 0
-#endif
-
-#if defined(CONFIG_FB_MSM_HDMI_MSM_PANEL)
-/* hdmi = 1920 x 1088 x 2(bpp) x 1(page) */
-#define MSM_FB_EXT_BUF_SIZE 0x3FC000
-#elif defined(CONFIG_FB_MSM_TVOUT)
-/* tvout = 720 x 576 x 2(bpp) x 2(pages) */
-#define MSM_FB_EXT_BUF_SIZE 0x195000
-#else /* CONFIG_FB_MSM_HDMI_MSM_PANEL */
-#define MSM_FB_EXT_BUF_SIZE 0
-#endif /* CONFIG_FB_MSM_HDMI_MSM_PANEL */
-
-#ifdef CONFIG_FB_MSM_OVERLAY0_WRITEBACK
-/* width x height x 3 bpp x 2 frame buffer */
-#define MSM_FB_WRITEBACK_SIZE 0x3FC000
-#define MSM_FB_WRITEBACK_OFFSET  \
-		(MSM_FB_PRIM_BUF_SIZE + MSM_FB_EXT_BUF_SIZE)
-#else
-#define MSM_FB_WRITEBACK_SIZE   0
-#define MSM_FB_WRITEBACK_OFFSET 0
-#endif
-
 /* Note: must be multiple of 4096 */
-#define MSM_FB_SIZE roundup(MSM_FB_PRIM_BUF_SIZE + MSM_FB_EXT_BUF_SIZE + \
-				MSM_FB_WRITEBACK_SIZE, 4096)
+#define MSM_FB_SIZE roundup(MSM_FB_PRIM_BUF_SIZE, 4096)
 
 #ifdef CONFIG_FB_MSM_OVERLAY0_WRITEBACK
 #define MSM_FB_OVERLAY0_WRITEBACK_SIZE roundup((1920 * 1200 * 3 * 2), 4096)
@@ -208,10 +168,15 @@ static struct platform_device samsung_mipi_esd_refresh_device = {
 #define TVOUT_PANEL_NAME	"tvout_msm"
 
 #ifdef CONFIG_FB_MSM_HDMI_AS_PRIMARY
-unsigned char hdmi_is_primary = 1;
+static unsigned char hdmi_is_primary = 1;
 #else
-unsigned char hdmi_is_primary;
+static unsigned char hdmi_is_primary;
 #endif
+
+unsigned char msm8960_hdmi_as_primary_selected(void)
+{
+	return hdmi_is_primary;
+}
 
 static struct resource msm_fb_resources[] = {
 	{
@@ -1285,6 +1250,7 @@ static int mipi_dsi_cdp_panel_power(int on)
 	return 0;
 }
 
+static char mipi_dsi_splash_is_enabled(void);
 static int mipi_dsi_panel_power(int on)
 {
 	int ret;
@@ -1315,82 +1281,9 @@ static struct mipi_dsi_platform_data mipi_dsi_pdata = {
 #endif /* CONFIG_FB_MSM_MIPI_PANEL_POWERON_LP11 */
 	.lcd_rst_up = pull_ldi_reset_up,
 	.lcd_rst_down = pull_ldi_reset_down,
+	.splash_is_enabled = mipi_dsi_splash_is_enabled,
 };
 #ifdef CONFIG_MSM_BUS_SCALING
-
-static struct msm_bus_vectors rotator_init_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab = 0,
-		.ib = 0,
-	},
-};
-
-static struct msm_bus_vectors rotator_ui_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (1024 * 600 * 4 * 2 * 60),
-		.ib  = (1024 * 600 * 4 * 2 * 60 * 1.5),
-	},
-};
-
-static struct msm_bus_vectors rotator_vga_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (640 * 480 * 2 * 2 * 30),
-		.ib  = (640 * 480 * 2 * 2 * 30 * 1.5),
-	},
-};
-static struct msm_bus_vectors rotator_720p_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (1280 * 736 * 2 * 2 * 30),
-		.ib  = (1280 * 736 * 2 * 2 * 30 * 1.5),
-	},
-};
-
-static struct msm_bus_vectors rotator_1080p_vectors[] = {
-	{
-		.src = MSM_BUS_MASTER_ROTATOR,
-		.dst = MSM_BUS_SLAVE_EBI_CH0,
-		.ab  = (1920 * 1088 * 2 * 2 * 30),
-		.ib  = (1920 * 1088 * 2 * 2 * 30 * 1.5),
-	},
-};
-
-static struct msm_bus_paths rotator_bus_scale_usecases[] = {
-	{
-		ARRAY_SIZE(rotator_init_vectors),
-		rotator_init_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_ui_vectors),
-		rotator_ui_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_vga_vectors),
-		rotator_vga_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_720p_vectors),
-		rotator_720p_vectors,
-	},
-	{
-		ARRAY_SIZE(rotator_1080p_vectors),
-		rotator_1080p_vectors,
-	},
-};
-
-struct msm_bus_scale_pdata rotator_bus_scale_pdata = {
-	rotator_bus_scale_usecases,
-	ARRAY_SIZE(rotator_bus_scale_usecases),
-	.name = "rotator",
-};
-
 static struct msm_bus_vectors mdp_init_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_MDP_PORT0,
@@ -1539,6 +1432,7 @@ static struct msm_panel_common_pdata mdp_pdata = {
 	.mem_hid = MEMTYPE_EBI1,
 #endif
 	.cont_splash_enabled = 0x0,
+	.mdp_iommu_split_domain = 0,
 };
 
 #ifndef CONFIG_FB_MSM_MIPI_PANEL_DETECT
@@ -1577,6 +1471,11 @@ void __init msm8960_mdp_writeback(struct memtype_reserve* reserve_table)
 	reserve_table[mdp_pdata.mem_hid].size +=
 		mdp_pdata.ov1_wb_size;
 #endif
+}
+
+static char mipi_dsi_splash_is_enabled(void)
+{
+	return mdp_pdata.cont_splash_enabled;
 }
 
 static struct platform_device mipi_dsi_renesas_panel_device = {
@@ -1769,9 +1668,16 @@ static int hdmi_enable_5v(int on)
 	if (on == prev_on)
 		return 0;
 
-	if (!reg_8921_hdmi_mvs)
+	if (!reg_8921_hdmi_mvs) {
 		reg_8921_hdmi_mvs = regulator_get(&hdmi_msm_device.dev,
-			"hdmi_mvs");
+					"hdmi_mvs");
+		if (IS_ERR(reg_8921_hdmi_mvs)) {
+			pr_err("'%s' regulator not found, rc=%ld\n",
+				"hdmi_mvs", IS_ERR(reg_8921_hdmi_mvs));
+			reg_8921_hdmi_mvs = NULL;
+			return -ENODEV;
+		}
+	}
 
 	if (on) {
 		rc = regulator_enable(reg_8921_hdmi_mvs);
@@ -2029,11 +1935,20 @@ void __init msm8960_allocate_fb_region(void)
 
 void __init msm8960_set_display_params(char *prim_panel, char *ext_panel)
 {
+	int disable_splash = 0;
 	if (strnlen(prim_panel, PANEL_NAME_MAX_LEN)) {
 		strlcpy(msm_fb_pdata.prim_panel_name, prim_panel,
 			PANEL_NAME_MAX_LEN);
 		pr_debug("msm_fb_pdata.prim_panel_name %s\n",
 			msm_fb_pdata.prim_panel_name);
+
+		if (strncmp((char *)msm_fb_pdata.prim_panel_name,
+			MIPI_VIDEO_TOSHIBA_WSVGA_PANEL_NAME,
+			strnlen(MIPI_VIDEO_TOSHIBA_WSVGA_PANEL_NAME,
+				PANEL_NAME_MAX_LEN))) {
+			/* Disable splash for panels other than Toshiba WSVGA */
+			disable_splash = 1;
+		}
 
 		if (!strncmp((char *)msm_fb_pdata.prim_panel_name,
 			HDMI_PANEL_NAME, strnlen(HDMI_PANEL_NAME,
@@ -2049,4 +1964,7 @@ void __init msm8960_set_display_params(char *prim_panel, char *ext_panel)
 		pr_debug("msm_fb_pdata.ext_panel_name %s\n",
 			msm_fb_pdata.ext_panel_name);
 	}
+
+	if (disable_splash)
+		mdp_pdata.cont_splash_enabled = 0;
 }

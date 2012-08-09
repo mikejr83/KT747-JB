@@ -45,6 +45,7 @@
 #include <mach/msm_battery.h>
 #include <linux/smsc911x.h>
 #include <linux/atmel_maxtouch.h>
+#include <linux/fmem.h>
 #include "devices.h"
 #include "timer.h"
 #include "board-msm7x27a-regulator.h"
@@ -54,6 +55,12 @@
 #include <mach/socinfo.h>
 #include "pm-boot.h"
 #include "board-msm7627a.h"
+
+/*
+ * Reserve enough v4l2 space for a double buffered full screen
+ * res image (864x480x1.5x2)
+*/
+#define MSM_V4L2_VIDEO_OVERLAY_BUF_SIZE 1244160
 
 #define PMEM_KERNEL_EBI1_SIZE	0x3A000
 #define MSM_PMEM_AUDIO_SIZE	0x5B000
@@ -159,12 +166,13 @@ static struct msm_i2c_platform_data msm_gsbi1_qup_i2c_pdata = {
 
 
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
-#define MSM_FB_SIZE		0x261000
-#define MSM7x25A_MSM_FB_SIZE	0xE1000
+#define MSM_FB_SIZE		0x4BF000
+#define MSM7x25A_MSM_FB_SIZE	0x1C2000
+#define MSM8x25_MSM_FB_SIZE	0x5FA000
 #else
-#define MSM_FB_SIZE		0x196000
-#define MSM7x25A_MSM_FB_SIZE	0x96000
-
+#define MSM_FB_SIZE		0x32A000
+#define MSM7x25A_MSM_FB_SIZE	0x12C000
+#define MSM8x25_MSM_FB_SIZE	0x3FC000
 #endif
 
 #endif
@@ -394,6 +402,9 @@ static struct android_pmem_platform_data android_pmem_adsp_pdata = {
 	.allocator_type = PMEM_ALLOCATORTYPE_BITMAP,
 	.cached = 1,
 	.memory_type = MEMTYPE_EBI1,
+	.request_region = request_fmem_c_region,
+	.release_region = release_fmem_c_region,
+	.reusable = 1,
 };
 
 static struct platform_device android_pmem_adsp_device = {
@@ -595,6 +606,14 @@ static struct resource msm_fb_resources[] = {
 	}
 };
 
+#ifdef CONFIG_MSM_V4L2_VIDEO_OVERLAY_DEVICE
+static struct resource msm_v4l2_video_overlay_resources[] = {
+	{
+		.flags = IORESOURCE_DMA,
+	}
+};
+#endif
+
 #define LCDC_TOSHIBA_FWVGA_PANEL_NAME	"lcdc_toshiba_fwvga_pt"
 #define MIPI_CMD_RENESAS_FWVGA_PANEL_NAME	"mipi_cmd_renesas_fwvga"
 
@@ -638,6 +657,15 @@ static struct platform_device msm_fb_device = {
 		.platform_data = &msm_fb_pdata,
 	}
 };
+
+#ifdef CONFIG_MSM_V4L2_VIDEO_OVERLAY_DEVICE
+static struct platform_device msm_v4l2_video_overlay_device = {
+	.name   = "msm_v4l2_overlay_pd",
+	.id     = 0,
+	.num_resources  = ARRAY_SIZE(msm_v4l2_video_overlay_resources),
+	.resource       = msm_v4l2_video_overlay_resources,
+};
+#endif
 
 #ifdef CONFIG_FB_MSM_MIPI_DSI
 static int mipi_renesas_set_bl(int level)
@@ -942,6 +970,14 @@ static void msm7x27a_cfg_uart2dm_serial(void)
 static void msm7x27a_cfg_uart2dm_serial(void) { }
 #endif
 
+struct fmem_platform_data fmem_pdata;
+
+struct platform_device fmem_device = {
+	.name = "fmem",
+	.id = 1,
+	.dev = { .platform_data = &fmem_pdata },
+};
+
 static struct platform_device *rumi_sim_devices[] __initdata = {
 	&msm_device_dmov,
 	&msm_device_smd,
@@ -968,6 +1004,7 @@ static struct platform_device *surf_ffa_devices[] __initdata = {
 	&android_pmem_device,
 	&android_pmem_adsp_device,
 	&android_pmem_audio_device,
+	&fmem_device,
 	&msm_device_snd,
 	&msm_device_adspdec,
 	&msm_fb_device,
@@ -976,6 +1013,9 @@ static struct platform_device *surf_ffa_devices[] __initdata = {
 	&smsc911x_device,
 #ifdef CONFIG_FB_MSM_MIPI_DSI
 	&mipi_dsi_renesas_panel_device,
+#endif
+#ifdef CONFIG_MSM_V4L2_VIDEO_OVERLAY_DEVICE
+	&msm_v4l2_video_overlay_device,
 #endif
 	&msm_kgsl_3d0,
 #ifdef CONFIG_BT
@@ -1009,6 +1049,8 @@ static void __init msm_msm7x2x_allocate_memory_regions(void)
 
 	if (machine_is_msm7625a_surf() || machine_is_msm7625a_ffa())
 		fb_size = MSM7x25A_MSM_FB_SIZE;
+	else if (machine_is_msm7627a_evb() || machine_is_msm8625_evb())
+		fb_size = MSM8x25_MSM_FB_SIZE;
 	else
 		fb_size = MSM_FB_SIZE;
 
@@ -1018,6 +1060,17 @@ static void __init msm_msm7x2x_allocate_memory_regions(void)
 	msm_fb_resources[0].end = msm_fb_resources[0].start + size - 1;
 	pr_info("allocating %lu bytes at %p (%lx physical) for fb\n",
 		size, addr, __pa(addr));
+
+#ifdef CONFIG_MSM_V4L2_VIDEO_OVERLAY_DEVICE
+	fb_size = MSM_V4L2_VIDEO_OVERLAY_BUF_SIZE;
+	addr = alloc_bootmem_align(fb_size, 0x1000);
+	msm_v4l2_video_overlay_resources[0].start = __pa(addr);
+	msm_v4l2_video_overlay_resources[0].end =
+	msm_v4l2_video_overlay_resources[0].start + fb_size - 1;
+	pr_debug("allocating %lu bytes at %p (%lx physical) for v4l2\n",
+	fb_size, addr, __pa(addr));
+#endif
+
 }
 
 static struct memtype_reserve msm7x27a_reserve_table[] __initdata = {
@@ -1031,8 +1084,19 @@ static struct memtype_reserve msm7x27a_reserve_table[] __initdata = {
 	},
 };
 
+#ifdef CONFIG_ANDROID_PMEM
+static struct android_pmem_platform_data *pmem_pdata_array[] __initdata = {
+		&android_pmem_adsp_pdata,
+		&android_pmem_audio_pdata,
+		&android_pmem_pdata,
+};
+#endif
+
 static void __init size_pmem_devices(void)
 {
+#ifdef CONFIG_ANDROID_PMEM
+	unsigned int i;
+	unsigned int reusable_count = 0;
 
 	if (machine_is_msm7625a_surf() || machine_is_msm7625a_ffa()) {
 		pmem_mdp_size = MSM7x25A_MSM_PMEM_MDP_SIZE;
@@ -1042,11 +1106,30 @@ static void __init size_pmem_devices(void)
 		pmem_adsp_size = MSM_PMEM_ADSP_SIZE;
 	}
 
-#ifdef CONFIG_ANDROID_PMEM
 	android_pmem_adsp_pdata.size = pmem_adsp_size;
 	android_pmem_pdata.size = pmem_mdp_size;
 	android_pmem_audio_pdata.size = pmem_audio_size;
+
+	fmem_pdata.size = 0;
+
+	/* Find pmem devices that should use FMEM (reusable) memory.
+	 */
+	for (i = 0; i < ARRAY_SIZE(pmem_pdata_array); ++i) {
+		struct android_pmem_platform_data *pdata = pmem_pdata_array[i];
+
+		if (!reusable_count && pdata->reusable)
+			fmem_pdata.size += pdata->size;
+
+		reusable_count += (pdata->reusable) ? 1 : 0;
+
+		if (pdata->reusable && reusable_count > 1) {
+			pr_err("%s: Too many PMEM devices specified as reusable. PMEM device %s was not configured as reusable.\n",
+				__func__, pdata->name);
+			pdata->reusable = 0;
+		}
+	}
 #endif
+
 }
 
 static void __init reserve_memory_for(struct android_pmem_platform_data *p)
@@ -1057,9 +1140,10 @@ static void __init reserve_memory_for(struct android_pmem_platform_data *p)
 static void __init reserve_pmem_memory(void)
 {
 #ifdef CONFIG_ANDROID_PMEM
-	reserve_memory_for(&android_pmem_adsp_pdata);
-	reserve_memory_for(&android_pmem_pdata);
-	reserve_memory_for(&android_pmem_audio_pdata);
+	unsigned int i;
+	for (i = 0; i < ARRAY_SIZE(pmem_pdata_array); ++i)
+		reserve_memory_for(pmem_pdata_array[i]);
+
 	msm7x27a_reserve_table[MEMTYPE_EBI1].size += pmem_kernel_ebi1_size;
 #endif
 }
