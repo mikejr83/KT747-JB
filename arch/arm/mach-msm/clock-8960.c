@@ -3392,10 +3392,38 @@ static struct clk_freq_tbl clk_tbl_gfx3d_8960_v2[] = {
 	F_END
 };
 
-static unsigned long fmax_gfx3d_8960_v2[MAX_VDD_LEVELS] __initdata = {
+static unsigned long fmax_gfx3d_8960_v2[MAX_VDD_LEVELS] = {
 	[VDD_DIG_LOW]     = 128000000,
 	[VDD_DIG_NOMINAL] = 300000000,
 	[VDD_DIG_HIGH]    = 400000000
+};
+
+static struct clk_freq_tbl clk_tbl_gfx3d_8960_oc[] = {
+	F_GFX3D( 0, gnd, 0, 0),
+	F_GFX3D( 27000000, pxo, 0, 0),
+	F_GFX3D( 48000000, pll8, 1, 8),
+	F_GFX3D( 54857000, pll8, 1, 7),
+	F_GFX3D( 64000000, pll8, 1, 6),
+	F_GFX3D( 76800000, pll8, 1, 5),
+	F_GFX3D( 96000000, pll8, 1, 4),
+	F_GFX3D(128000000, pll8, 1, 3),
+	F_GFX3D(145455000, pll2, 2, 11),
+	F_GFX3D(160000000, pll2, 1, 5),
+	F_GFX3D(177778000, pll2, 2, 9),
+	F_GFX3D(200000000, pll2, 1, 4),
+	F_GFX3D(228571000, pll2, 2, 7),
+	F_GFX3D(266667000, pll2, 1, 3),
+	F_GFX3D(300000000, pll3, 1, 4),
+	F_GFX3D(320000000, pll2, 2, 5),
+	F_GFX3D(400000000, pll2, 1, 2),
+	F_GFX3D(480000000, pll3, 2, 5),
+	F_END
+};
+
+static unsigned long fmax_gfx3d_8960_oc[MAX_VDD_LEVELS] = {
+	[VDD_DIG_LOW] = 128000000,
+	[VDD_DIG_NOMINAL] = 320000000,
+	[VDD_DIG_HIGH] = 480000000
 };
 
 static struct clk_freq_tbl clk_tbl_gfx3d_8064[] = {
@@ -5989,12 +6017,64 @@ static void __init msm8960_clock_init(void)
 		clk_enable(&sdc3_p_clk.c);
 	}
 }
+int gpu_control_oc_var = 0;
+static ssize_t gpu_control_oc_show(struct device *dev, struct device_attribute *attr, char *buf) {
+	return sprintf(buf, "%d\n", gpu_control_oc_var);
+}
+
+static ssize_t gpu_control_oc_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t count) {
+	unsigned int g;
+	unsigned int ret = -EINVAL;
+	ret=sscanf(buf, "%d", &g);
+	gpu_control_oc_var = g;
+	if (cpu_is_msm8960() || cpu_is_msm8930()) {
+		if (SOCINFO_VERSION_MAJOR(socinfo_get_version()) >= 2) {
+			if (gpu_control_oc_var == 1)
+			{
+				gfx3d_clk.freq_tbl = clk_tbl_gfx3d_8960_oc;
+				memcpy(gfx3d_clk.c.fmax, fmax_gfx3d_8960_oc,
+					sizeof(gfx3d_clk.c.fmax));
+			}
+			else
+			{
+				gfx3d_clk.freq_tbl = clk_tbl_gfx3d_8960_v2;
+				memcpy(gfx3d_clk.c.fmax, fmax_gfx3d_8960_v2, 
+			      		sizeof(gfx3d_clk.c.fmax)); 
+			}
+		}
+	}
+	return count;
+}
+
+static DEVICE_ATTR(gpu_control_oc, S_IRUGO | S_IWUGO, gpu_control_oc_show, gpu_control_oc_store);
+
+static struct attribute *gpu_clock_control_attributes[] = {
+	&dev_attr_gpu_control_oc.attr,
+	NULL
+};
+#include <linux/miscdevice.h>
+static struct miscdevice gpu_clock_control_device = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "gpu_clock_control",
+};
+
+static struct attribute_group gpu_clock_control_group = {
+	.attrs = gpu_clock_control_attributes,
+};
 
 static int __init msm8960_clock_late_init(void)
 {
 	int rc;
 	struct clk *mmfpb_a_clk = clk_get_sys("clock-8960", "mmfpb_a_clk");
 	struct clk *cfpb_a_clk = clk_get_sys("clock-8960", "cfpb_a_clk");
+
+	misc_register(&gpu_clock_control_device);
+	//printk("%s - %d gpu_clock_control_device\n", __FUNCTION__, gpu_control_oc_var);
+	if (sysfs_create_group(&gpu_clock_control_device.this_device->kobj,
+			&gpu_clock_control_group) < 0) {
+		printk("%s sysfs_create_group failed\n", __FUNCTION__);
+		pr_err("Unable to create group for %s\n", gpu_clock_control_device.name);
+	}
 
 	/* Vote for MMFPB to be at least 76.8MHz when an Apps CPU is active. */
 	if (WARN(IS_ERR(mmfpb_a_clk), "mmfpb_a_clk not found (%ld)\n",
