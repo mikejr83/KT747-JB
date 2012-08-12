@@ -35,7 +35,7 @@ rm $(find $INITRAMFS_DEST -name EMPTY_DIRECTORY -print)
 rm -rf $(find $INITRAMFS_DEST -name .git -print)
 
 echo "Make the kernel"
-make cyanogen_d2_defconfig
+make KT747_d2att_defconfig
 make -j`grep 'processor' /proc/cpuinfo | wc -l`
 
 echo "Copy modules to Package"
