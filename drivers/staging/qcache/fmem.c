@@ -51,14 +51,6 @@ static int fmem_probe(struct platform_device *pdev)
 {
 	struct fmem_platform_data *pdata = pdev->dev.platform_data;
 
-	if (!pdata->phys)
-		pdata->phys = allocate_contiguous_ebi_nomap(pdata->size,
-			pdata->align);
-
-#ifdef CONFIG_MEMORY_HOTPLUG
-	fmem_section_start = pdata->phys >> PA_SECTION_SHIFT;
-	fmem_section_end = (pdata->phys - 1 + pdata->size) >> PA_SECTION_SHIFT;
-#endif
 	fmem_data.phys = pdata->phys + pdata->reserved_size_low;
 	fmem_data.size = pdata->size - pdata->reserved_size_low -
 					pdata->reserved_size_high;
