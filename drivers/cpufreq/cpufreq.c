@@ -52,7 +52,7 @@
  */
  #define __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
 
-#define FREQ_STEPS	27
+#define FREQ_STEPS	28
 
 static unsigned int isBooted = 0;
 
@@ -499,7 +499,7 @@ static ssize_t store_scaling_booted
 	{
 		isBooted = 1;
 		GLOBALKT_MIN_FREQ_LIMIT = 192000;
-		GLOBALKT_MAX_FREQ_LIMIT = 1971000;
+		GLOBALKT_MAX_FREQ_LIMIT = 2106000;
 		//set_app_user_min_max();
 	}
 	else
@@ -725,7 +725,7 @@ ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
 {
 	unsigned int ret = -EINVAL;
 	int u[FREQ_STEPS];
-	ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14], &u[15], &u[16], &u[17], &u[18], &u[19], &u[20], &u[21], &u[22], &u[23], &u[24], &u[25], &u[26]);
+	ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14], &u[15], &u[16], &u[17], &u[18], &u[19], &u[20], &u[21], &u[22], &u[23], &u[24], &u[25], &u[26], &u[27]);
 	if(ret != FREQ_STEPS) {
 		return -EINVAL;
 	}
@@ -1958,9 +1958,9 @@ static unsigned int user_max_freq_limit = 1512000;
 static void set_app_user_min_max()
 {
 	app_min_freq_limit = GLOBALKT_MIN_FREQ_LIMIT;
-	app_max_freq_limit = GLOBALKT_MIN_FREQ_LIMIT;
+	app_max_freq_limit = GLOBALKT_MAX_FREQ_LIMIT;
 	user_min_freq_limit = GLOBALKT_MIN_FREQ_LIMIT;
-	user_max_freq_limit = GLOBALKT_MIN_FREQ_LIMIT;
+	user_max_freq_limit = GLOBALKT_MAX_FREQ_LIMIT;
 }
 
 static int cpufreq_set_limits_off
