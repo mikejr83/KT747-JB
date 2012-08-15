@@ -52,7 +52,11 @@
  */
  #define __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
 
-#define FREQ_STEPS	28
+#if defined CONFIG_SUPER_CLOCKED
+	#define FREQ_STEPS	28
+#else
+	#define FREQ_STEPS	26
+#endif
 
 static unsigned int isBooted = 0;
 
@@ -490,6 +494,7 @@ static ssize_t store_scaling_booted
 	unsigned int ret = -EINVAL;
 	unsigned int value = 0;
 
+	pr_alert("store_scaling_booted call open: %d\n", GLOBALKT_MAX_FREQ_LIMIT);
 	ret = sscanf(buf, "%u", &value);
 	if (ret != 1)
 		return -EINVAL;
@@ -498,11 +503,16 @@ static ssize_t store_scaling_booted
 	{
 		isBooted = 1;
 		GLOBALKT_MIN_FREQ_LIMIT = 192000;
+#if defined CONFIG_SUPER_CLOCKED
 		GLOBALKT_MAX_FREQ_LIMIT = 2106000;
+#else
+		GLOBALKT_MAX_FREQ_LIMIT = 1890000;
+#endif
 		//set_app_user_min_max();
 	}
 	else
 		isBooted = 0;
+	pr_alert("store_scaling_booted call close: %d\n", GLOBALKT_MAX_FREQ_LIMIT);
 	return count;
 }
 static ssize_t show_scaling_booted(struct cpufreq_policy *policy,

@@ -81,7 +81,11 @@
 
 /* PTE EFUSE register. */
 #define QFPROM_PTE_EFUSE_ADDR	(MSM_QFPROM_BASE + 0x00C0)
-#define FREQ_TABLE_SIZE    36
+#if defined CONFIG_SUPER_CLOCKED
+	#define FREQ_TABLE_SIZE    36
+#else
+	#define FREQ_TABLE_SIZE    34
+#endif
 
 enum scalables {
 	CPU0 = 0,
@@ -725,8 +729,10 @@ static struct acpu_level acpu_freq_tbl_8960_kraitv2_slow[] = {
 	{ 1, {  1728000, HFPLL, 1, 0, 0x3C }, L2(19), 1262500 },
 	{ 1, {  1809000, HFPLL, 1, 0, 0x3E }, L2(19), 1262500 },
 	{ 1, {  1890000, HFPLL, 1, 0, 0x40 }, L2(19), 1300000 },
+#if defined CONFIG_SUPER_CLOCKED
 	{ 1, {  1998000, HFPLL, 1, 0, 0x42 }, L2(19), 1325000 },
 	{ 1, {  2106000, HFPLL, 1, 0, 0x44 }, L2(19), 1350000 },
+#endif
 	{ 0, { 0 } }
 };
 
@@ -758,8 +764,10 @@ static struct acpu_level acpu_freq_tbl_8960_kraitv2_nom[] = {
 	{ 1, {  1728000, HFPLL, 1, 0, 0x3C }, L2(19), 1250000 },
 	{ 1, {  1809000, HFPLL, 1, 0, 0x3E }, L2(19), 1275000 },
 	{ 1, {  1890000, HFPLL, 1, 0, 0x40 }, L2(19), 1300000 },
+#if defined CONFIG_SUPER_CLOCKED
 	{ 1, {  1998000, HFPLL, 1, 0, 0x42 }, L2(19), 1325000 },
 	{ 1, {  2106000, HFPLL, 1, 0, 0x44 }, L2(19), 1350000 },
+#endif
 	{ 0, { 0 } }
 };
 
@@ -791,8 +799,10 @@ static struct acpu_level acpu_freq_tbl_8960_kraitv2_fast[] = {
 	{ 1, {  1728000, HFPLL, 1, 0, 0x3C }, L2(19), 1200000 },
 	{ 1, {  1809000, HFPLL, 1, 0, 0x3E }, L2(19), 1250000 },
 	{ 1, {  1890000, HFPLL, 1, 0, 0x40 }, L2(19), 1300000 },
+#if defined CONFIG_SUPER_CLOCKED
 	{ 1, {  1998000, HFPLL, 1, 0, 0x42 }, L2(19), 1325000 },
 	{ 1, {  2106000, HFPLL, 1, 0, 0x44 }, L2(19), 1350000 },
+#endif
 	{ 0, { 0 } }
 };
 
