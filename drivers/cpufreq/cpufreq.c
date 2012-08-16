@@ -53,9 +53,9 @@
  #define __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
 
 #if defined CONFIG_SUPER_CLOCKED
-	#define FREQ_STEPS	28
+	#define FREQ_STEPS	30
 #else
-	#define FREQ_STEPS	26
+	#define FREQ_STEPS	28
 #endif
 
 static unsigned int isBooted = 0;
@@ -502,7 +502,7 @@ static ssize_t store_scaling_booted
 	if (value == 1)
 	{
 		isBooted = 1;
-		GLOBALKT_MIN_FREQ_LIMIT = 192000;
+		GLOBALKT_MIN_FREQ_LIMIT = 96000;
 #if defined CONFIG_SUPER_CLOCKED
 		GLOBALKT_MAX_FREQ_LIMIT = 2106000;
 #else

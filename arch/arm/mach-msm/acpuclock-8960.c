@@ -82,9 +82,9 @@
 /* PTE EFUSE register. */
 #define QFPROM_PTE_EFUSE_ADDR	(MSM_QFPROM_BASE + 0x00C0)
 #if defined CONFIG_SUPER_CLOCKED
-	#define FREQ_TABLE_SIZE    36
+	#define FREQ_TABLE_SIZE    38
 #else
-	#define FREQ_TABLE_SIZE    34
+	#define FREQ_TABLE_SIZE    36
 #endif
 
 enum scalables {
@@ -703,7 +703,9 @@ static struct l2_level l2_freq_tbl_8960_kraitv2[] = {
 
 static struct acpu_level acpu_freq_tbl_8960_kraitv2_slow[] = {
 	{ 0, { STBY_KHZ, QSB,   0, 0, 0x00 }, L2(0),   950000 },
-	{ 1, {   192000, PLL_8, 0, 2, 0x00 }, L2(1),   950000 },
+	{ 1, {    96000, PLL_8, 0, 2, 0x00 }, L2(1),   950000 },
+	{ 1, {   144000, HFPLL, 2, 0, 0x12 }, L2(1),   950000 },
+	{ 1, {   192000, HFPLL, 2, 0, 0x16 }, L2(1),   950000 },
 	{ 1, {   384000, HFPLL, 2, 0, 0x20 }, L2(7),   975000 },
 	{ 1, {   486000, HFPLL, 2, 0, 0x24 }, L2(7),   975000 },
 	{ 1, {   540000, HFPLL, 2, 0, 0x28 }, L2(7),  1000000 },
@@ -738,7 +740,9 @@ static struct acpu_level acpu_freq_tbl_8960_kraitv2_slow[] = {
 
 static struct acpu_level acpu_freq_tbl_8960_kraitv2_nom[] = {
 	{ 0, { STBY_KHZ, QSB,   0, 0, 0x00 }, L2(0),   850000 },
-	{ 1, {   192000, PLL_8, 0, 2, 0x00 }, L2(1),   925000 },
+	{ 1, {    96000, PLL_8, 0, 2, 0x00 }, L2(1),   925000 },
+	{ 1, {   144000, HFPLL, 2, 0, 0x12 }, L2(1),   925000 },
+	{ 1, {   192000, HFPLL, 2, 0, 0x16 }, L2(1),   925000 },
 	{ 1, {   384000, HFPLL, 2, 0, 0x20 }, L2(7),   925000 },
 	{ 1, {   486000, HFPLL, 2, 0, 0x24 }, L2(7),   925000 },
 	{ 1, {   540000, HFPLL, 2, 0, 0x28 }, L2(7),   950000 },
@@ -773,7 +777,9 @@ static struct acpu_level acpu_freq_tbl_8960_kraitv2_nom[] = {
 
 static struct acpu_level acpu_freq_tbl_8960_kraitv2_fast[] = {
 	{ 0, { STBY_KHZ, QSB,   0, 0, 0x00 }, L2(0),   850000 },
-	{ 1, {   192000, PLL_8, 0, 2, 0x00 }, L2(1),   850000 },
+	{ 1, {    96000, PLL_8, 0, 2, 0x00 }, L2(1),   850000 },
+	{ 1, {   144000, HFPLL, 2, 0, 0x12 }, L2(1),   850000 },
+	{ 1, {   192000, HFPLL, 2, 0, 0x16 }, L2(1),   850000 },
 	{ 1, {   384000, HFPLL, 2, 0, 0x20 }, L2(7),   875000 },
 	{ 1, {   486000, HFPLL, 2, 0, 0x24 }, L2(7),   875000 },
 	{ 1, {   540000, HFPLL, 2, 0, 0x28 }, L2(7),   900000 },
