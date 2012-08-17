@@ -487,12 +487,14 @@ static ssize_t store_scaling_min_freq
 	return count;
 }
 static void set_app_user_min_max();
+static int cpufreq_set_limits_off(int cpu, unsigned int min, unsigned int max);
 
 static ssize_t store_scaling_booted
 	(struct cpufreq_policy *policy, const char *buf, size_t count)
 {
 	unsigned int ret = -EINVAL;
 	unsigned int value = 0;
+	struct cpufreq_policy new_policy;
 
 	pr_alert("store_scaling_booted call open: %d\n", GLOBALKT_MAX_FREQ_LIMIT);
 	ret = sscanf(buf, "%u", &value);
@@ -509,6 +511,12 @@ static ssize_t store_scaling_booted
 		GLOBALKT_MAX_FREQ_LIMIT = 1890000;
 #endif
 		//set_app_user_min_max();
+		cpufreq_get_policy(&new_policy, policy->cpu);
+		new_policy.cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
+		new_policy.cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
+		new_policy.user_policy.min = GLOBALKT_MIN_FREQ_LIMIT;
+		new_policy.user_policy.max = GLOBALKT_MAX_FREQ_LIMIT;
+		ret = __cpufreq_set_policy(policy, &new_policy);
 	}
 	else
 		isBooted = 0;
@@ -1878,7 +1886,7 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	}
 
 	/* verify the cpu speed can be set within this limit */
-	ret = cpufreq_driver->verify(policy);
+	ret = 0; //cpufreq_driver->verify(policy);
 	if (ret)
 		goto error_out;
 
@@ -1892,7 +1900,7 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 
 	/* verify the cpu speed can be set within this limit,
 	   which might be different to the first one */
-	ret = cpufreq_driver->verify(policy);
+	ret = 0; //cpufreq_driver->verify(policy);
 	if (ret)
 		goto error_out;
 
@@ -2034,6 +2042,11 @@ static int cpufreq_set_limits(int cpu, unsigned int min, unsigned int max)
 		policy->user_policy.max = policy->max;
 	}
 
+	if (min < GLOBALKT_MIN_FREQ_LIMIT)
+		min = GLOBALKT_MIN_FREQ_LIMIT;
+	if (max > GLOBALKT_MAX_FREQ_LIMIT)
+		max = GLOBALKT_MAX_FREQ_LIMIT;
+
 	new_policy.min = min;
 	new_policy.max = max;
 
@@ -2051,6 +2064,8 @@ cpu_put:
 no_policy:
 	if (cpu_is_offline(cpu))
 		ret = cpufreq_set_limits_off(cpu, min, max);
+
+	//pr_alert("cpufreq_set_limits: %d-%d-%d-%d \n", min, max, new_policy.min, new_policy.max);
 
 	return ret;
 }
