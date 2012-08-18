@@ -52,12 +52,6 @@
  */
  #define __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
 
-#if defined CONFIG_SUPER_CLOCKED
-	#define FREQ_STEPS	30
-#else
-	#define FREQ_STEPS	28
-#endif
-
 static unsigned int isBooted = 0;
 
 #ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
@@ -486,8 +480,27 @@ static ssize_t store_scaling_min_freq
 
 	return count;
 }
-static void set_app_user_min_max();
 static int cpufreq_set_limits_off(int cpu, unsigned int min, unsigned int max);
+
+static ssize_t store_cpuinfo_max_freq
+	(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	int value = 0;
+
+	ret = sscanf(buf, "%d", &value);
+	if (ret != 1)
+		return -EINVAL;
+
+	if (value > GLOBALKT_MAX_FREQ_LIMIT)
+		value = GLOBALKT_MAX_FREQ_LIMIT;
+
+	policy->cpuinfo.max_freq = value;
+	policy->user_policy.max = value;
+	ret = __cpufreq_set_policy(policy, policy);
+	//cpufreq_cpu_put(policy);
+	return count;
+}
 
 static ssize_t store_scaling_booted
 	(struct cpufreq_policy *policy, const char *buf, size_t count)
@@ -505,24 +518,25 @@ static ssize_t store_scaling_booted
 	{
 		isBooted = 1;
 		GLOBALKT_MIN_FREQ_LIMIT = 96000;
-#if defined CONFIG_SUPER_CLOCKED
+#ifdef CONFIG_SUPER_CLOCKED
 		GLOBALKT_MAX_FREQ_LIMIT = 2106000;
 #else
 		GLOBALKT_MAX_FREQ_LIMIT = 1890000;
 #endif
-		//set_app_user_min_max();
 		cpufreq_get_policy(&new_policy, policy->cpu);
 		new_policy.cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
 		new_policy.cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
 		new_policy.user_policy.min = GLOBALKT_MIN_FREQ_LIMIT;
 		new_policy.user_policy.max = GLOBALKT_MAX_FREQ_LIMIT;
 		ret = __cpufreq_set_policy(policy, &new_policy);
+		//cpufreq_cpu_put(&new_policy);
 	}
 	else
 		isBooted = 0;
 	pr_alert("store_scaling_booted call close: %d\n", GLOBALKT_MAX_FREQ_LIMIT);
 	return count;
 }
+
 static ssize_t show_scaling_booted(struct cpufreq_policy *policy,
 					char *buf)
 {
@@ -731,29 +745,42 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 extern ssize_t acpuclk_get_vdd_levels_str(char *buf, int isApp);
 extern void acpuclk_set_vdd(unsigned acpu_khz, int vdd);
 extern void acpuclk_UV_mV_table(int cnt, int vdd_uv[]);
+extern unsigned int get_enable_oc();
 
 ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf)
 {
-	return acpuclk_get_vdd_levels_str(buf, FREQ_STEPS);
+	int modu = 0;
+	if (get_enable_oc() == 0)
+		modu = FREQ_TABLE_SIZE_OFFSET;
+	return acpuclk_get_vdd_levels_str(buf, FREQ_STEPS-modu);
 }
 
 ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
                                       const char *buf, size_t count)
 {
 	unsigned int ret = -EINVAL;
+	int modu = 0;
+	unsigned int is_en_oc = get_enable_oc();
+	if (is_en_oc == 0)
+		modu = FREQ_TABLE_SIZE_OFFSET;
 	int u[FREQ_STEPS];
-	ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14], &u[15], &u[16], &u[17], &u[18], &u[19], &u[20], &u[21], &u[22], &u[23], &u[24], &u[25], &u[26], &u[27]);
-	if(ret != FREQ_STEPS) {
+	if (is_en_oc == 1)
+		ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14], &u[15], &u[16], &u[17], &u[18], &u[19], &u[20], &u[21], &u[22], &u[23], &u[24], &u[25], &u[26], &u[27], &u[28], &u[29]);
+	else
+		ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14], &u[15], &u[16], &u[17], &u[18], &u[19], &u[20], &u[21], &u[22], &u[23], &u[24], &u[25], &u[26], &u[27], &u[28], &u[29]);
+		//ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14], &u[15], &u[16], &u[17], &u[18], &u[19], &u[20], &u[21], &u[22], &u[23]);
+	pr_alert("store_UV_mV_table: %d\n", ret);
+	if(ret != (FREQ_STEPS-modu)) {
 		return -EINVAL;
 	}
 
-	acpuclk_UV_mV_table(FREQ_STEPS, u);
+	acpuclk_UV_mV_table(FREQ_STEPS-modu, u);
 	return count;
 }
 
 cpufreq_freq_attr_ro_perm(cpuinfo_cur_freq, 0400);
 cpufreq_freq_attr_ro(cpuinfo_min_freq);
-cpufreq_freq_attr_ro(cpuinfo_max_freq);
+cpufreq_freq_attr_rw(cpuinfo_max_freq);
 cpufreq_freq_attr_ro(cpuinfo_transition_latency);
 cpufreq_freq_attr_ro(scaling_available_governors);
 cpufreq_freq_attr_ro(scaling_driver);
@@ -1971,14 +1998,6 @@ static unsigned int app_min_freq_limit = 384000;
 static unsigned int app_max_freq_limit = 1512000;
 static unsigned int user_min_freq_limit = 384000;
 static unsigned int user_max_freq_limit = 1512000;
-
-static void set_app_user_min_max()
-{
-	app_min_freq_limit = GLOBALKT_MIN_FREQ_LIMIT;
-	app_max_freq_limit = GLOBALKT_MAX_FREQ_LIMIT;
-	user_min_freq_limit = GLOBALKT_MIN_FREQ_LIMIT;
-	user_max_freq_limit = GLOBALKT_MAX_FREQ_LIMIT;
-}
 
 static int cpufreq_set_limits_off
 	(int cpu, unsigned int min, unsigned int max)
