@@ -41,7 +41,8 @@ make -j`grep 'processor' /proc/cpuinfo | wc -l`
 echo "Copy modules to Package"
 # cp ../lib/modules/* ./Package/system/lib/modules/
 cp -a $(find . -name *.ko -print |grep -v initramfs) Package/system/lib/modules/
-cp 00post-init ./Package/system/etc/init.d/00post-init
+cp 00post-init.sh ./Package/system/etc/init.d/00post-init.sh
+cp enable-oc.sh ./Package/system/etc/init.d/enable-oc.sh
 
 echo "Copy zImage to Package"
 cp arch/arm/boot/zImage Package/zImage

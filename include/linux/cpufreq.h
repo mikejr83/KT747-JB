@@ -358,6 +358,16 @@ static int GLOBALKT_MIN_FREQ_LIMIT = 384000;
 //#define MAX_FREQ_LIMIT 1512000
 static int GLOBALKT_MAX_FREQ_LIMIT = 1512000;
 
+#ifdef CONFIG_SUPER_CLOCKED
+	#define FREQ_TABLE_SIZE		38
+	#define FREQ_TABLE_SIZE_OFFSET	6
+	#define FREQ_STEPS		30
+#else
+	#define FREQ_TABLE_SIZE		36
+	#define FREQ_TABLE_SIZE_OFFSET	4
+	#define FREQ_STEPS		28
+#endif
+
 enum {
 	SET_MIN = 0,
 	SET_MAX
