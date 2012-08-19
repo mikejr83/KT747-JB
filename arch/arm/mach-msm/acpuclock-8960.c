@@ -1828,6 +1828,19 @@ unsigned int get_enable_oc()
 	return isenable_oc;
 }
 
+int get_the_freq_table(int cnt, int steps[]) {
+	if (acpu_freq_tbl == NULL)
+		return 0;
+	int real_cnt=FREQ_STEPS;
+	int i= 0;
+	//if (isenable_oc == 0)
+	//	real_cnt = real_cnt - FREQ_TABLE_SIZE_OFFSET;
+	for (i = 0; i < real_cnt; i++) {
+		steps[i] = acpu_freq_tbl[i+1].speed.khz;
+	}
+	return real_cnt;
+}
+
 static ssize_t show_enable_oc(struct kobject *kobj,
 				     struct attribute *attr, char *buf)
 {
@@ -1848,6 +1861,21 @@ static ssize_t store_enable_oc(struct kobject *kobj,
 	if (value == 1)
 	{
 		acpu_freq_tbl = acpu_freq_tbl_8960_kraitv2_nom;
+		for (l = acpu_freq_tbl; l->speed.khz != 0; l++)
+		{
+			if (l->use_for_scaling)
+				max_acpu_level = l;
+		}
+		init_clock_sources(&scalable[L2], &max_acpu_level->l2_level->speed);
+		scalable[0].l2_vote = max_acpu_level->l2_level;
+		scalable[1].l2_vote = max_acpu_level->l2_level;
+		//on_each_cpu(per_cpu_init, max_acpu_level, true);
+
+		cpufreq_table_init();
+	}
+	else
+	{
+		acpu_freq_tbl = acpu_freq_tbl_8960_kraitv2_stock;
 		for (l = acpu_freq_tbl; l->speed.khz != 0; l++)
 		{
 			if (l->use_for_scaling)
