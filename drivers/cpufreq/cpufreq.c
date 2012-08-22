@@ -52,6 +52,10 @@
  */
  #define __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
 
+#define TOUCH_BOOSTER_FREQ_LIMIT 486000
+static unsigned int Ltouch_booster_first_freq_limit = 1134000;
+static unsigned int Ltouch_booster_second_freq_limit = 810000;
+
 static unsigned int isBooted = 0;
 
 #ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
@@ -760,6 +764,36 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 	return sprintf(buf, "%u\n", policy->cpuinfo.max_freq);
 }
 
+static ssize_t show_touch_booster_first_freq_limit(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", Ltouch_booster_first_freq_limit);
+}
+static ssize_t store_touch_booster_first_freq_limit(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int freq = 0;
+	unsigned int ret;
+	ret = sscanf(buf, "%u", &freq);
+	Ltouch_booster_first_freq_limit = freq;
+
+	return count;
+}
+
+static ssize_t show_touch_booster_second_freq_limit(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", Ltouch_booster_second_freq_limit);
+}
+static ssize_t store_touch_booster_second_freq_limit(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int freq = 0;
+	unsigned int ret;
+	ret = sscanf(buf, "%u", &freq);
+	Ltouch_booster_second_freq_limit = freq;
+
+	return count;
+}
+
 extern ssize_t acpuclk_get_vdd_levels_str(char *buf, int isApp);
 extern void acpuclk_set_vdd(unsigned acpu_khz, int vdd);
 extern void acpuclk_UV_mV_table(int cnt, int vdd_uv[]);
@@ -814,6 +848,8 @@ cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(scaling_booted);
+cpufreq_freq_attr_rw(touch_booster_first_freq_limit);
+cpufreq_freq_attr_rw(touch_booster_second_freq_limit);
 cpufreq_freq_attr_rw(UV_mV_table);
 
 static struct attribute *default_attrs[] = {
@@ -833,6 +869,8 @@ static struct attribute *default_attrs[] = {
 	&scaling_setspeed.attr,
 	&UV_mV_table.attr,
 	&scaling_booted,
+	&touch_booster_first_freq_limit,
+	&touch_booster_second_freq_limit,
 	NULL
 };
 
@@ -2168,9 +2206,9 @@ int cpufreq_set_limit(unsigned int flag, unsigned int value)
 
 	/* set min freq */
 	if (freq_limit_start_flag & TOUCH_BOOSTER_FIRST_BIT)
-		min_value = TOUCH_BOOSTER_FIRST_FREQ_LIMIT;
+		min_value = Ltouch_booster_first_freq_limit;
 	else if (freq_limit_start_flag & TOUCH_BOOSTER_SECOND_BIT)
-		min_value = TOUCH_BOOSTER_SECOND_FREQ_LIMIT;
+		min_value = Ltouch_booster_second_freq_limit;
 	else if (freq_limit_start_flag & TOUCH_BOOSTER_BIT)
 		min_value = TOUCH_BOOSTER_FREQ_LIMIT;
 	else
