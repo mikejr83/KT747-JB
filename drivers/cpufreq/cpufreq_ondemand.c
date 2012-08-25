@@ -670,7 +670,8 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	}
 #if defined(__MP_DECISION_PATCH__)
 	/* calculate the scaled load across CPU */
-	load_at_max_freq = (cur_load * policy->cur)/policy->cpuinfo.max_freq;
+	load_at_max_freq += (cur_load * policy->cur) /
+	    policy->cpuinfo.max_freq;
 
 	/* add cpu_utilization */
 	dbs_tuners_ins.cpu_utilization = load_at_max_freq;
