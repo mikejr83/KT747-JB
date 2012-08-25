@@ -2613,13 +2613,10 @@ kgsl_ptdata_init(void)
 
 static void kgsl_core_exit(void)
 {
+	unregister_chrdev_region(kgsl_driver.major, KGSL_DEVICE_MAX);
+
 	kgsl_mmu_ptpool_destroy(kgsl_driver.ptpool);
 	kgsl_driver.ptpool = NULL;
-
-	kgsl_drm_exit();
-	kgsl_cffdump_destroy();
-	kgsl_core_debugfs_close();
-	kgsl_sharedmem_uninit_sysfs();
 
 	device_unregister(&kgsl_driver.virtdev);
 
@@ -2628,7 +2625,10 @@ static void kgsl_core_exit(void)
 		kgsl_driver.class = NULL;
 	}
 
-	unregister_chrdev_region(kgsl_driver.major, KGSL_DEVICE_MAX);
+	kgsl_drm_exit();
+	kgsl_cffdump_destroy();
+	kgsl_core_debugfs_close();
+	kgsl_sharedmem_uninit_sysfs();
 }
 
 static int __init kgsl_core_init(void)
