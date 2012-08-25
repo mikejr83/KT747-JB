@@ -2619,11 +2619,9 @@ static void kgsl_core_exit(void)
 	kgsl_drm_exit();
 	kgsl_cffdump_destroy();
 	kgsl_core_debugfs_close();
-	
-	if (kgsl_driver.virtdev.class) {
-		kgsl_sharedmem_uninit_sysfs();
-		device_unregister(&kgsl_driver.virtdev);
-	}
+	kgsl_sharedmem_uninit_sysfs();
+
+	device_unregister(&kgsl_driver.virtdev);
 
 	if (kgsl_driver.class) {
 		class_destroy(kgsl_driver.class);
