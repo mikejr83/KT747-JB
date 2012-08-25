@@ -17,6 +17,7 @@ echo "Remove old Package Files"
 rm -rf ./Package/*
 
 echo "Setup Package Directory"
+mkdir -p Package/system/app
 mkdir -p Package/system/lib/modules
 mkdir -p Package/system/etc/init.d
 
@@ -43,6 +44,7 @@ cp ../lib/modules/* ./Package/system/lib/modules/
 cp -a $(find . -name *.ko -print |grep -v initramfs) Package/system/lib/modules/
 cp 00post-init.sh ./Package/system/etc/init.d/00post-init.sh
 cp enable-oc.sh ./Package/system/etc/init.d/enable-oc.sh
+cp /home/ktoonsez/workspace/com.ktoonsez.KTweaker.apk ./Package/system/app/com.ktoonsez.KTweaker.apk
 
 echo "Copy zImage to Package"
 cp arch/arm/boot/zImage Package/zImage
