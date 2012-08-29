@@ -32,6 +32,11 @@
 
 #include <trace/events/power.h>
 #include <linux/semaphore.h>
+#ifdef CONFIG_HAS_EARLYSUSPEND
+#include <linux/earlysuspend.h>
+static struct early_suspend cpufreq_gov_early_suspend;
+static unsigned int cpufreq_gov_lcd_status;
+#endif
 
 #if !defined(__MP_DECISION_PATCH__)
 #error "__MP_DECISION_PATCH__ must be defined in cpufreq.c"
@@ -55,6 +60,9 @@
 #define TOUCH_BOOSTER_FREQ_LIMIT 486000
 static unsigned int Ltouch_booster_first_freq_limit = 1134000;
 static unsigned int Ltouch_booster_second_freq_limit = 810000;
+static unsigned int Lscreen_off_scaling_enable = 0;
+static unsigned int Lscreen_off_scaling_mhz = 1512000;
+static unsigned int Lscreen_off_scaling_mhz_orig = 1512000;
 
 static unsigned int isBooted = 0;
 
@@ -581,7 +589,11 @@ static ssize_t store_scaling_max_freq
 		else if (value >= GLOBALKT_MIN_FREQ_LIMIT)
 			cpufreq_set_limit_defered(USER_MAX_START, value);
 	}
-
+	if (value > GLOBALKT_MAX_FREQ_LIMIT)
+		value = GLOBALKT_MAX_FREQ_LIMIT;
+	if (value < GLOBALKT_MIN_FREQ_LIMIT)
+		value = GLOBALKT_MIN_FREQ_LIMIT;
+	Lscreen_off_scaling_mhz_orig = value;
 	return count;
 }
 #else
@@ -794,6 +806,42 @@ static ssize_t store_touch_booster_second_freq_limit(struct cpufreq_policy *poli
 	return count;
 }
 
+static ssize_t show_screen_off_scaling_enable(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", Lscreen_off_scaling_enable);
+}
+static ssize_t store_screen_off_scaling_enable(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int value = 0;
+	unsigned int ret;
+	ret = sscanf(buf, "%u", &value);
+	if (value > 1)
+	    value = 1;
+	Lscreen_off_scaling_enable = value;
+
+	return count;
+}
+
+static ssize_t show_screen_off_scaling_mhz(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", Lscreen_off_scaling_mhz);
+}
+static ssize_t store_screen_off_scaling_mhz(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int value = 0;
+	unsigned int ret;
+	ret = sscanf(buf, "%u", &value);
+	if (value > GLOBALKT_MAX_FREQ_LIMIT)
+		value = GLOBALKT_MAX_FREQ_LIMIT;
+	if (value < GLOBALKT_MIN_FREQ_LIMIT)
+		value = GLOBALKT_MIN_FREQ_LIMIT;
+	Lscreen_off_scaling_mhz = value;
+
+	return count;
+}
+
 extern ssize_t acpuclk_get_vdd_levels_str(char *buf, int isApp);
 extern void acpuclk_set_vdd(unsigned acpu_khz, int vdd);
 extern void acpuclk_UV_mV_table(int cnt, int vdd_uv[]);
@@ -850,6 +898,8 @@ cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(scaling_booted);
 cpufreq_freq_attr_rw(touch_booster_first_freq_limit);
 cpufreq_freq_attr_rw(touch_booster_second_freq_limit);
+cpufreq_freq_attr_rw(screen_off_scaling_enable);
+cpufreq_freq_attr_rw(screen_off_scaling_mhz);
 cpufreq_freq_attr_rw(UV_mV_table);
 
 static struct attribute *default_attrs[] = {
@@ -868,9 +918,11 @@ static struct attribute *default_attrs[] = {
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
 	&UV_mV_table.attr,
-	&scaling_booted,
-	&touch_booster_first_freq_limit,
-	&touch_booster_second_freq_limit,
+	&scaling_booted.attr,
+	&touch_booster_first_freq_limit.attr,
+	&touch_booster_second_freq_limit.attr,
+	&screen_off_scaling_enable.attr,
+	&screen_off_scaling_mhz.attr,
 	NULL
 };
 
@@ -2474,6 +2526,30 @@ int cpufreq_unregister_driver(struct cpufreq_driver *driver)
 }
 EXPORT_SYMBOL_GPL(cpufreq_unregister_driver);
 
+#ifdef CONFIG_HAS_EARLYSUSPEND
+static void cpufreq_gov_suspend(struct early_suspend *h){
+
+	if (Lscreen_off_scaling_enable == 1)
+	{
+		unsigned int value = Lscreen_off_scaling_mhz;
+		cpufreq_set_limit_defered(USER_MAX_START, value);
+		cpufreq_gov_lcd_status = 0;
+		pr_alert("cpufreq_gov_suspend: %u\n", value);
+	}
+}
+
+static void cpufreq_gov_resume(struct early_suspend *h){
+
+	if (Lscreen_off_scaling_enable == 1)
+	{
+		unsigned int value = Lscreen_off_scaling_mhz_orig;
+		cpufreq_set_limit_defered(USER_MAX_STOP, value);
+		cpufreq_gov_lcd_status = 1;
+		pr_alert("cpufreq_gov_resume: %u\n", value);
+	}
+}
+#endif
+
 static int __init cpufreq_core_init(void)
 {
 	int cpu;
@@ -2494,6 +2570,14 @@ static int __init cpufreq_core_init(void)
 #endif
 	register_syscore_ops(&cpufreq_syscore_ops);
 
+	#ifdef CONFIG_HAS_EARLYSUSPEND
+		cpufreq_gov_lcd_status = 1;
+		cpufreq_gov_early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 25;
+		cpufreq_gov_early_suspend.suspend = cpufreq_gov_suspend;
+		cpufreq_gov_early_suspend.resume = cpufreq_gov_resume;
+		register_early_suspend(&cpufreq_gov_early_suspend);
+	#endif
+															
 	return 0;
 }
 core_initcall(cpufreq_core_init);
