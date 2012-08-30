@@ -2543,7 +2543,7 @@ static void cpufreq_gov_resume(struct early_suspend *h){
 	if (Lscreen_off_scaling_enable == 1)
 	{
 		unsigned int value = Lscreen_off_scaling_mhz_orig;
-		cpufreq_set_limit_defered(USER_MAX_STOP, value);
+		cpufreq_set_limit_defered(USER_MAX_START, value);
 		cpufreq_gov_lcd_status = 1;
 		pr_alert("cpufreq_gov_resume: %u\n", value);
 	}
