@@ -32,6 +32,7 @@
 #define DEF_FREQUENCY_UP_THRESHOLD		(70)
 #define DEF_FREQUENCY_UP_THRESHOLD_HOTPLUG	(60)
 #define DEF_FREQUENCY_DOWN_THRESHOLD		(40)
+#define DEF_FREQUENCY_DOWN_THRESHOLD_HOTPLUG	(30)
 
 /*
  * The polling frequency of this governor depends on the capability of
@@ -87,12 +88,14 @@ static struct dbs_tuners {
 	unsigned int up_threshold;
 	unsigned int up_threshold_hotplug;
 	unsigned int down_threshold;
+	unsigned int down_threshold_hotplug;
 	unsigned int ignore_nice;
 	unsigned int freq_step;
 } dbs_tuners_ins = {
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
 	.up_threshold_hotplug = DEF_FREQUENCY_UP_THRESHOLD_HOTPLUG,
 	.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD,
+	.down_threshold_hotplug = DEF_FREQUENCY_DOWN_THRESHOLD_HOTPLUG,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice = 0,
 	.freq_step = 5,
@@ -184,6 +187,7 @@ show_one(sampling_down_factor, sampling_down_factor);
 show_one(up_threshold, up_threshold);
 show_one(up_threshold_hotplug, up_threshold_hotplug);
 show_one(down_threshold, down_threshold);
+show_one(down_threshold_hotplug, down_threshold_hotplug);
 show_one(ignore_nice_load, ignore_nice);
 show_one(freq_step, freq_step);
 
@@ -262,6 +266,22 @@ static ssize_t store_down_threshold(struct kobject *a, struct attribute *b,
 	return count;
 }
 
+static ssize_t store_down_threshold_hotplug(struct kobject *a, struct attribute *b,
+				    const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	/* cannot be lower than 11 otherwise freq will not fall */
+	if (ret != 1 || input < 11 || input > 100 ||
+			input >= dbs_tuners_ins.up_threshold)
+		return -EINVAL;
+
+	dbs_tuners_ins.down_threshold_hotplug = input;
+	return count;
+}
+
 static ssize_t store_ignore_nice_load(struct kobject *a, struct attribute *b,
 				      const char *buf, size_t count)
 {
@@ -318,6 +338,7 @@ define_one_global_rw(sampling_down_factor);
 define_one_global_rw(up_threshold);
 define_one_global_rw(up_threshold_hotplug);
 define_one_global_rw(down_threshold);
+define_one_global_rw(down_threshold_hotplug);
 define_one_global_rw(ignore_nice_load);
 define_one_global_rw(freq_step);
 
@@ -328,6 +349,7 @@ static struct attribute *dbs_attributes[] = {
 	&up_threshold.attr,
 	&up_threshold_hotplug.attr,
 	&down_threshold.attr,
+	&down_threshold_hotplug.attr,
 	&ignore_nice_load.attr,
 	&freq_step.attr,
 	NULL
@@ -442,6 +464,11 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		return;
 	}
 
+	if (max_load < (dbs_tuners_ins.down_threshold_hotplug)) {
+		if (num_online_cpus() > 1)
+			cpu_down(1);
+	}
+
 	/*
 	 * The optimal frequency is the frequency that is the lowest that
 	 * can support the current CPU usage without triggering the up
@@ -458,11 +485,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		 * if we cannot reduce the frequency anymore, break out early
 		 */
 		if (policy->cur == policy->min)
-		{
-			if (num_online_cpus() > 1)
-				cpu_down(1);
 			return;
-		}
 
 		__cpufreq_driver_target(policy, this_dbs_info->requested_freq,
 				CPUFREQ_RELATION_H);
