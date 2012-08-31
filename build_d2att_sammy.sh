@@ -41,7 +41,7 @@ make KT747_defconfig
 make -j`grep 'processor' /proc/cpuinfo | wc -l`
 
 echo "Copy modules to Package"
-cp ../lib/modules/* ./Package/system/lib/modules/
+cp ../lib/modules/* $PACKAGEDIR/system/lib/modules/
 cp -a $(find . -name *.ko -print |grep -v initramfs) $PACKAGEDIR/system/lib/modules/
 cp 00post-init.sh $PACKAGEDIR/system/etc/init.d/00post-init.sh
 cp enable-oc.sh $PACKAGEDIR/system/etc/init.d/enable-oc.sh
