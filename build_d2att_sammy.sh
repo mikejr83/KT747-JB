@@ -4,6 +4,7 @@ export PARENT_DIR=`readlink -f ..`
 export INITRAMFS_DEST=$KERNELDIR/kernel/usr/initramfs
 export INITRAMFS_SOURCE=`readlink -f ..`/initramfs
 export CONFIG_SAMMY_BUILD=y
+export PACKAGEDIR=$PARENT_DIR/PackageATTsammy
 #Enable FIPS mode
 export USE_SEC_FIPS_MODE=true
 export ARCH=arm
@@ -14,12 +15,12 @@ export ARCH=arm
 export CROSS_COMPILE=$PARENT_DIR/linaro4.7/bin/arm-eabi-
 
 echo "Remove old Package Files"
-rm -rf ./Package/*
+rm -rf $PACKAGEDIR/*
 
 echo "Setup Package Directory"
-mkdir -p Package/system/app
-mkdir -p Package/system/lib/modules
-mkdir -p Package/system/etc/init.d
+mkdir -p $PACKAGEDIR/system/app
+mkdir -p $PACKAGEDIR/system/lib/modules
+mkdir -p $PACKAGEDIR/system/etc/init.d
 
 echo "Create initramfs dir"
 mkdir -p $INITRAMFS_DEST
@@ -41,25 +42,15 @@ make -j`grep 'processor' /proc/cpuinfo | wc -l`
 
 echo "Copy modules to Package"
 cp ../lib/modules/* ./Package/system/lib/modules/
-cp -a $(find . -name *.ko -print |grep -v initramfs) Package/system/lib/modules/
-cp 00post-init.sh ./Package/system/etc/init.d/00post-init.sh
-cp enable-oc.sh ./Package/system/etc/init.d/enable-oc.sh
-cp /home/ktoonsez/workspace/com.ktoonsez.KTweaker.apk ./Package/system/app/com.ktoonsez.KTweaker.apk
+cp -a $(find . -name *.ko -print |grep -v initramfs) $PACKAGEDIR/system/lib/modules/
+cp 00post-init.sh $PACKAGEDIR/system/etc/init.d/00post-init.sh
+cp enable-oc.sh $PACKAGEDIR/system/etc/init.d/enable-oc.sh
+cp /home/ktoonsez/workspace/com.ktoonsez.KTweaker.apk $PACKAGEDIR/system/app/com.ktoonsez.KTweaker.apk
 
 echo "Copy zImage to Package"
-cp arch/arm/boot/zImage Package/zImage
+cp arch/arm/boot/zImage $PACKAGEDIR/zImage
 
-echo "Make CPIO initramfs"
-# cd $INITRAMFS_DEST
-# find . | cpio -o -H newc | gzip > ../../../Package/ramdisk.cpio.gz
-# cd $KERNELDIR
-
-# gzip -9 ramdisk.cpio
-# Make boot.img
-# --board qcom --base 0x10000000 --pagesize 2048 --ramdiskaddr 0x11000000 
-# ./mkbootimg --kernel zImage --ramdisk ramdisk.cpio.gz --output $KERNELDIR/boot.img
-# MSM8960
 echo "Make boot.img"
-./mkbootfs $INITRAMFS_DEST | gzip > ./Package/ramdisk.gz
-./mkbootimg --cmdline 'console = null androidboot.hardware=qcom user_debug = 31' --kernel Package/zImage --ramdisk Package/ramdisk.gz --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81500000 --output Package/boot.img 
+./mkbootfs $INITRAMFS_DEST | gzip > $PACKAGEDIR/ramdisk.gz
+./mkbootimg --cmdline 'console = null androidboot.hardware=qcom user_debug = 31' --kernel $PACKAGEDIR/zImage --ramdisk $PACKAGEDIR/ramdisk.gz --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81500000 --output $PACKAGEDIR/boot.img 
 
