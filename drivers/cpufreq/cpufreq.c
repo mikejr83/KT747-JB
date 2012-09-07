@@ -38,25 +38,6 @@ static struct early_suspend cpufreq_gov_early_suspend;
 static unsigned int cpufreq_gov_lcd_status;
 #endif
 
-#if !defined(__MP_DECISION_PATCH__)
-#error "__MP_DECISION_PATCH__ must be defined in cpufreq.c"
-#endif
-/* Description of __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
- *
- * When the kobject of cpufreq's ref count is zero in show/store function,
- * cpufreq_cpu_put() causes a deadlock because the active count of the
- * accessing file is incremented just before calling show/store at
- * fill_read(write)_buffer.
- * (This happens when show/store is called first and then the cpu_down is called
- * before the show/store function is finished)
- * So basically, cpufreq_cpu_put() in show/store must not release the kobject
- * of cpufreq. To make sure that kobj ref count of the cpufreq is not 0 in this
- * case, a per cpu mutex is used.
- * This per cpu mutex wraps the whole show/store function and kobject_put()
- * function in __cpufreq_remove_dev().
- */
- #define __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
-
 #define TOUCH_BOOSTER_FREQ_LIMIT 486000
 static unsigned int Ltouch_booster_first_freq_limit = 1134000;
 static unsigned int Ltouch_booster_second_freq_limit = 810000;
@@ -65,10 +46,6 @@ static unsigned int Lscreen_off_scaling_mhz = 1512000;
 static unsigned int Lscreen_off_scaling_mhz_orig = 1512000;
 
 static unsigned int isBooted = 0;
-
-#ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
-static DEFINE_PER_CPU(struct mutex, cpufreq_remove_mutex);
-#endif
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -225,32 +202,12 @@ static void __cpufreq_cpu_put(struct cpufreq_policy *data, int sysfs)
 		kobject_put(&data->kobj);
 	module_put(cpufreq_driver->owner);
 }
+
 void cpufreq_cpu_put(struct cpufreq_policy *data)
 {
 	__cpufreq_cpu_put(data, 0);
 }
 EXPORT_SYMBOL_GPL(cpufreq_cpu_put);
-
-#ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
-/* just peek to see if the cpufreq policy is available.
- * The caller must hold cpufreq_driver_lock
- */
-struct cpufreq_policy *cpufreq_cpu_peek(unsigned int cpu)
-{
-	struct cpufreq_policy *data;
-
-	if (cpu >= nr_cpu_ids)
-		return NULL;
-
-	if (!cpufreq_driver)
-		return NULL;
-
-	/* get the CPU */
-	data = per_cpu(cpufreq_cpu_data, cpu);
-
-	return data;
-}
-#endif
 
 static void cpufreq_cpu_put_sysfs(struct cpufreq_policy *data)
 {
@@ -348,30 +305,31 @@ void cpufreq_notify_transition(struct cpufreq_freqs *freqs, unsigned int state)
 		trace_cpu_frequency(freqs->new, freqs->cpu);
 		srcu_notifier_call_chain(&cpufreq_transition_notifier_list,
 				CPUFREQ_POSTCHANGE, freqs);
-		if (likely(policy) && likely(policy->cpu == freqs->cpu))
+		if (likely(policy) && likely(policy->cpu == freqs->cpu)) {
 			policy->cur = freqs->new;
+			sysfs_notify(&policy->kobj, NULL, "scaling_cur_freq");
+		}
 		break;
 	}
 }
 EXPORT_SYMBOL_GPL(cpufreq_notify_transition);
-
-#if defined(__MP_DECISION_PATCH__)
-/*
- * cpufreq_notify_utilization - notify CPU userspace abt CPU utilization
+/**
+ * cpufreq_notify_utilization - notify CPU userspace about CPU utilization
  * change
  *
- * This function calls the sysfs notifiers function.
- * It is called every ondemand load evaluation to compute CPU loading.
+ * This function is called everytime the CPU load is evaluated by the
+ * ondemand governor. It notifies userspace of cpu load changes via sysfs.
  */
 void cpufreq_notify_utilization(struct cpufreq_policy *policy,
-				unsigned int utils)
+		unsigned int util)
 {
 	if (policy)
-		policy->utils = utils;
+		policy->util = util;
 
-	sysfs_notify(&policy->kobj, NULL, "cpu_utilization");
+	if (policy->util >= MIN_CPU_UTIL_NOTIFY)
+		sysfs_notify(&policy->kobj, NULL, "cpu_utilization");
+
 }
-#endif
 
 /*********************************************************************
  *                          SYSFS INTERFACE                          *
@@ -459,9 +417,7 @@ show_one(cpuinfo_transition_latency, cpuinfo.transition_latency);
 show_one(scaling_min_freq, min);
 show_one(scaling_max_freq, max);
 show_one(scaling_cur_freq, cur);
-#if defined(__MP_DECISION_PATCH__)
-show_one(cpu_utilization, utils);
-#endif
+show_one(cpu_utilization, util);
 
 static int __cpufreq_set_policy(struct cpufreq_policy *data,
 				struct cpufreq_policy *policy);
@@ -888,9 +844,7 @@ cpufreq_freq_attr_ro(scaling_cur_freq);
 cpufreq_freq_attr_ro(bios_limit);
 cpufreq_freq_attr_ro(related_cpus);
 cpufreq_freq_attr_ro(affected_cpus);
-#if defined(__MP_DECISION_PATCH__)
 cpufreq_freq_attr_ro(cpu_utilization);
-#endif
 cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
@@ -908,10 +862,8 @@ static struct attribute *default_attrs[] = {
 	&cpuinfo_transition_latency.attr,
 	&scaling_min_freq.attr,
 	&scaling_max_freq.attr,
-#if defined(__MP_DECISION_PATCH__)
-	&cpu_utilization.attr,
-#endif
 	&affected_cpus.attr,
+	&cpu_utilization.attr,
 	&related_cpus.attr,
 	&scaling_governor.attr,
 	&scaling_driver.attr,
@@ -937,27 +889,6 @@ static ssize_t show(struct kobject *kobj, struct attribute *attr, char *buf)
 	struct cpufreq_policy *policy = to_policy(kobj);
 	struct freq_attr *fattr = to_attr(attr);
 	ssize_t ret = -EINVAL;
-#ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
-	unsigned int cpu;
-	unsigned long flags;
-#endif
-
-#ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
-	spin_lock_irqsave(&cpufreq_driver_lock, flags);
-	policy = cpufreq_cpu_peek(policy->cpu);
-	if (!policy) {
-		spin_unlock_irqrestore(&cpufreq_driver_lock, flags);
-		return -EINVAL;
-	}
-	cpu = policy->cpu;
-	if (mutex_trylock(&per_cpu(cpufreq_remove_mutex, cpu)) == 0) {
-		spin_unlock_irqrestore(&cpufreq_driver_lock, flags);
-		pr_info("!WARN %s failed because cpu%u is going down\n",
-			__func__, cpu);
-		return -EINVAL;
-	}
-	spin_unlock_irqrestore(&cpufreq_driver_lock, flags);
-#endif
 	policy = cpufreq_cpu_get_sysfs(policy->cpu);
 	if (!policy)
 		goto no_policy;
@@ -974,9 +905,6 @@ static ssize_t show(struct kobject *kobj, struct attribute *attr, char *buf)
 fail:
 	cpufreq_cpu_put_sysfs(policy);
 no_policy:
-#ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
-	mutex_unlock(&per_cpu(cpufreq_remove_mutex, cpu));
-#endif
 	return ret;
 }
 
@@ -986,27 +914,6 @@ static ssize_t store(struct kobject *kobj, struct attribute *attr,
 	struct cpufreq_policy *policy = to_policy(kobj);
 	struct freq_attr *fattr = to_attr(attr);
 	ssize_t ret = -EINVAL;
-#ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
-	unsigned int cpu;
-	unsigned long flags;
-#endif
-
-#ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
-	spin_lock_irqsave(&cpufreq_driver_lock, flags);
-	policy = cpufreq_cpu_peek(policy->cpu);
-	if (!policy) {
-		spin_unlock_irqrestore(&cpufreq_driver_lock, flags);
-		return -EINVAL;
-	}
-	cpu = policy->cpu;
-	if (mutex_trylock(&per_cpu(cpufreq_remove_mutex, cpu)) == 0) {
-		spin_unlock_irqrestore(&cpufreq_driver_lock, flags);
-		pr_info("!WARN %s failed because cpu%u is going down\n",
-			__func__, cpu);
-		return -EINVAL;
-	}
-	spin_unlock_irqrestore(&cpufreq_driver_lock, flags);
-#endif
 	policy = cpufreq_cpu_get_sysfs(policy->cpu);
 	if (!policy)
 		goto no_policy;
@@ -1023,9 +930,6 @@ static ssize_t store(struct kobject *kobj, struct attribute *attr,
 fail:
 	cpufreq_cpu_put_sysfs(policy);
 no_policy:
-#ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
-	mutex_unlock(&per_cpu(cpufreq_remove_mutex, cpu));
-#endif
 	return ret;
 }
 
@@ -1483,13 +1387,8 @@ static int __cpufreq_remove_dev(struct sys_device *sys_dev)
 	kobj = &data->kobj;
 	cmp = &data->kobj_unregister;
 	unlock_policy_rwsem_write(cpu);
-#ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
-	mutex_lock(&per_cpu(cpufreq_remove_mutex, cpu));
-#endif
 	kobject_put(kobj);
-#ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
-	mutex_unlock(&per_cpu(cpufreq_remove_mutex, cpu));
-#endif
+
 	/* we need to make sure that the underlying kobj is actually
 	 * not referenced anymore by anybody before we proceed with
 	 * unloading.
@@ -2557,9 +2456,6 @@ static int __init cpufreq_core_init(void)
 	for_each_possible_cpu(cpu) {
 		per_cpu(cpufreq_policy_cpu, cpu) = -1;
 		init_rwsem(&per_cpu(cpu_policy_rwsem, cpu));
-#ifdef __CPUFREQ_KOBJ_DEL_DEADLOCK_FIX
-		mutex_init(&per_cpu(cpufreq_remove_mutex, cpu));
-#endif
 	}
 
 	cpufreq_global_kobject = kobject_create_and_add("cpufreq",
