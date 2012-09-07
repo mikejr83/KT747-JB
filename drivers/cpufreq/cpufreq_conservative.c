@@ -532,12 +532,12 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			 * governor, thus we are bound to jiffes/HZ
 			 */
 			min_sampling_rate =
-				(MIN_SAMPLING_RATE_RATIO * jiffies_to_usecs(10)) / 20;
+				MIN_SAMPLING_RATE_RATIO * jiffies_to_usecs(10);
 			/* Bring kernel and HW constraints together */
 			min_sampling_rate = max(min_sampling_rate,
 					MIN_LATENCY_MULTIPLIER * latency);
 			dbs_tuners_ins.sampling_rate =
-				max((min_sampling_rate * 20),
+				max(min_sampling_rate,
 				    latency * LATENCY_MULTIPLIER);
 
 			cpufreq_register_notifier(
@@ -623,4 +623,3 @@ fs_initcall(cpufreq_gov_dbs_init);
 module_init(cpufreq_gov_dbs_init);
 #endif
 module_exit(cpufreq_gov_dbs_exit);
-
