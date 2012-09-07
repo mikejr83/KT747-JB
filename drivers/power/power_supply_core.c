@@ -128,7 +128,7 @@ void power_supply_changed(struct power_supply *psy)
 
 	spin_lock_irqsave(&psy->changed_lock, flags);
 	psy->changed = true;
-	wake_lock_timeout(&psy->work_wake_lock, HZ * 2);
+	wake_lock(&psy->work_wake_lock);
 	spin_unlock_irqrestore(&psy->changed_lock, flags);
 	schedule_work(&psy->changed_work);
 }
