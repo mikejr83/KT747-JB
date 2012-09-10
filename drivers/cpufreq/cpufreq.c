@@ -63,6 +63,7 @@ static unsigned int Ltouch_booster_second_freq_limit = 810000;
 static unsigned int Lscreen_off_scaling_enable = 0;
 static unsigned int Lscreen_off_scaling_mhz = 1512000;
 static unsigned int Lscreen_off_scaling_mhz_orig = 1512000;
+static unsigned int vfreq_lock = 0;
 
 static unsigned int isBooted = 0;
 
@@ -526,7 +527,8 @@ static ssize_t store_cpuinfo_max_freq
 		value = GLOBALKT_MAX_FREQ_LIMIT;
 
 	policy->cpuinfo.max_freq = value;
-	policy->user_policy.max = value;
+	if (vfreq_lock == 0)
+		policy->user_policy.max = value;
 	ret = __cpufreq_set_policy(policy, policy);
 	//cpufreq_cpu_put(policy);
 	return count;
@@ -583,17 +585,21 @@ static ssize_t store_scaling_max_freq
 	if (ret != 1)
 		return -EINVAL;
 
-	if (policy->cpu == BOOT_CPU) {
-		if (value >= GLOBALKT_MAX_FREQ_LIMIT)
-			cpufreq_set_limit_defered(USER_MAX_STOP, value);
-		else if (value >= GLOBALKT_MIN_FREQ_LIMIT)
-			cpufreq_set_limit_defered(USER_MAX_START, value);
+	if (vfreq_lock == 0)
+	{
+		if (policy->cpu == BOOT_CPU) {
+			if (value >= GLOBALKT_MAX_FREQ_LIMIT)
+				cpufreq_set_limit_defered(USER_MAX_STOP, value);
+			else if (value >= GLOBALKT_MIN_FREQ_LIMIT)
+				cpufreq_set_limit_defered(USER_MAX_START, value);
+		}
+
+		if (value > GLOBALKT_MAX_FREQ_LIMIT)
+			value = GLOBALKT_MAX_FREQ_LIMIT;
+		if (value < GLOBALKT_MIN_FREQ_LIMIT)
+			value = GLOBALKT_MIN_FREQ_LIMIT;
+		Lscreen_off_scaling_mhz_orig = value;
 	}
-	if (value > GLOBALKT_MAX_FREQ_LIMIT)
-		value = GLOBALKT_MAX_FREQ_LIMIT;
-	if (value < GLOBALKT_MIN_FREQ_LIMIT)
-		value = GLOBALKT_MIN_FREQ_LIMIT;
-	Lscreen_off_scaling_mhz_orig = value;
 	return count;
 }
 #else
@@ -842,6 +848,23 @@ static ssize_t store_screen_off_scaling_mhz(struct cpufreq_policy *policy,
 	return count;
 }
 
+static ssize_t show_freq_lock(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", vfreq_lock);
+}
+static ssize_t store_freq_lock(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int value = 0;
+	unsigned int ret;
+	ret = sscanf(buf, "%u", &value);
+	if (value > 1)
+		value = 1;
+	vfreq_lock = value;
+
+	return count;
+}
+
 extern ssize_t acpuclk_get_vdd_levels_str(char *buf, int isApp);
 extern void acpuclk_set_vdd(unsigned acpu_khz, int vdd);
 extern void acpuclk_UV_mV_table(int cnt, int vdd_uv[]);
@@ -900,6 +923,7 @@ cpufreq_freq_attr_rw(touch_booster_first_freq_limit);
 cpufreq_freq_attr_rw(touch_booster_second_freq_limit);
 cpufreq_freq_attr_rw(screen_off_scaling_enable);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
+cpufreq_freq_attr_rw(freq_lock);
 cpufreq_freq_attr_rw(UV_mV_table);
 
 static struct attribute *default_attrs[] = {
@@ -923,6 +947,7 @@ static struct attribute *default_attrs[] = {
 	&touch_booster_second_freq_limit.attr,
 	&screen_off_scaling_enable.attr,
 	&screen_off_scaling_mhz.attr,
+	&freq_lock.attr,
 	NULL
 };
 
@@ -2123,7 +2148,8 @@ static int cpufreq_set_limits_off
 		goto out_unlock;
 
 	per_cpu(cpufreq_policy_save, cpu).min = min;
-	per_cpu(cpufreq_policy_save, cpu).max = max;
+	if (vfreq_lock == 0)
+		per_cpu(cpufreq_policy_save, cpu).max = max;
 
 	ret = 0;
 
@@ -2140,6 +2166,12 @@ static int cpufreq_set_limits(int cpu, unsigned int min, unsigned int max)
 	struct cpufreq_policy *policy = NULL;
 	struct cpufreq_policy new_policy;
 	int ret = -EINVAL;
+
+	//if (vfreq_lock == 1)
+	//{
+	//	pr_alert("cpufreq_set_limits: Set while locked\n");
+	//	return 111;
+	//}
 
 	if (cpu_is_offline(cpu))
 		goto no_policy;
@@ -2176,12 +2208,14 @@ static int cpufreq_set_limits(int cpu, unsigned int min, unsigned int max)
 		max = GLOBALKT_MAX_FREQ_LIMIT;
 
 	new_policy.min = min;
-	new_policy.max = max;
+	if (vfreq_lock == 0)
+		new_policy.max = max;
 
 	ret = __cpufreq_set_policy(policy, &new_policy);
 
 	policy->user_policy.min = policy->min;
-	policy->user_policy.max = policy->max;
+	if (vfreq_lock == 0)
+		policy->user_policy.max = policy->max;
 
 unlock:
 	unlock_policy_rwsem_write(policy->cpu);
@@ -2307,6 +2341,11 @@ static void cpufreq_set_limit_work(struct work_struct *ws)
 int cpufreq_set_limit_defered(unsigned int flag, unsigned value)
 {
 	int ret = 0;
+	if (vfreq_lock == 1)
+	{
+		pr_alert("cpufreq_set_limit_defered: Set while locked\n");
+		return 111;
+	}
 
 	if (down_trylock(&cpufreq_defered_lock) == 0) {
 		cpufreq_queue_priv.flag = flag;
@@ -2347,8 +2386,11 @@ int cpufreq_update_policy(unsigned int cpu)
 
 	pr_debug("updating policy for CPU %u\n", cpu);
 	memcpy(&policy, data, sizeof(struct cpufreq_policy));
-	policy.min = data->user_policy.min;
-	policy.max = data->user_policy.max;
+	if (vfreq_lock == 0)
+	{
+		policy.min = data->user_policy.min;
+		policy.max = data->user_policy.max;
+	}
 	policy.policy = data->user_policy.policy;
 	policy.governor = data->user_policy.governor;
 
@@ -2531,9 +2573,11 @@ static void cpufreq_gov_suspend(struct early_suspend *h){
 
 	if (Lscreen_off_scaling_enable == 1)
 	{
+		vfreq_lock = 0;
 		unsigned int value = Lscreen_off_scaling_mhz;
 		cpufreq_set_limit_defered(USER_MAX_START, value);
 		cpufreq_gov_lcd_status = 0;
+		vfreq_lock = 1;
 		pr_alert("cpufreq_gov_suspend: %u\n", value);
 	}
 }
@@ -2542,9 +2586,11 @@ static void cpufreq_gov_resume(struct early_suspend *h){
 
 	if (Lscreen_off_scaling_enable == 1)
 	{
+		vfreq_lock = 0;
 		unsigned int value = Lscreen_off_scaling_mhz_orig;
 		cpufreq_set_limit_defered(USER_MAX_START, value);
 		cpufreq_gov_lcd_status = 1;
+		vfreq_lock = 1;
 		pr_alert("cpufreq_gov_resume: %u\n", value);
 	}
 }
