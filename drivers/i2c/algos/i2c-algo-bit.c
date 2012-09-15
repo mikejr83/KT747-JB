@@ -111,7 +111,7 @@ static int sclhi(struct i2c_algo_bit_data *adap)
 				break;
 			return -ETIMEDOUT;
 		}
-		cpu_relax();
+		cond_resched();
 	}
 #ifdef DEBUG
 	if (jiffies != start && i2c_debug >= 3)
