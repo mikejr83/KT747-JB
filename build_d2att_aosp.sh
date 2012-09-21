@@ -2,9 +2,9 @@
 export KERNELDIR=`readlink -f .`
 export PARENT_DIR=`readlink -f ..`
 export INITRAMFS_DEST=$KERNELDIR/kernel/usr/initramfs
-export INITRAMFS_SOURCE=`readlink -f ..`/initramfs_aokp
+export INITRAMFS_SOURCE=`readlink -f ..`/Ramdisks/AOSP_ICS
 export CONFIG_AOSP_BUILD=y
-export PACKAGEDIR=$PARENT_DIR/PackageATTaosp9
+export PACKAGEDIR=$PARENT_DIR/Packages/AOSP_ICS_ATT
 #Enable FIPS mode
 export USE_SEC_FIPS_MODE=true
 export ARCH=arm
