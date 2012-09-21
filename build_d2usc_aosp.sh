@@ -2,9 +2,9 @@
 export KERNELDIR=`readlink -f .`
 export PARENT_DIR=`readlink -f ..`
 export INITRAMFS_DEST=$KERNELDIR/kernel/usr/initramfs
-export INITRAMFS_SOURCE=`readlink -f ..`/initramfs_aokp_usc_jb
+export INITRAMFS_SOURCE=`readlink -f ..`/Ramdisks/AOSP_JB
 export CONFIG_AOSP_BUILD=y
-export PACKAGEDIR=$PARENT_DIR/PackageUSC
+export PACKAGEDIR=$PARENT_DIR/Packages/AOSP_JB_USC
 #Enable FIPS mode
 export USE_SEC_FIPS_MODE=true
 export ARCH=arm
@@ -51,5 +51,5 @@ cp arch/arm/boot/zImage $PACKAGEDIR/zImage
 
 echo "Make boot.img"
 ./mkbootfs $INITRAMFS_DEST | gzip > $PACKAGEDIR/ramdisk.gz
-./mkbootimg --cmdline 'console = null androidboot.hardware=qcom user_debug = 31' --kernel $PACKAGEDIR/zImage --ramdisk $PACKAGEDIR/ramdisk.gz --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81500000 --output $PACKAGEDIR/boot.img 
+./mkbootimg --cmdline 'console = null androidboot.hardware=qcom user_debug=31 zcache' --kernel $PACKAGEDIR/zImage --ramdisk $PACKAGEDIR/ramdisk.gz --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81500000 --output $PACKAGEDIR/boot.img 
 
