@@ -2,9 +2,9 @@
 export KERNELDIR=`readlink -f .`
 export PARENT_DIR=`readlink -f ..`
 export INITRAMFS_DEST=$KERNELDIR/kernel/usr/initramfs
-export INITRAMFS_SOURCE=`readlink -f ..`/initramfs_sammy_jb
+export INITRAMFS_SOURCE=`readlink -f ..`/Ramdisks/TW_JB
 export CONFIG_SAMMY_BUILD=y
-export PACKAGEDIR=$PARENT_DIR/PackageATTsammyJB
+export PACKAGEDIR=$PARENT_DIR/Packages/TW_JB_ATT
 #Enable FIPS mode
 export USE_SEC_FIPS_MODE=true
 export ARCH=arm
