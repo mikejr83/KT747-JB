@@ -768,4 +768,3 @@ static int __init register_cpufreq_notifier(void)
 core_initcall(register_cpufreq_notifier);
 
 #endif
->>>>>>> ec971ea... ARM: add cpufreq transiton notifier to adjust loops_per_jiffy for smp
