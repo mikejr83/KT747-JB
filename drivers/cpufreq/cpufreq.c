@@ -2200,14 +2200,17 @@ int cpufreq_set_limit(unsigned int flag, unsigned int value)
 	}
 
 	/* set min freq */
-	if (freq_limit_start_flag & TOUCH_BOOSTER_FIRST_BIT)
-		min_value = Ltouch_booster_first_freq_limit;
-	else if (freq_limit_start_flag & TOUCH_BOOSTER_SECOND_BIT)
-		min_value = Ltouch_booster_second_freq_limit;
-	else if (freq_limit_start_flag & TOUCH_BOOSTER_BIT)
-		min_value = TOUCH_BOOSTER_FREQ_LIMIT;
-	else
-		min_value = GLOBALKT_MIN_FREQ_LIMIT;
+	if (Ltouch_booster_first_freq_limit != 0)
+	{
+		if (freq_limit_start_flag & TOUCH_BOOSTER_FIRST_BIT)
+			min_value = Ltouch_booster_first_freq_limit;
+		else if (freq_limit_start_flag & TOUCH_BOOSTER_SECOND_BIT)
+			min_value = Ltouch_booster_second_freq_limit;
+		else if (freq_limit_start_flag & TOUCH_BOOSTER_BIT)
+			min_value = TOUCH_BOOSTER_FREQ_LIMIT;
+		else
+			min_value = GLOBALKT_MIN_FREQ_LIMIT;
+	}
 
 	/* cpufreq_min_limit */
 	if (freq_limit_start_flag & APPS_MIN_BIT) {
