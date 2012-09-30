@@ -40,4 +40,5 @@ echo "Make Mrproper"
 make mrproper
 ./build_d2att_sammy.sh
 
-
+echo "Switch to JellyBean"
+git checkout jellybean
