@@ -387,6 +387,7 @@ static ssize_t vsync_show_event(struct device *dev,
 	struct vsycn_ctrl *vctrl;
 	ssize_t ret = 0;
 	unsigned long flags;
+	u64 vsync_tick;
 
 	cndx = 0;
 	vctrl = &vsync_ctrl_db[0];
@@ -400,10 +401,15 @@ static ssize_t vsync_show_event(struct device *dev,
 		INIT_COMPLETION(vctrl->vsync_comp);
 	vctrl->wait_vsync_cnt++;
 	spin_unlock_irqrestore(&vctrl->spin_lock, flags);
-	wait_for_completion_timeout(&vctrl->vsync_comp, msecs_to_jiffies(1000));
+	ret = wait_for_completion_interruptible(&vctrl->vsync_comp);
+	if (ret)
+		return ret;
 
-	ret = snprintf(buf, PAGE_SIZE, "VSYNC=%llu",
-			ktime_to_ns(vctrl->vsync_time));
+	spin_lock_irqsave(&vctrl->spin_lock, flags);
+	vsync_tick = ktime_to_ns(vctrl->vsync_time);
+	spin_unlock_irqrestore(&vctrl->spin_lock, flags);
+
+	ret = snprintf(buf, PAGE_SIZE, "VSYNC=%llu", vsync_tick);
 	buf[strlen(buf) + 1] = '\0';
 	return ret;
 }
@@ -919,9 +925,11 @@ void mdp4_primary_vsync_dsi_video(void)
 
 	cndx = 0;
 	vctrl = &vsync_ctrl_db[cndx];
-	vctrl->vsync_time = ktime_get();
+	pr_debug("%s: cpu=%d\n", __func__, smp_processor_id());
 
 	spin_lock(&vctrl->spin_lock);
+	vctrl->vsync_time = ktime_get();
+
 	if (vctrl->wait_vsync_cnt) {
 		complete_all(&vctrl->vsync_comp);
 		vctrl->wait_vsync_cnt = 0;
@@ -1091,6 +1099,8 @@ void mdp4_dsi_video_overlay(struct msm_fb_data_type *mfd)
 		return;
 	}
 
+	pr_debug("%s: cpu=%d pid=%d\n", __func__,
+			smp_processor_id(), current->pid);
 	if (pipe->pipe_type == OVERLAY_TYPE_RGB) {
 		bpp = fbi->var.bits_per_pixel / 8;
 		buf = (uint8 *) fbi->fix.smem_start;
@@ -1106,14 +1116,12 @@ void mdp4_dsi_video_overlay(struct msm_fb_data_type *mfd)
 
 	mdp4_overlay_mdp_perf_upd(mfd, 1);
 
-	cnt = 0;
 	cnt = mdp4_dsi_video_pipe_commit(cndx, 0);
-
 	if (cnt) {
 		if (pipe->ov_blt_addr)
-			mdp4_dsi_video_wait4ov(0);
+			mdp4_dsi_video_wait4ov(cndx);
 		else
-			mdp4_dsi_video_wait4dmap(0);
+			mdp4_dsi_video_wait4dmap(cndx);
 	}
 
 	mdp4_overlay_mdp_perf_upd(mfd, 0);
