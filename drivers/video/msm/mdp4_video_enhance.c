@@ -315,9 +315,9 @@ void lut_tune(int num, unsigned int *pLutTable)
 		printk(KERN_ERR "can't malloc cmap!");
 		goto fail_rest;
 	}
-	r = cmap->red;
-	g = cmap->green;
-	b = cmap->blue;
+	r = min (max (cmap->red - 4, 0), 255);
+	g = min (max (cmap->green - 4, 0), 255);
+	b = min (max (cmap->blue + 4, 0), 255);
 
 	j = 0;
 	DPRINT("cmap->len %d\n", cmap->len);
@@ -333,9 +333,9 @@ void lut_tune(int num, unsigned int *pLutTable)
 
 	j = 0;
 	for (i = 0; i < cmap->len; i++) {
-		r_1 = pLutTable[j++];
-		g_1 = pLutTable[j++];
-		b_1 = pLutTable[j++];
+		r_1 = min (max (pLutTable[j++] - 4, 0), 255);
+		g_1 = min (max (pLutTable[j++] - 4, 0), 255);
+		b_1 = min (max (pLutTable[j++] + 4, 0), 255);
 
 #ifdef CONFIG_FB_MSM_MDP40
 		MDP_OUTP(MDP_BASE + 0x94800 +
