@@ -553,6 +553,68 @@ static void melfas_ta_cb(struct tsp_callbacks *cb, bool ta_status)
 	}
 }
 
+static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
+{
+	mutex_lock(&info->lock);
+	if (info->enabled)
+		goto out;
+	/* wake up the touch controller. */
+	if (wakeupcmd == 1) {
+		i2c_smbus_write_byte_data(info->client, 0, 0);
+		usleep_range(3000, 5000);
+	}
+	info->enabled = true;
+	enable_irq(info->irq);
+out:
+	mutex_unlock(&info->lock);
+	return 0;
+}
+
+static unsigned int wake_start = 0;
+static unsigned int x_lo;
+static unsigned int x_hi;
+static struct input_dev *slide2wake_dev;
+static DEFINE_MUTEX(s2w_lock);
+extern int get_suspend_state(void);
+extern void request_suspend_state(int);
+
+void slide2wake_setdev(struct input_dev *input_device)
+{
+	slide2wake_dev = input_device;
+}
+
+static void slide2wake_force_wakeup(void)
+{
+	int state;
+	mutex_lock(&s2w_lock);
+	state = get_suspend_state();
+	pr_info("WAKE_START suspend state: %d\n", state);
+	if (state != 0)
+		request_suspend_state(0);
+	msleep(100);
+	mutex_unlock(&s2w_lock);
+}
+
+static void slide2wake_presspwr(struct work_struct *slide2wake_presspwr_work)
+{
+	input_event(slide2wake_dev, EV_KEY, KEY_POWER, 1);
+	input_event(slide2wake_dev, EV_SYN, 0, 0);
+	msleep(500);
+	input_event(slide2wake_dev, EV_KEY, KEY_POWER, 0);
+	input_event(slide2wake_dev, EV_SYN, 0, 0);
+	mutex_unlock(&s2w_lock);
+	msleep(1000);
+	pr_info("WAKE_START OFF-2 %d\n", slide2wake_dev->id.version);
+}
+
+static DECLARE_WORK(slide2wake_presspwr_work, slide2wake_presspwr);
+
+void slide2wake_pwrtrigger(void)
+{
+	if (mutex_trylock(&s2w_lock))
+		schedule_work(&slide2wake_presspwr_work);
+}
+
 static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 {
 	struct mms_ts_info *info = dev_id;
@@ -652,6 +714,19 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 		}
 
 		if ((tmp[0] & 0x80) == 0) {
+			if (wake_start == 1 && x > x_hi) {
+				//mutex_lock(&info->input_dev->mutex);
+				//if (info->input_dev->users)
+				//{
+				//	ret = mms_ts_enable(info, 1);
+				//	pr_info("wake_start OFF-1 %d-%d\n", x, x_hi);
+				//}
+				//mutex_unlock(&info->input_dev->mutex);
+				//slide2wake_force_wakeup();
+				slide2wake_pwrtrigger();
+				pr_info("WAKE_START OFF-1 %d-%d\n", x, x_hi);
+			}
+			wake_start = 0;
 #if defined(SEC_TSP_DEBUG)
 			dev_dbg(&client->dev,
 				"finger id[%d]: x=%d y=%d p=%d w=%d major=%d minor=%d angle=%d palm=%d\n"
@@ -682,6 +757,11 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 #if defined(SEC_TSP_DEBUG)
 		if (info->finger_state[id] == 0) {
 			info->finger_state[id] = 1;
+			if (x < x_lo)
+			{
+				wake_start = 1;
+				pr_info("WAKE_START ON %d-%d\n", x, x_lo);
+			}
 			dev_dbg(&client->dev,
 				"finger id[%d]: x=%d y=%d p=%d w=%d major=%d minor=%d angle=%d palm=%d\n"
 				, id, x, y, tmp[5], tmp[4], tmp[6], tmp[7]
@@ -690,6 +770,12 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 #else
 		if (info->finger_state[id] == 0) {
 			info->finger_state[id] = 1;
+			if (x < x_lo)
+			{
+				wake_start = 1;
+				pr_info("WAKE_START ON %d-%d\n", x, x_lo);
+			}
+			//dev_notice(&client->dev, "finger [%d] down\n", id);
 		}
 #endif
 	}
@@ -1749,23 +1835,6 @@ static int get_hw_version(struct mms_ts_info *info)
 	} while (ret < 0 && retries-- > 0);
 
 	return ret;
-}
-
-static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
-{
-	mutex_lock(&info->lock);
-	if (info->enabled)
-		goto out;
-	/* wake up the touch controller. */
-	if (wakeupcmd == 1) {
-		i2c_smbus_write_byte_data(info->client, 0, 0);
-		usleep_range(3000, 5000);
-	}
-	info->enabled = true;
-	enable_irq(info->irq);
-out:
-	mutex_unlock(&info->lock);
-	return 0;
 }
 
 static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
@@ -2960,6 +3029,8 @@ static int __devinit mms_ts_probe(struct i2c_client *client,
 		info->max_x = 720;
 		info->max_y = 1280;
 	}
+	x_lo = info->max_x / 10;
+	x_hi = (info->max_x / 10) * 9;
 
 	i2c_set_clientdata(client, info);
 
@@ -3016,12 +3087,12 @@ static int __devinit mms_ts_probe(struct i2c_client *client,
 
 	info->enabled = true;
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	info->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
-	info->early_suspend.suspend = mms_ts_early_suspend;
-	info->early_suspend.resume = mms_ts_late_resume;
-	register_early_suspend(&info->early_suspend);
-#endif
+//#ifdef CONFIG_HAS_EARLYSUSPEND
+//	info->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
+//	info->early_suspend.suspend = mms_ts_early_suspend;
+//	info->early_suspend.resume = mms_ts_late_resume;
+//	register_early_suspend(&info->early_suspend);
+//#endif
 
 #ifdef SEC_TSP_FACTORY_TEST
 		INIT_LIST_HEAD(&info->cmd_list_head);
