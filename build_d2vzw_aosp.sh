@@ -36,6 +36,10 @@ chmod -R g-w $INITRAMFS_DEST/*
 rm $(find $INITRAMFS_DEST -name EMPTY_DIRECTORY -print)
 rm -rf $(find $INITRAMFS_DEST -name .git -print)
 
+echo "Remove old zImage"
+rm $PACKAGEDIR/zImage
+rm arch/arm/boot/zImage
+
 echo "Make the kernel"
 make KT747_d2vzw_defconfig
 make -j`grep 'processor' /proc/cpuinfo | wc -l`
@@ -46,17 +50,21 @@ cp 00post-init.sh $PACKAGEDIR/system/etc/init.d/00post-init.sh
 cp enable-oc.sh $PACKAGEDIR/system/etc/init.d/enable-oc.sh
 cp /home/ktoonsez/workspace/com.ktoonsez.KTweaker.apk $PACKAGEDIR/system/app/com.ktoonsez.KTweaker.apk
 
-echo "Copy zImage to Package"
-cp arch/arm/boot/zImage $PACKAGEDIR/zImage
+if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
+	echo "Copy zImage to Package"
+	cp arch/arm/boot/zImage $PACKAGEDIR/zImage
 
-echo "Make boot.img"
-./mkbootfs $INITRAMFS_DEST | gzip > $PACKAGEDIR/ramdisk.gz
-./mkbootimg --cmdline 'console = null androidboot.hardware=qcom user_debug=31 zcache' --kernel $PACKAGEDIR/zImage --ramdisk $PACKAGEDIR/ramdisk.gz --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81500000 --output $PACKAGEDIR/boot.img 
-export curdate=`date "+%m-%d-%Y"`
-cd $PACKAGEDIR
-cp -R ../META-INF .
-rm ramdisk.gz
-rm zImage
-rm ../KT747-Kernel-AOSP-JB-VZW*.zip
-zip -r ../KT747-Kernel-AOSP-JB-VZW-$curdate.zip .
-cd $KERNELDIR
+	echo "Make boot.img"
+	./mkbootfs $INITRAMFS_DEST | gzip > $PACKAGEDIR/ramdisk.gz
+	./mkbootimg --cmdline 'console = null androidboot.hardware=qcom user_debug=31 zcache' --kernel $PACKAGEDIR/zImage --ramdisk $PACKAGEDIR/ramdisk.gz --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81500000 --output $PACKAGEDIR/boot.img 
+	export curdate=`date "+%m-%d-%Y"`
+	cd $PACKAGEDIR
+	cp -R ../META-INF .
+	rm ramdisk.gz
+	rm zImage
+	rm ../KT747-Kernel-AOSP-JB-VZW*.zip
+	zip -r ../KT747-Kernel-AOSP-JB-VZW-$curdate.zip .
+	cd $KERNELDIR
+else
+	echo "KERNEL DID NOT BUILD! no zImage exist"
+fi;
