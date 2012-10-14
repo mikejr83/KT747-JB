@@ -567,8 +567,7 @@ static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
 		usleep_range(3000, 5000);
 	}
 	info->enabled = true;
-	//enable_irq(info->irq);
-	 disable_irq_wake(info->irq);
+	enable_irq(info->irq);
 out:
 	mutex_unlock(&info->lock);
 	return 0;
@@ -601,10 +600,10 @@ static void slide2wake_force_wakeup(void)
 
 static void slide2wake_presspwr(struct work_struct *slide2wake_presspwr_work)
 {
-	input_event(slide2wake_dev, EV_KEY, KEY_HOME, 1);
+	input_event(slide2wake_dev, EV_KEY, KEY_POWER, 1);
 	input_event(slide2wake_dev, EV_SYN, 0, 0);
-	msleep(250);
-	input_event(slide2wake_dev, EV_KEY, KEY_HOME, 0);
+	msleep(500);
+	input_event(slide2wake_dev, EV_KEY, KEY_POWER, 0);
 	input_event(slide2wake_dev, EV_SYN, 0, 0);
 	mutex_unlock(&s2w_lock);
 	msleep(1000);
@@ -719,7 +718,14 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 
 		if ((tmp[0] & 0x80) == 0) {
 			if (wake_start == 1 && x > x_hi) {
-				slide2wake_force_wakeup();
+				//mutex_lock(&info->input_dev->mutex);
+				//if (info->input_dev->users)
+				//{
+				//	ret = mms_ts_enable(info, 1);
+				//	pr_info("wake_start OFF-1 %d-%d\n", x, x_hi);
+				//}
+				//mutex_unlock(&info->input_dev->mutex);
+				//slide2wake_force_wakeup();
 				slide2wake_pwrtrigger();
 				pr_info("WAKE_START OFF-1 %d-%d\n", x, x_hi);
 			}
@@ -1840,8 +1846,7 @@ static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
 	mutex_lock(&info->lock);
 	if (!info->enabled)
 		goto out;
-	//disable_irq(info->irq);
-	enable_irq_wake(info->irq);
+	disable_irq(info->irq);
 	if (sleepcmd == 1) {
 		i2c_smbus_write_byte_data(info->client, MMS_MODE_CONTROL, 0);
 		usleep_range(10000, 12000);
@@ -3086,12 +3091,12 @@ static int __devinit mms_ts_probe(struct i2c_client *client,
 
 	info->enabled = true;
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	info->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
-	info->early_suspend.suspend = mms_ts_early_suspend;
-	info->early_suspend.resume = mms_ts_late_resume;
-	register_early_suspend(&info->early_suspend);
-#endif
+//#ifdef CONFIG_HAS_EARLYSUSPEND
+//	info->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
+//	info->early_suspend.suspend = mms_ts_early_suspend;
+//	info->early_suspend.resume = mms_ts_late_resume;
+//	register_early_suspend(&info->early_suspend);
+//#endif
 
 #ifdef SEC_TSP_FACTORY_TEST
 		INIT_LIST_HEAD(&info->cmd_list_head);
@@ -3151,7 +3156,7 @@ static int mms_ts_suspend(struct device *dev)
 	if (!info->input_dev->users)
 		goto out;
 
-	//mms_ts_disable(info, 0);
+	mms_ts_disable(info, 0);
 	touch_is_pressed = 0;
 	release_all_fingers(info);
 	info->pdata->vdd_on(0);
@@ -3183,8 +3188,8 @@ static int mms_ts_resume(struct device *dev)
 
 	mms_set_noise_mode(info);
 	mutex_lock(&info->input_dev->mutex);
-	//if (info->input_dev->users)
-		//ret = mms_ts_enable(info, 0);
+	if (info->input_dev->users)
+		ret = mms_ts_enable(info, 0);
 	mutex_unlock(&info->input_dev->mutex);
 
 	return ret;
