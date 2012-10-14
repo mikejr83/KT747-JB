@@ -601,13 +601,11 @@ static void slide2wake_force_wakeup(void)
 
 static void slide2wake_presspwr(struct work_struct *slide2wake_presspwr_work)
 {
-	//input_event(slide2wake_dev, EV_KEY, KEY_POWER, 1);
-	//input_event(slide2wake_dev, EV_SYN, 0, 0);
-	input_report_key(slide2wake_dev, KEY_POWER, 1);
-	msleep(500);
-	input_report_key(slide2wake_dev, KEY_POWER, 0);
-	//input_event(slide2wake_dev, EV_KEY, KEY_POWER, 0);
-	//input_event(slide2wake_dev, EV_SYN, 0, 0);
+	input_event(slide2wake_dev, EV_KEY, KEY_HOME, 1);
+	input_event(slide2wake_dev, EV_SYN, 0, 0);
+	msleep(250);
+	input_event(slide2wake_dev, EV_KEY, KEY_HOME, 0);
+	input_event(slide2wake_dev, EV_SYN, 0, 0);
 	mutex_unlock(&s2w_lock);
 	msleep(1000);
 	pr_info("WAKE_START OFF-2 %d\n", slide2wake_dev->id.version);
