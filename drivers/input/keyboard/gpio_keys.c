@@ -628,8 +628,8 @@ static int __devinit gpio_keys_probe(struct platform_device *pdev)
 
 		input_set_capability(input, type, button->code);
 
+		slide2wake_setdev(input);
 	}
-	slide2wake_setdev(input);
 
 	error = sysfs_create_group(&pdev->dev.kobj, &gpio_keys_attr_group);
 	if (error) {
