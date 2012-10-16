@@ -357,7 +357,8 @@ LDFLAGS_MODULE  =
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
-XX_A9		= -marm -mtune=cortex-a9 -mfpu=neon -march=armv7-a
+XX_A9		= -marm -mtune=cortex-a9 -mfpu=neon -mfloat-abi=softfp -march=armv7-a \
+		  -funsafe-math-optimizations -funroll-loops -mvectorize-with-neon-quad
 XX_GRAPHITE	= -fgraphite-identity -floop-block -ftree-loop-linear \
 		  -floop-strip-mine -ftree-loop-distribution
 XX_MODULO	= -fmodulo-sched -fmodulo-sched-allow-regmoves
