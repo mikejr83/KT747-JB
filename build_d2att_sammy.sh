@@ -42,7 +42,14 @@ rm arch/arm/boot/zImage
 
 echo "Make the kernel"
 make KT747_defconfig
-make -j`grep 'processor' /proc/cpuinfo | wc -l`
+
+if [ $HOST_CHECK = 'ktoonsez-VirtualBox' ]; then
+	make -j24
+	echo "Ktoonsez 24!"
+else
+	make -j`grep 'processor' /proc/cpuinfo | wc -l`
+	echo "Others! - " + $HOST_CHECK
+fi;
 
 echo "Copy modules to Package"
 cp ../lib/modules/* $PACKAGEDIR/system/lib/modules/
