@@ -5,7 +5,6 @@
 #include <linux/radix-tree.h>
 #include <linux/rcupdate.h>
 
-struct cfq_queue;
 struct cfq_io_context {
 	void *key;
 
@@ -102,3 +101,4 @@ static inline int put_io_context(struct io_context *ioc)
 #endif
 
 #endif
+
