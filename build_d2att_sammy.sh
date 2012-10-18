@@ -38,7 +38,15 @@ rm -rf $(find $INITRAMFS_DEST -name .git -print)
 
 echo "Make the kernel"
 make KT747_defconfig
-make -j`grep 'processor' /proc/cpuinfo | wc -l`
+
+HOST_CHECK=`uname -n`
+if [ $HOST_CHECK = 'ktoonsez-VirtualBox' ]; then
+	make -j24
+	echo "Ktoonsez 24!"
+else
+	make -j`grep 'processor' /proc/cpuinfo | wc -l`
+	echo "Others! - " + $HOST_CHECK
+fi;
 
 echo "Copy modules to Package"
 cp ../lib/modules/* $PACKAGEDIR/system/lib/modules/
