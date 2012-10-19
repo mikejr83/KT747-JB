@@ -27,29 +27,28 @@ static void hlist_sched_dtor(struct io_context *ioc, struct hlist_head *list)
 	}
 }
 
-/**
- * put_io_context - put a reference of io_context
- * @ioc: io_context to put
- *
- * Decrement reference count of @ioc and release it if the count reaches
- * zero.
+/*
+ * IO Context helper functions. put_io_context() returns 1 if there are no
+ * more users of this io context, 0 otherwise.
  */
-void put_io_context(struct io_context *ioc)
+int put_io_context(struct io_context *ioc)
 {
 	if (ioc == NULL)
-		return;
+		return 1;
 
-	BUG_ON(atomic_long_read(&ioc->refcount) <= 0);
+	BUG_ON(atomic_long_read(&ioc->refcount) == 0);
 
-	if (!atomic_long_dec_and_test(&ioc->refcount))
-		return;
-
+	if (atomic_long_dec_and_test(&ioc->refcount)) {
 		rcu_read_lock();
+
 		hlist_sched_dtor(ioc, &ioc->cic_list);
 		hlist_sched_dtor(ioc, &ioc->bfq_cic_list);
 		rcu_read_unlock();
 
 		kmem_cache_free(iocontext_cachep, ioc);
+		return 1;
+	}
+	return 0;
 }
 EXPORT_SYMBOL(put_io_context);
 
