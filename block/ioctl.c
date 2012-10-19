@@ -1,6 +1,5 @@
 #include <linux/capability.h>
 #include <linux/blkdev.h>
-#include <linux/module.h>
 #include <linux/gfp.h>
 #include <linux/blkpg.h>
 #include <linux/hdreg.h>
