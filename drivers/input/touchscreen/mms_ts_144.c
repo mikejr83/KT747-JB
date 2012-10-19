@@ -579,12 +579,19 @@ static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
 		i2c_smbus_write_byte_data(info->client, 0, 0);
 		usleep_range(3000, 5000);
 	}
-	info->enabled = true;
-	if (s2w_enabled)
-		disable_irq_wake(info->irq);
-	else
-		enable_irq(info->irq);
 out:
+	if (isasleep)
+	{
+		if (s2w_enabled)
+			disable_irq_wake(info->irq);
+		else
+		{
+			if (!info->enabled)
+				enable_irq(info->irq);
+		}
+	}
+	info->enabled = true;
+	isasleep = false;
 	mutex_unlock(&info->lock);
 	return 0;
 }
@@ -594,18 +601,22 @@ static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
 	mutex_lock(&info->lock);
 	if (!info->enabled)
 		goto out;
-	if (s2w_enabled)
-		enable_irq_wake(info->irq);
-	else
-		disable_irq(info->irq);
 	if (sleepcmd == 1) {
 		i2c_smbus_write_byte_data(info->client, MMS_MODE_CONTROL, 0);
 		usleep_range(10000, 12000);
 	}
+out:
+	if (!isasleep)
+	{
+		if (!isasleep && s2w_enabled)
+			enable_irq_wake(info->irq);
+		else
+			disable_irq(info->irq);
+	}
 	if (!s2w_enabled)
 		info->enabled = false;
+	isasleep = true;
 	touch_is_pressed = 0;
-out:
 	mutex_unlock(&info->lock);
 	return 0;
 }
@@ -3264,7 +3275,6 @@ static int mms_ts_resume(struct device *dev)
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void mms_ts_early_suspend(struct early_suspend *h)
 {
-	isasleep = true;
 	struct mms_ts_info *info;
 	info = container_of(h, struct mms_ts_info, early_suspend);
 	mms_ts_suspend(&info->client->dev);
@@ -3272,7 +3282,6 @@ static void mms_ts_early_suspend(struct early_suspend *h)
 
 static void mms_ts_late_resume(struct early_suspend *h)
 {
-	isasleep = false;
 	struct mms_ts_info *info;
 	info = container_of(h, struct mms_ts_info, early_suspend);
 	mms_ts_resume(&info->client->dev);
