@@ -556,6 +556,19 @@ static void melfas_ta_cb(struct tsp_callbacks *cb, bool ta_status)
 	}
 }
 
+static bool isasleep = false;
+static unsigned int wake_start = 0;
+static unsigned int x_lo;
+static unsigned int x_onethird;
+static unsigned int x_twothird;
+static unsigned int x_hi;
+static struct input_dev *slide2wake_dev;
+static DEFINE_MUTEX(s2w_lock);
+static DEFINE_SEMAPHORE(s2w_sem);
+extern int get_suspend_state(void);
+extern void request_suspend_state(int);
+bool s2w_enabled = false;
+
 static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
 {
 	mutex_lock(&info->lock);
@@ -567,20 +580,35 @@ static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
 		usleep_range(3000, 5000);
 	}
 	info->enabled = true;
-	//enable_irq(info->irq);
-	 disable_irq_wake(info->irq);
+	if (s2w_enabled)
+		disable_irq_wake(info->irq);
+	else
+		enable_irq(info->irq);
 out:
 	mutex_unlock(&info->lock);
 	return 0;
 }
 
-static unsigned int wake_start = 0;
-static unsigned int x_lo;
-static unsigned int x_hi;
-static struct input_dev *slide2wake_dev;
-static DEFINE_MUTEX(s2w_lock);
-extern int get_suspend_state(void);
-extern void request_suspend_state(int);
+static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
+{
+	mutex_lock(&info->lock);
+	if (!info->enabled)
+		goto out;
+	if (s2w_enabled)
+		enable_irq_wake(info->irq);
+	else
+		disable_irq(info->irq);
+	if (sleepcmd == 1) {
+		i2c_smbus_write_byte_data(info->client, MMS_MODE_CONTROL, 0);
+		usleep_range(10000, 12000);
+	}
+	if (!s2w_enabled)
+		info->enabled = false;
+	touch_is_pressed = 0;
+out:
+	mutex_unlock(&info->lock);
+	return 0;
+}
 
 void slide2wake_setdev(struct input_dev *input_device)
 {
@@ -601,10 +629,10 @@ static void slide2wake_force_wakeup(void)
 
 static void slide2wake_presspwr(struct work_struct *slide2wake_presspwr_work)
 {
-	input_event(slide2wake_dev, EV_KEY, KEY_HOME, 1);
+	input_event(slide2wake_dev, EV_KEY, KEY_POWER, 1);
 	input_event(slide2wake_dev, EV_SYN, 0, 0);
 	msleep(250);
-	input_event(slide2wake_dev, EV_KEY, KEY_HOME, 0);
+	input_event(slide2wake_dev, EV_KEY, KEY_POWER, 0);
 	input_event(slide2wake_dev, EV_SYN, 0, 0);
 	mutex_unlock(&s2w_lock);
 	msleep(1000);
@@ -640,6 +668,11 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 			.buf    = buf,
 		},
 	};
+	if (s2w_enabled) {
+		ret = down_trylock(&s2w_sem);
+		if (ret)
+			printk(KERN_ERR "[TSP] slide2wake SEM cannot be aquired\n");
+	}
 
 	sz = i2c_smbus_read_byte_data(client, MMS_INPUT_EVENT_PKT_SZ);
 	if (sz < 0) {
@@ -718,8 +751,9 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 		}
 
 		if ((tmp[0] & 0x80) == 0) {
-			if (wake_start == 1 && x > x_hi) {
-				slide2wake_force_wakeup();
+			//pr_info("WAKE_START BAD %d-%d-%d\n", wake_start, x, x_hi);
+			if (s2w_enabled && wake_start == 3 && x > x_hi) {
+				//slide2wake_force_wakeup();
 				slide2wake_pwrtrigger();
 				pr_info("WAKE_START OFF-1 %d-%d\n", x, x_hi);
 			}
@@ -755,25 +789,51 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 #if defined(SEC_TSP_DEBUG)
 		if (info->finger_state[id] == 0) {
 			info->finger_state[id] = 1;
-			if (x < x_lo)
+			if (s2w_enabled && x < x_lo && isasleep == true)
 			{
 				wake_start = 1;
-				pr_info("WAKE_START ON %d-%d\n", x, x_lo);
+				pr_info("WAKE_START ON1 %d-%d\n", x, x_lo);
 			}
 			dev_dbg(&client->dev,
 				"finger id[%d]: x=%d y=%d p=%d w=%d major=%d minor=%d angle=%d palm=%d\n"
 				, id, x, y, tmp[5], tmp[4], tmp[6], tmp[7]
 				, angle, palm);
 		}
+		else
+		{
+			if (s2w_enabled && wake_start == 1 && x >= (x_onethird-30) && x <= (x_onethird+30) && isasleep == true)
+			{
+				wake_start = 2;
+				pr_info("WAKE_START ON2 %d-%d\n", x, x_lo);
+			}
+			if (s2w_enabled && wake_start == 2 && x >= (x_twothird-30) && x <= (x_twothird+30) && isasleep == true)
+			{
+				wake_start = 3;
+				pr_info("WAKE_START ON3 %d-%d\n", x, x_lo);
+			}
+		}
 #else
 		if (info->finger_state[id] == 0) {
 			info->finger_state[id] = 1;
-			if (x < x_lo)
+			if (s2w_enabled && x < x_lo && isasleep == true)
 			{
 				wake_start = 1;
-				pr_info("WAKE_START ON %d-%d\n", x, x_lo);
+				pr_info("WAKE_START ON1 %d-%d\n", x, x_lo);
 			}
 			//dev_notice(&client->dev, "finger [%d] down\n", id);
+		}
+		else
+		{
+			if (s2w_enabled && wake_start == 1 && x >= (x_onethird-30) && x <= (x_onethird+30) && isasleep == true)
+			{
+				wake_start = 2;
+				pr_info("WAKE_START ON2 %d-%d\n", x, x_lo);
+			}
+			if (s2w_enabled && wake_start == 2 && x >= (x_twothird-30) && x <= (x_twothird+30) && isasleep == true)
+			{
+				wake_start = 3;
+				pr_info("WAKE_START ON3 %d-%d\n", x, x_lo);
+			}
 		}
 #endif
 	}
@@ -791,6 +851,9 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 #endif
 
 out:
+	if (s2w_enabled)
+		up(&s2w_sem);
+
 	return IRQ_HANDLED;
 }
 
@@ -1833,24 +1896,6 @@ static int get_hw_version(struct mms_ts_info *info)
 	} while (ret < 0 && retries-- > 0);
 
 	return ret;
-}
-
-static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
-{
-	mutex_lock(&info->lock);
-	if (!info->enabled)
-		goto out;
-	//disable_irq(info->irq);
-	enable_irq_wake(info->irq);
-	if (sleepcmd == 1) {
-		i2c_smbus_write_byte_data(info->client, MMS_MODE_CONTROL, 0);
-		usleep_range(10000, 12000);
-	}
-	info->enabled = false;
-	touch_is_pressed = 0;
-out:
-	mutex_unlock(&info->lock);
-	return 0;
 }
 
 static int mms_ts_finish_config(struct mms_ts_info *info)
@@ -2954,6 +2999,28 @@ static ssize_t show_intensity_logging_off(struct device *dev,
 
 #endif
 
+static ssize_t slide2wake_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", s2w_enabled);
+}
+
+static ssize_t slide2wake_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	int ret;
+	unsigned int value;
+	
+	ret = sscanf(buf, "%d\n", &value);
+	if (ret != 1)
+		return -EINVAL;
+	else
+		s2w_enabled = value ? true : false;
+
+	return size;
+}
+	
+static DEVICE_ATTR(slide2wake, S_IRUGO | S_IWUSR | S_IWGRP,
+	slide2wake_show, slide2wake_store);
+
 static DEVICE_ATTR(close_tsp_test, S_IRUGO, show_close_tsp_test, NULL);
 static DEVICE_ATTR(cmd, S_IWUSR | S_IWGRP, NULL, store_cmd);
 static DEVICE_ATTR(cmd_status, S_IRUGO, show_cmd_status, NULL);
@@ -2974,6 +3041,7 @@ static struct attribute *sec_touch_facotry_attributes[] = {
 		&dev_attr_intensity_logging_on.attr,
 		&dev_attr_intensity_logging_off.attr,
 #endif
+		&dev_attr_slide2wake.attr,
 		NULL,
 };
 
@@ -3029,6 +3097,8 @@ static int __devinit mms_ts_probe(struct i2c_client *client,
 		info->max_y = 1280;
 	}
 	x_lo = info->max_x / 10;
+	x_onethird = (info->max_x / 10) * 3;
+	x_twothird = (info->max_x / 10) * 6;
 	x_hi = (info->max_x / 10) * 9;
 
 	i2c_set_clientdata(client, info);
@@ -3151,7 +3221,7 @@ static int mms_ts_suspend(struct device *dev)
 	if (!info->input_dev->users)
 		goto out;
 
-	//mms_ts_disable(info, 0);
+	mms_ts_disable(info, 0);
 	touch_is_pressed = 0;
 	release_all_fingers(info);
 	info->pdata->vdd_on(0);
@@ -3183,8 +3253,8 @@ static int mms_ts_resume(struct device *dev)
 
 	mms_set_noise_mode(info);
 	mutex_lock(&info->input_dev->mutex);
-	//if (info->input_dev->users)
-		//ret = mms_ts_enable(info, 0);
+	if (info->input_dev->users)
+		ret = mms_ts_enable(info, 0);
 	mutex_unlock(&info->input_dev->mutex);
 
 	return ret;
@@ -3194,6 +3264,7 @@ static int mms_ts_resume(struct device *dev)
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void mms_ts_early_suspend(struct early_suspend *h)
 {
+	isasleep = true;
 	struct mms_ts_info *info;
 	info = container_of(h, struct mms_ts_info, early_suspend);
 	mms_ts_suspend(&info->client->dev);
@@ -3201,6 +3272,7 @@ static void mms_ts_early_suspend(struct early_suspend *h)
 
 static void mms_ts_late_resume(struct early_suspend *h)
 {
+	isasleep = false;
 	struct mms_ts_info *info;
 	info = container_of(h, struct mms_ts_info, early_suspend);
 	mms_ts_resume(&info->client->dev);
