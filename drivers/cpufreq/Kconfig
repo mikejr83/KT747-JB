@@ -220,6 +220,12 @@ config CPU_FREQ_DEFAULT_GOV_HYPER
         help
           Use the CPUFreq governor 'HYPER' as default.
 
+config CPU_FREQ_DEFAULT_GOV_SLEEPY
+	bool "sleepy"
+	select CPU_FREQ_GOV_SCARY
+	help
+	  Use the CPUFreq governor 'sleepy' as default.
+
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE
@@ -502,6 +508,12 @@ config SUPER_CLOCKED
 	default n
 	help
 	  SUPER_CLOCKED up to 2.1 GHz
+
+config CPU_FREQ_GOV_SLEEPY
+	tristate "'sleepy' cpufreq governor"
+	depends on CPU_FREQ
+	help
+          'sleepy' - an "ondemandx" based tweaked, smart and smooth optimized governor!
 
 menu "x86 CPU frequency scaling drivers"
 depends on X86
