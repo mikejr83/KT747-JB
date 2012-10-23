@@ -43,12 +43,13 @@ rm arch/arm/boot/zImage
 echo "Make the kernel"
 make KT747_defconfig
 
+HOST_CHECK=`uname -n`
 if [ $HOST_CHECK = 'ktoonsez-VirtualBox' ]; then
-	make -j24
 	echo "Ktoonsez 24!"
+	make -j24
 else
-	make -j`grep 'processor' /proc/cpuinfo | wc -l`
 	echo "Others! - " + $HOST_CHECK
+	make -j`grep 'processor' /proc/cpuinfo | wc -l`
 fi;
 
 echo "Copy modules to Package"
@@ -57,7 +58,6 @@ cp -a $(find . -name *.ko -print |grep -v initramfs) $PACKAGEDIR/system/lib/modu
 cp 00post-init.sh $PACKAGEDIR/system/etc/init.d/00post-init.sh
 cp enable-oc.sh $PACKAGEDIR/system/etc/init.d/enable-oc.sh
 cp /home/ktoonsez/workspace/com.ktoonsez.KTweaker.apk $PACKAGEDIR/system/app/com.ktoonsez.KTweaker.apk
-cp ../Ramdisks/libsqlite.so $PACKAGEDIR/system/lib/libsqlite.so
 
 if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
 	echo "Copy zImage to Package"
@@ -68,7 +68,7 @@ if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
 	./mkbootimg --cmdline 'console = null androidboot.hardware=qcom user_debug = 31' --kernel $PACKAGEDIR/zImage --ramdisk $PACKAGEDIR/ramdisk.gz --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81500000 --output $PACKAGEDIR/boot.img 
 	export curdate=`date "+%m-%d-%Y"`
 	cd $PACKAGEDIR
-	cp -R ../META-INF .
+	cp -R ../META-INF_ICS META-INF
 	rm ramdisk.gz
 	rm zImage
 	rm ../KT747-Kernel-TW-ICS*.zip
