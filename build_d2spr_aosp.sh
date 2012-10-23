@@ -45,11 +45,11 @@ make KT747_d2spr_defconfig
 
 HOST_CHECK=`uname -n`
 if [ $HOST_CHECK = 'ktoonsez-VirtualBox' ]; then
-	make -j24
 	echo "Ktoonsez 24!"
+	make -j24
 else
-	make -j`grep 'processor' /proc/cpuinfo | wc -l`
 	echo "Others! - " + $HOST_CHECK
+	make -j`grep 'processor' /proc/cpuinfo | wc -l`
 fi;
 
 echo "Copy modules to Package"
