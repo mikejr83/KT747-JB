@@ -45,6 +45,7 @@ static unsigned int Lscreen_off_scaling_enable = 0;
 static unsigned int Lscreen_off_scaling_mhz = 1512000;
 static unsigned int Lscreen_off_scaling_mhz_orig = 1512000;
 static unsigned int vfreq_lock = 0;
+static bool vfreq_lock_tempOFF = false;
 
 static unsigned int isBooted = 0;
 
@@ -2076,12 +2077,6 @@ static int cpufreq_set_limits(int cpu, unsigned int min, unsigned int max)
 	struct cpufreq_policy new_policy;
 	int ret = -EINVAL;
 
-	//if (vfreq_lock == 1)
-	//{
-	//	pr_alert("cpufreq_set_limits: Set while locked\n");
-	//	return 111;
-	//}
-
 	if (cpu_is_offline(cpu))
 		goto no_policy;
 
@@ -2136,6 +2131,12 @@ no_policy:
 	if (cpu_is_offline(cpu))
 		ret = cpufreq_set_limits_off(cpu, min, max);
 
+	if (vfreq_lock_tempOFF)
+	{
+		vfreq_lock_tempOFF = false;
+		vfreq_lock = 1;
+		pr_alert("cpufreq_gov_remove_tempOFF\n");
+	}
 	//pr_alert("cpufreq_set_limits: %d-%d-%d-%d \n", min, max, new_policy.min, new_policy.max);
 
 	return ret;
@@ -2485,11 +2486,14 @@ static void cpufreq_gov_suspend(struct early_suspend *h){
 
 	if (Lscreen_off_scaling_enable == 1)
 	{
-		vfreq_lock = 0;
+		if (vfreq_lock == 1)
+		{
+			vfreq_lock = 0;
+			vfreq_lock_tempOFF = true;
+		}
 		unsigned int value = Lscreen_off_scaling_mhz;
 		cpufreq_set_limit_defered(USER_MAX_START, value);
 		cpufreq_gov_lcd_status = 0;
-		vfreq_lock = 1;
 		pr_alert("cpufreq_gov_suspend: %u\n", value);
 	}
 }
@@ -2498,11 +2502,14 @@ static void cpufreq_gov_resume(struct early_suspend *h){
 
 	if (Lscreen_off_scaling_enable == 1)
 	{
-		vfreq_lock = 0;
+		if (vfreq_lock == 1)
+		{
+			vfreq_lock = 0;
+			vfreq_lock_tempOFF = true;
+		}
 		unsigned int value = Lscreen_off_scaling_mhz_orig;
 		cpufreq_set_limit_defered(USER_MAX_START, value);
 		cpufreq_gov_lcd_status = 1;
-		vfreq_lock = 1;
 		pr_alert("cpufreq_gov_resume: %u\n", value);
 	}
 }
