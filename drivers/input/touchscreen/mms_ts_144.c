@@ -568,6 +568,8 @@ static DEFINE_SEMAPHORE(s2w_sem);
 extern int get_suspend_state(void);
 extern void request_suspend_state(int);
 bool s2w_enabled = false;
+bool s2w_enabled_plug = false;
+static unsigned int s2w_enabled_req = 0;
 
 static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
 {
@@ -593,6 +595,11 @@ out:
 	info->enabled = true;
 	isasleep = false;
 	mutex_unlock(&info->lock);
+	if (s2w_enabled_req == 11)
+		s2w_enabled = true;
+	if (s2w_enabled_req == 10)
+		s2w_enabled = false;
+	s2w_enabled_req = 0;
 	return 0;
 }
 
@@ -3028,9 +3035,41 @@ static ssize_t slide2wake_store(struct device *dev, struct device_attribute *att
 
 	return size;
 }
+
+static ssize_t slide2wake_plug_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", s2w_enabled_plug);
+}
+
+static ssize_t slide2wake_plug_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	int ret;
+	unsigned int value;
+	
+	ret = sscanf(buf, "%d\n", &value);
+	if (ret != 1)
+		return -EINVAL;
+	else
+		s2w_enabled_plug = value ? true : false;
+
+	return size;
+}
+
+void slide2wake_change(unsigned int val)
+{
+	if (s2w_enabled_plug)
+	{
+		if (isasleep)
+			s2w_enabled_req = val;
+		else
+			s2w_enabled = (val - 10) ? true : false;
+	}
+}
 	
 static DEVICE_ATTR(slide2wake, S_IRUGO | S_IWUSR | S_IWGRP,
 	slide2wake_show, slide2wake_store);
+static DEVICE_ATTR(slide2wake_plug, S_IRUGO | S_IWUSR | S_IWGRP,
+	slide2wake_plug_show, slide2wake_plug_store);
 
 static DEVICE_ATTR(close_tsp_test, S_IRUGO, show_close_tsp_test, NULL);
 static DEVICE_ATTR(cmd, S_IWUSR | S_IWGRP, NULL, store_cmd);
@@ -3053,6 +3092,7 @@ static struct attribute *sec_touch_facotry_attributes[] = {
 		&dev_attr_intensity_logging_off.attr,
 #endif
 		&dev_attr_slide2wake.attr,
+		&dev_attr_slide2wake_plug.attr,
 		NULL,
 };
 
