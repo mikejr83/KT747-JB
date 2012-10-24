@@ -65,6 +65,8 @@ static unsigned int Lscreen_off_scaling_mhz = 1512000;
 static unsigned int Lscreen_off_scaling_mhz_orig = 1512000;
 static unsigned int vfreq_lock = 0;
 static bool vfreq_lock_tempOFF = false;
+static char scaling_governor_screen_off_sel[16];
+static char scaling_governor_screen_off_sel_prev[16];
 
 static unsigned int isBooted = 0;
 
@@ -620,6 +622,19 @@ static ssize_t show_cpuinfo_cur_freq(struct cpufreq_policy *policy,
 	return sprintf(buf, "%u\n", cur_freq);
 }
 
+static ssize_t show_scaling_governor_screen_off(struct cpufreq_policy *policy, char *buf)
+{
+	return scnprintf(buf, 16, "%s\n",
+				scaling_governor_screen_off_sel);
+}
+
+static ssize_t store_scaling_governor_screen_off(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	ret = sscanf(buf, "%15s", scaling_governor_screen_off_sel);
+	return count;
+}
 
 /**
  * show_scaling_governor - show the current policy for the specified CPU
@@ -885,9 +900,9 @@ ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
 	unsigned int ret = -EINVAL;
 	int modu = 0;
 	unsigned int is_en_oc = get_enable_oc();
+	int u[FREQ_STEPS];
 	if (is_en_oc == 0)
 		modu = FREQ_TABLE_SIZE_OFFSET;
-	int u[FREQ_STEPS];
 	if (is_en_oc == 1)
 		ret = sscanf(buf, "%d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d", &u[0], &u[1], &u[2], &u[3], &u[4], &u[5], &u[6], &u[7], &u[8], &u[9], &u[10], &u[11], &u[12], &u[13], &u[14], &u[15], &u[16], &u[17], &u[18], &u[19], &u[20], &u[21], &u[22], &u[23], &u[24], &u[25], &u[26], &u[27], &u[28], &u[29]);
 	else
@@ -918,6 +933,7 @@ cpufreq_freq_attr_ro(cpu_utilization);
 cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
+cpufreq_freq_attr_rw(scaling_governor_screen_off);
 cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(scaling_booted);
 cpufreq_freq_attr_rw(touch_booster_first_freq_limit);
@@ -939,6 +955,7 @@ static struct attribute *default_attrs[] = {
 	&affected_cpus.attr,
 	&related_cpus.attr,
 	&scaling_governor.attr,
+	&scaling_governor_screen_off.attr,
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
@@ -2575,6 +2592,23 @@ EXPORT_SYMBOL_GPL(cpufreq_unregister_driver);
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void cpufreq_gov_suspend(struct early_suspend *h){
 
+	struct cpufreq_policy *policy = NULL;
+	unsigned int ret = -EINVAL;
+	unsigned int value;
+	if (!cpu_is_offline(0) && scaling_governor_screen_off_sel != NULL)
+	{
+		policy = cpufreq_cpu_get(0);
+		ret = sscanf(policy->governor->name, "%15s", scaling_governor_screen_off_sel_prev);
+		if (ret == 1)
+		{
+			store_scaling_governor(policy, scaling_governor_screen_off_sel, sizeof(scaling_governor_screen_off_sel));
+			pr_alert("cpufreq_gov_suspend_gov: %s\n", scaling_governor_screen_off_sel);
+		}
+		else
+			pr_alert("cpufreq_gov_suspend_gov_DENIED1: %s\n", scaling_governor_screen_off_sel);
+	}
+	else
+		pr_alert("cpufreq_gov_suspend_gov_DENIED2: %s\n", scaling_governor_screen_off_sel);
 	if (Lscreen_off_scaling_enable == 1)
 	{
 		if (vfreq_lock == 1)
@@ -2582,15 +2616,27 @@ static void cpufreq_gov_suspend(struct early_suspend *h){
 			vfreq_lock = 0;
 			vfreq_lock_tempOFF = true;
 		}
-		unsigned int value = Lscreen_off_scaling_mhz;
+		value = Lscreen_off_scaling_mhz;
 		cpufreq_set_limit_defered(USER_MAX_START, value);
 		cpufreq_gov_lcd_status = 0;
-		pr_alert("cpufreq_gov_suspend: %u\n", value);
+		pr_alert("cpufreq_gov_suspend_freq: %u\n", value);
 	}
 }
 
 static void cpufreq_gov_resume(struct early_suspend *h){
 
+	struct cpufreq_policy *policy = NULL;
+	unsigned int value;
+	if (!cpu_is_offline(0) && scaling_governor_screen_off_sel_prev != NULL)
+	{
+		policy = cpufreq_cpu_get(0);
+		store_scaling_governor(policy, scaling_governor_screen_off_sel_prev, sizeof(scaling_governor_screen_off_sel_prev));
+		pr_alert("cpufreq_gov_resume_gov: %s\n", scaling_governor_screen_off_sel_prev);
+	}
+	else
+	{
+		pr_alert("cpufreq_gov_resume_gov_DENIED: %s\n", scaling_governor_screen_off_sel_prev);
+	}
 	if (Lscreen_off_scaling_enable == 1)
 	{
 		if (vfreq_lock == 1)
@@ -2598,10 +2644,10 @@ static void cpufreq_gov_resume(struct early_suspend *h){
 			vfreq_lock = 0;
 			vfreq_lock_tempOFF = true;
 		}
-		unsigned int value = Lscreen_off_scaling_mhz_orig;
+		value = Lscreen_off_scaling_mhz_orig;
 		cpufreq_set_limit_defered(USER_MAX_START, value);
 		cpufreq_gov_lcd_status = 1;
-		pr_alert("cpufreq_gov_resume: %u\n", value);
+		pr_alert("cpufreq_gov_resume_freq: %u\n", value);
 	}
 }
 #endif
