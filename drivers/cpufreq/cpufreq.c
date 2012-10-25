@@ -44,6 +44,8 @@ static unsigned int Ltouch_booster_second_freq_limit = 810000;
 static unsigned int Lscreen_off_scaling_enable = 0;
 static unsigned int Lscreen_off_scaling_mhz = 1512000;
 static unsigned int Lscreen_off_scaling_mhz_orig = 1512000;
+static unsigned int Lbluetooth_scaling_mhz = 0;
+static unsigned int Lbluetooth_scaling_mhz_orig = 384000;
 static unsigned int vfreq_lock = 0;
 static bool vfreq_lock_tempOFF = false;
 static char scaling_governor_screen_off_sel[16];
@@ -467,6 +469,7 @@ static ssize_t store_scaling_min_freq
 		else if (value <= GLOBALKT_MAX_FREQ_LIMIT)
 			cpufreq_set_limit_defered(USER_MIN_START, value);
 	}
+	Lbluetooth_scaling_mhz_orig = value;
 
 	return count;
 }
@@ -830,6 +833,58 @@ static ssize_t store_screen_off_scaling_mhz(struct cpufreq_policy *policy,
 	return count;
 }
 
+static ssize_t show_bluetooth_scaling_mhz(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", Lbluetooth_scaling_mhz);
+}
+static ssize_t store_bluetooth_scaling_mhz(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int value = 0;
+	unsigned int ret;
+	ret = sscanf(buf, "%u", &value);
+	if (value > GLOBALKT_MAX_FREQ_LIMIT)
+		value = GLOBALKT_MAX_FREQ_LIMIT;
+	if (value < GLOBALKT_MIN_FREQ_LIMIT && value != 0)
+		value = GLOBALKT_MIN_FREQ_LIMIT;
+	Lbluetooth_scaling_mhz = value;
+
+	return count;
+}
+
+void set_bluetooth_state(unsigned int val, __u8	dev_name[248])
+{
+	unsigned int value;
+	char tmp[248] = "SGH-I747";
+	__u8 tmp2[248] = "SGH-I747";
+	if (Lbluetooth_scaling_mhz != 0)
+	{
+		//pr_info("set_bluetooth_state: %s\n", dev_name);
+		//pr_info("set_bluetooth_state: %s\n", tmp);
+		//pr_info("set_bluetooth_state: %s\n", tmp2);
+		//if (strnicmp(dev_name, tmp, 248))
+		//	pr_info("set_bluetooth_state_cmp1: %s\n", dev_name);
+		//if (strnicmp(dev_name, tmp2, 248))
+		//	pr_info("set_bluetooth_state_cmp2: %s\n", dev_name);
+			
+		if (vfreq_lock == 1)
+		{
+			vfreq_lock = 0;
+			vfreq_lock_tempOFF = true;
+		}
+		if (val == 1)
+		{
+			value = Lbluetooth_scaling_mhz;
+			cpufreq_set_limit_defered(USER_MIN_START, value);
+		}
+		else
+		{
+			value = Lbluetooth_scaling_mhz_orig;
+			cpufreq_set_limit_defered(USER_MIN_START, value);
+		}
+	}
+}
+
 static ssize_t show_freq_lock(struct cpufreq_policy *policy, char *buf)
 {
 	return sprintf(buf, "%u\n", vfreq_lock);
@@ -904,6 +959,7 @@ cpufreq_freq_attr_rw(touch_booster_first_freq_limit);
 cpufreq_freq_attr_rw(touch_booster_second_freq_limit);
 cpufreq_freq_attr_rw(screen_off_scaling_enable);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
+cpufreq_freq_attr_rw(bluetooth_scaling_mhz);
 cpufreq_freq_attr_rw(freq_lock);
 cpufreq_freq_attr_rw(UV_mV_table);
 
@@ -927,6 +983,7 @@ static struct attribute *default_attrs[] = {
 	&touch_booster_second_freq_limit.attr,
 	&screen_off_scaling_enable.attr,
 	&screen_off_scaling_mhz.attr,
+	&bluetooth_scaling_mhz.attr,
 	&freq_lock.attr,
 	NULL
 };
