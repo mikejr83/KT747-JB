@@ -596,10 +596,15 @@ out:
 	isasleep = false;
 	mutex_unlock(&info->lock);
 	if (s2w_enabled_req == 11)
+	{
 		s2w_enabled = true;
+		s2w_enabled_req = 0;
+	}	
 	if (s2w_enabled_req == 10)
+	{
 		s2w_enabled = false;
-	s2w_enabled_req = 0;
+		s2w_enabled_req = 0;
+	}	
 	return 0;
 }
 
@@ -3036,6 +3041,21 @@ static ssize_t slide2wake_store(struct device *dev, struct device_attribute *att
 	return size;
 }
 
+void slide2wake_change(unsigned int val)
+{
+	if (s2w_enabled_plug)
+	{
+		if (isasleep)
+			s2w_enabled_req = val;
+		else
+			s2w_enabled = (val - 10) ? true : false;
+	}
+	else
+	{
+		s2w_enabled_req = val + 10;
+	}
+}
+
 static ssize_t slide2wake_plug_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
 	return sprintf(buf, "%d\n", s2w_enabled_plug);
@@ -3050,22 +3070,15 @@ static ssize_t slide2wake_plug_store(struct device *dev, struct device_attribute
 	if (ret != 1)
 		return -EINVAL;
 	else
+	{
 		s2w_enabled_plug = value ? true : false;
+		if (s2w_enabled_req == 20 || s2w_enabled_req == 21)
+			s2w_enabled = (s2w_enabled_req - 20) ? true : false;
+	}
 
 	return size;
 }
 
-void slide2wake_change(unsigned int val)
-{
-	if (s2w_enabled_plug)
-	{
-		if (isasleep)
-			s2w_enabled_req = val;
-		else
-			s2w_enabled = (val - 10) ? true : false;
-	}
-}
-	
 static DEVICE_ATTR(slide2wake, S_IRUGO | S_IWUSR | S_IWGRP,
 	slide2wake_show, slide2wake_store);
 static DEVICE_ATTR(slide2wake_plug, S_IRUGO | S_IWUSR | S_IWGRP,
