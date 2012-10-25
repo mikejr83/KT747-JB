@@ -46,6 +46,7 @@ static unsigned int Lscreen_off_scaling_mhz = 1512000;
 static unsigned int Lscreen_off_scaling_mhz_orig = 1512000;
 static unsigned int Lbluetooth_scaling_mhz = 0;
 static unsigned int Lbluetooth_scaling_mhz_orig = 384000;
+static bool bluetooth_scaling_mhz_active = false;
 static unsigned int vfreq_lock = 0;
 static bool vfreq_lock_tempOFF = false;
 static char scaling_governor_screen_off_sel[16];
@@ -876,11 +877,13 @@ void set_bluetooth_state(unsigned int val, __u8	dev_name[248])
 		{
 			value = Lbluetooth_scaling_mhz;
 			cpufreq_set_limit_defered(USER_MIN_START, value);
+			bluetooth_scaling_mhz_active = true;
 		}
 		else
 		{
 			value = Lbluetooth_scaling_mhz_orig;
 			cpufreq_set_limit_defered(USER_MIN_START, value);
+			bluetooth_scaling_mhz_active = false;
 		}
 	}
 }
@@ -2575,17 +2578,21 @@ static void cpufreq_gov_suspend(struct early_suspend *h){
 	}
 	else
 		pr_alert("cpufreq_gov_suspend_gov_DENIED2: %s\n", scaling_governor_screen_off_sel);
-	if (Lscreen_off_scaling_enable == 1)
+
+	if ((bluetooth_scaling_mhz_active == true && Lscreen_off_scaling_mhz > Lbluetooth_scaling_mhz_orig) || (bluetooth_scaling_mhz_active == false))
 	{
-		if (vfreq_lock == 1)
+		if (Lscreen_off_scaling_enable == 1)
 		{
-			vfreq_lock = 0;
-			vfreq_lock_tempOFF = true;
+			if (vfreq_lock == 1)
+			{
+				vfreq_lock = 0;
+				vfreq_lock_tempOFF = true;
+			}
+			value = Lscreen_off_scaling_mhz;
+			cpufreq_set_limit_defered(USER_MAX_START, value);
+			cpufreq_gov_lcd_status = 0;
+			pr_alert("cpufreq_gov_suspend_freq: %u\n", value);
 		}
-		value = Lscreen_off_scaling_mhz;
-		cpufreq_set_limit_defered(USER_MAX_START, value);
-		cpufreq_gov_lcd_status = 0;
-		pr_alert("cpufreq_gov_suspend_freq: %u\n", value);
 	}
 }
 
