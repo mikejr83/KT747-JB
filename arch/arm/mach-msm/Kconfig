@@ -1283,6 +1283,11 @@ config MSM_BAM_DMUX
 	  provides a means to support more logical channels
 	  via muxing than BAM could without muxing.
 
+config MSM_BAM_DMUX_D2USC
+	bool "BAM Data Mux Driver: d2usc workaround for modem crash"
+	depends on MSM_BAM_DMUX
+	default n
+
 config MSM_N_WAY_SMD
 	depends on (MSM_SMD && !(ARCH_MSM7X01A))
 	default y
@@ -1516,6 +1521,14 @@ config MSM_DALRPC_TEST
 	default m
 	help
 	  Exercises DAL RPC calls to QDSP6.
+
+config MSM_MPDEC
+	bool "Enable kernel based mpdecision"
+	depends on MSM_SMP
+	default n
+	help
+	  This enables kernel based multi core control.
+	  (up/down hotplug based on load)
 
 if CPU_FREQ_MSM
 
@@ -2086,6 +2099,10 @@ config MSM_SLEEP_STATS
 config MSM_SLEEP_STATS_DEVICE
 	bool "Enable exporting of MSM sleep device stats to userspace"
 
+config MSM_RUN_QUEUE_STATS
+	bool "Enable collection and exporting of MSM Run Queue stats to userspace"
+	default y
+
 config MSM_STANDALONE_POWER_COLLAPSE
        bool "Enable standalone power collapse"
        default n
@@ -2350,4 +2367,9 @@ config MSM_DCVS
 	  algorithm and the algorithm returns a frequency for the core which is
 	  passed to the frequency change driver.
 
+config SUPER_CLOCKED
+	bool "Enable SUPER_CLOCKED option"
+	default n
+	help
+	  SUPER_CLOCKED up to 2.1 GHz
 endif
