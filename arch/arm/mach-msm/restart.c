@@ -40,10 +40,6 @@
 #include "msm_watchdog.h"
 #include "timer.h"
 
-#ifdef CONFIG_KEXEC_HARDBOOT
-#include <asm/kexec.h>
-#endif
-
 #define WDT0_RST	0x38
 #define WDT0_EN		0x40
 #define WDT0_BARK_TIME	0x4C
@@ -275,6 +271,11 @@ void arch_reset(char mode, const char *cmd)
 			__raw_writel(0x77665507, restart_reason);
 			printk(KERN_NOTICE "peripheral_hw_reset C777!!!!\n");
 #endif
+#ifdef CONFIG_SEC_L1_DCACHE_PANIC_CHK
+		} else if (!strncmp(cmd, "l1_dcache_reset", 15)) {
+			__raw_writel(0x77665588, restart_reason);
+			printk(KERN_NOTICE "l1_dcache_reset !!!!\n");
+#endif
 		} else if (!strncmp(cmd, "download", 8)) {
 			__raw_writel(0x12345671, restart_reason);
 		} else if (!strncmp(cmd, "sud", 3)) {
@@ -283,6 +284,11 @@ void arch_reset(char mode, const char *cmd)
 		} else if (!strncmp(cmd, "debug", 5) /* set debug leve */
 				&& !kstrtoul(cmd + 5, 0, &value)) {
 			__raw_writel(0xabcd0000 | value, restart_reason);
+#ifdef CONFIG_SEC_SSR_DEBUG_LEVEL_CHK
+		} else if (!strncmp(cmd, "cpdebug", 7) /* set cp debug level */
+				&& !kstrtoul(cmd + 7, 0, &value)) {
+			__raw_writel(0xfedc0000 | value, restart_reason);
+#endif
 		} else if (!strncmp(cmd, "nvbackup", 8)) {
 			__raw_writel(0x77665511, restart_reason);
 		} else if (!strncmp(cmd, "nvrestore", 9)) {
@@ -333,18 +339,6 @@ static struct notifier_block dload_reboot_block = {
 };
 #endif
 
-#ifdef CONFIG_KEXEC_HARDBOOT
-void msm_kexec_hardboot(void)
-{
-	/* Set PM8XXX PMIC to reset on power off. */
-	pm8xxx_reset_pwr_off(1);
-
-	/* Reboot with the recovery kernel since the boot kernel decompressor may
-	 * not support the hardboot jump. */
-	__raw_writel(0x77665502, restart_reason);
-}
-#endif
-
 static int __init msm_restart_init(void)
 {
 	int rc;
@@ -370,9 +364,6 @@ static int __init msm_restart_init(void)
 	restart_reason = MSM_IMEM_BASE + RESTART_REASON_ADDR;
 #endif
 	pm_power_off = msm_power_off;
-#ifdef CONFIG_KEXEC_HARDBOOT
-	kexec_hardboot_hook = msm_kexec_hardboot;
-#endif
 
 	if (pmic_reset_irq != 0) {
 		rc = request_any_context_irq(pmic_reset_irq,

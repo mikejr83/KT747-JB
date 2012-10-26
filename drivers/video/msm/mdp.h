@@ -38,20 +38,29 @@
 
 #include "msm_fb_panel.h"
 
+#if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
+#define MDP_HANG_DEBUG
+#endif
 extern uint32 mdp_hw_revision;
 extern ulong mdp4_display_intf;
 extern spinlock_t mdp_spin_lock;
+#ifdef MDP_UNDERFLOW_RESET_CTRL_CMD
+extern spinlock_t mixer_reset_lock;
+#endif
 extern int mdp_rev;
-extern int mdp_iommu_split_domain;
 extern struct mdp_csc_cfg mdp_csc_convert[4];
+
 extern struct workqueue_struct *mdp_hist_wq;
+
+extern uint32 mdp_intr_mask;
 
 extern int mdp_lut_i;
 extern int mdp_lut_push;
 extern int mdp_lut_push_i;
 extern struct mutex mdp_lut_push_sem;
-extern uint32 mdp_intr_mask;
-
+#ifdef MDP_HANG_DEBUG
+extern void mdp4_dump_regs(void);//JSJEONG
+#endif
 #define MDP4_REVISION_V1		0
 #define MDP4_REVISION_V2		1
 #define MDP4_REVISION_V2_1	2
@@ -770,7 +779,7 @@ void mdp_lcdc_update(struct msm_fb_data_type *mfd);
 int mdp_dsi_video_on(struct platform_device *pdev);
 int mdp_dsi_video_off(struct platform_device *pdev);
 void mdp_dsi_video_update(struct msm_fb_data_type *mfd);
-void mdp3_dsi_cmd_dma_busy_wait(struct msm_fb_data_type *mfd)
+void mdp3_dsi_cmd_dma_busy_wait(struct msm_fb_data_type *mfd);
 static inline int mdp4_dsi_cmd_off(struct platform_device *pdev)
 {
 	return 0;
@@ -815,7 +824,9 @@ void mdp_disable_irq(uint32 term);
 void mdp_disable_irq_nosync(uint32 term);
 int mdp_get_bytes_per_pixel(uint32_t format,
 				 struct msm_fb_data_type *mfd);
-int mdp_set_core_clk(uint16 perf_level);
+int mdp_set_core_clk(u32 rate);
+int mdp_clk_round_rate(u32 rate);
+
 unsigned long mdp_get_core_clk(void);
 unsigned long mdp_perf_level2clk_rate(uint32 perf_level);
 
@@ -834,8 +845,8 @@ void mdp3_vsync_irq_enable(int intr, int term);
 void mdp3_vsync_irq_disable(int intr, int term);
 
 #ifdef MDP_HW_VSYNC
-void vsync_clk_enable(void);
-void vsync_clk_disable(void);
+void vsync_clk_prepare_enable(void);
+void vsync_clk_disable_unprepare(void);
 void mdp_hw_vsync_clk_enable(struct msm_fb_data_type *mfd);
 void mdp_hw_vsync_clk_disable(struct msm_fb_data_type *mfd);
 void mdp_vsync_clk_disable(void);
@@ -855,6 +866,7 @@ int mdp_histogram_block2mgmt(uint32_t block, struct mdp_hist_mgmt **mgmt);
 void mdp_histogram_handle_isr(struct mdp_hist_mgmt *mgmt);
 void __mdp_histogram_kickoff(struct mdp_hist_mgmt *mgmt);
 void __mdp_histogram_reset(struct mdp_hist_mgmt *mgmt);
+unsigned int mdp_check_suspended(void);
 void mdp_footswitch_ctrl(boolean on);
 
 #ifdef CONFIG_FB_MSM_MDP303
@@ -875,10 +887,13 @@ static inline int mdp4_overlay_dsi_state_get(void)
 {
 	return 0;
 }
+static inline void mdp4_iommu_detach(void)
+{
+	/*empty */
+}
 #endif
 
 void mdp_vid_quant_set(void);
-
 #ifndef CONFIG_FB_MSM_MDP40
 static inline void mdp_dsi_cmd_overlay_suspend(struct msm_fb_data_type *mfd)
 {

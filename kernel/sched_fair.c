@@ -2715,8 +2715,7 @@ static inline void update_sg_lb_stats(struct sched_domain *sd,
 			int local_group, const struct cpumask *cpus,
 			int *balance, struct sg_lb_stats *sgs)
 {
-	unsigned long nr_running, max_nr_running, min_nr_running;
-	unsigned long load, max_cpu_load, min_cpu_load;
+	unsigned long load, max_cpu_load, min_cpu_load, max_nr_running;
 	int i;
 	unsigned int balance_cpu = -1, first_idle_cpu = 0;
 	unsigned long avg_load_per_task = 0;
@@ -2728,12 +2727,9 @@ static inline void update_sg_lb_stats(struct sched_domain *sd,
 	max_cpu_load = 0;
 	min_cpu_load = ~0UL;
 	max_nr_running = 0;
-	min_nr_running = ~0UL;
 
 	for_each_cpu_and(i, sched_group_cpus(group), cpus) {
 		struct rq *rq = cpu_rq(i);
-
-		nr_running = rq->nr_running;
 
 		/* Bias balancing toward cpus of our domain */
 		if (local_group) {
@@ -2745,19 +2741,16 @@ static inline void update_sg_lb_stats(struct sched_domain *sd,
 			load = target_load(i, load_idx);
 		} else {
 			load = source_load(i, load_idx);
-			if (load > max_cpu_load)
+			if (load > max_cpu_load) {
 				max_cpu_load = load;
+				max_nr_running = rq->nr_running;
+			}
 			if (min_cpu_load > load)
 				min_cpu_load = load;
-
-			if (nr_running > max_nr_running)
-				max_nr_running = nr_running;
-			if (min_nr_running > nr_running)
-				min_nr_running = nr_running;
 		}
 
 		sgs->group_load += load;
-		sgs->sum_nr_running += nr_running;
+		sgs->sum_nr_running += rq->nr_running;
 		sgs->sum_weighted_load += weighted_cpuload(i);
 		if (idle_cpu(i))
 			sgs->idle_cpus++;
@@ -2792,8 +2785,7 @@ static inline void update_sg_lb_stats(struct sched_domain *sd,
 	if (sgs->sum_nr_running)
 		avg_load_per_task = sgs->sum_weighted_load / sgs->sum_nr_running;
 
-	if ((max_cpu_load - min_cpu_load) >= avg_load_per_task &&
-	    (max_nr_running - min_nr_running) > 1)
+	if ((max_cpu_load - min_cpu_load) >= avg_load_per_task && max_nr_running > 1)
 		sgs->group_imb = 1;
 
 	sgs->group_capacity = DIV_ROUND_CLOSEST(group->sgp->power,
@@ -4032,28 +4024,20 @@ static inline int nohz_kick_needed(struct rq *rq, int cpu)
 	first_pick_cpu = atomic_read(&nohz.first_pick_cpu);
 	second_pick_cpu = atomic_read(&nohz.second_pick_cpu);
 
-	/*
-	 * As long as rq->nr_running is greater than 1, nohz_kick will be
-	 * needed, regardless of whether the current CPU has successfully
-	 * competed for the first or second cpu spot.
-	 */
-	if (rq->nr_running > 1) {
-		ret = atomic_cmpxchg(&nohz.first_pick_cpu, nr_cpu_ids, cpu);
-		if (ret == nr_cpu_ids || ret == cpu)
-			atomic_cmpxchg(&nohz.second_pick_cpu, cpu, nr_cpu_ids);
-		else
-			atomic_cmpxchg(&nohz.second_pick_cpu, nr_cpu_ids, cpu);
-		return 1;
+	if (first_pick_cpu < nr_cpu_ids && first_pick_cpu != cpu &&
+	    second_pick_cpu < nr_cpu_ids && second_pick_cpu != cpu)
+		return 0;
+
+	ret = atomic_cmpxchg(&nohz.first_pick_cpu, nr_cpu_ids, cpu);
+	if (ret == nr_cpu_ids || ret == cpu) {
+		atomic_cmpxchg(&nohz.second_pick_cpu, cpu, nr_cpu_ids);
+		if (rq->nr_running > 1)
+			return 1;
 	} else {
-		ret = atomic_cmpxchg(&nohz.first_pick_cpu, nr_cpu_ids, cpu);
+		ret = atomic_cmpxchg(&nohz.second_pick_cpu, nr_cpu_ids, cpu);
 		if (ret == nr_cpu_ids || ret == cpu) {
-			atomic_cmpxchg(&nohz.second_pick_cpu, cpu, nr_cpu_ids);
-		} else {
-			ret = atomic_cmpxchg(&nohz.second_pick_cpu, nr_cpu_ids, cpu);
-			if (ret == nr_cpu_ids || ret == cpu) {
-				if (rq->nr_running)
-					return 1;
-			}
+			if (rq->nr_running)
+				return 1;
 		}
 	}
 	return 0;
@@ -4070,10 +4054,8 @@ static void run_rebalance_domains(struct softirq_action *h)
 {
 	int this_cpu = smp_processor_id();
 	struct rq *this_rq = cpu_rq(this_cpu);
-	enum cpu_idle_type idle;
-	this_rq->idle_at_tick = idle_cpu(this_cpu);
-	idle = this_rq->idle_at_tick ?
-		CPU_IDLE : CPU_NOT_IDLE;
+	enum cpu_idle_type idle = this_rq->idle_at_tick ?
+						CPU_IDLE : CPU_NOT_IDLE;
 
 	rebalance_domains(this_cpu, idle);
 
@@ -4100,7 +4082,7 @@ static inline void trigger_load_balance(struct rq *rq, int cpu)
 	    likely(!on_null_domain(cpu)))
 		raise_softirq(SCHED_SOFTIRQ);
 #ifdef CONFIG_NO_HZ
-	if (nohz_kick_needed(rq, cpu) && likely(!on_null_domain(cpu)))
+	else if (nohz_kick_needed(rq, cpu) && likely(!on_null_domain(cpu)))
 		nohz_balancer_kick(cpu);
 #endif
 }

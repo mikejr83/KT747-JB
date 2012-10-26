@@ -577,11 +577,11 @@ void ddl_vidc_encode_init_codec(struct ddl_client_context *ddl)
 		h263_cpfc_enable = true;
 
 /* MMRND_AVRC. Start */
-	/* added for MMS plus header issue */
-	if ((encoder->codec.codec == VCD_CODEC_H263) &&
-			(encoder->frame_size.width == QCIF_WIDTH) &&
-			(encoder->frame_size.height == QCIF_HEIGHT))
-		h263_cpfc_enable = false;
+        /* added for MMS plus header issue */
+    if ((encoder->codec.codec == VCD_CODEC_H263) &&
+        (encoder->frame_size.width == QCIF_WIDTH) &&
+        (encoder->frame_size.height == QCIF_HEIGHT))
+            h263_cpfc_enable = false;
 /* MMRND_AVRC. End */
 
 	vidc_sm_set_extended_encoder_control(&ddl->shared_mem

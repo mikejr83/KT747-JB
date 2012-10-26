@@ -340,13 +340,6 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	 * Enable local interrupts.
 	 */
 	notify_cpu_starting(cpu);
-	local_irq_enable();
-	local_fiq_enable();
-
-	/*
-	 * Setup the percpu timer for this CPU.
-	 */
-	percpu_timer_setup();
 
 	if (skip_secondary_calibrate())
 		calibrate_delay();
@@ -359,8 +352,14 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	 * before we continue.
 	 */
 	set_cpu_online(cpu, true);
-	while (!cpu_active(cpu))
-		cpu_relax();
+
+	/*
+	 * Setup the percpu timer for this CPU.
+	 */
+	percpu_timer_setup();
+
+	local_irq_enable();
+	local_fiq_enable();
 
 	/*
 	 * OK, it's off to the idle thread for us
@@ -664,9 +663,7 @@ void handle_IPI(int ipinr, struct pt_regs *regs)
 		break;
 
 	case IPI_CPU_BACKTRACE:
-		irq_enter();
 		ipi_cpu_backtrace(cpu, regs);
-		irq_exit();
 		break;
 
 	default:
@@ -714,4 +711,3 @@ int setup_profiling_timer(unsigned int multiplier)
 {
 	return -EINVAL;
 }
-

@@ -387,6 +387,10 @@ static ssize_t mdp_stat_read(
 	dlen -= len;
 	len = snprintf(bp, dlen, "dmas: %08lu\n",
 					mdp4_stat.kickoff_dmas);
+	bp += len;
+	dlen -= len;
+	len = snprintf(bp, dlen, "mixer_reset: %08lu\n",
+					mdp4_stat.mixer_reset);
 
 	bp += len;
 	dlen -= len;
@@ -486,19 +490,19 @@ static ssize_t mdp_stat_read(
 	len = snprintf(bp, dlen, "err_mixer : %08lu\t", mdp4_stat.err_mixer);
 	bp += len;
 	dlen -= len;
-	len = snprintf(bp, dlen, "err_size  : %08lu\n", mdp4_stat.err_size);
+	len = snprintf(bp, dlen, "err_size : %08lu\n", mdp4_stat.err_size);
 	bp += len;
 	dlen -= len;
-	len = snprintf(bp, dlen, "err_scale : %08lu\t", mdp4_stat.err_scale);
+	len = snprintf(bp, dlen, "err_scale: %08lu\t", mdp4_stat.err_scale);
 	bp += len;
 	dlen -= len;
 	len = snprintf(bp, dlen, "err_format: %08lu\n", mdp4_stat.err_format);
 	bp += len;
 	dlen -= len;
-	len = snprintf(bp, dlen, "err_play  : %08lu\t", mdp4_stat.err_play);
+	len = snprintf(bp, dlen, "err_play:  %08lu\t", mdp4_stat.err_play);
 	bp += len;
 	dlen -= len;
-	len = snprintf(bp, dlen, "err_stage : %08lu\n", mdp4_stat.err_stage);
+	len = snprintf(bp, dlen, "err_stage: %08lu\n", mdp4_stat.err_stage);
 	bp += len;
 	dlen -= len;
 	len = snprintf(bp, dlen, "err_underflow: %08lu\n\n",
@@ -568,12 +572,12 @@ struct mddi_reg {
 };
 
 static struct mddi_reg mddi_regs_list[] = {
-	{"MDDI_CMD", MDDI_CMD},		/* 0x0000 */
-	{"MDDI_VERSION", MDDI_VERSION},		/* 0x0004 */
-	{"MDDI_PRI_PTR", MDDI_PRI_PTR},		/* 0x0008 */
-	{"MDDI_BPS",  MDDI_BPS},		/* 0x0010 */
-	{"MDDI_SPM", MDDI_SPM},		/* 0x0014 */
-	{"MDDI_INT", MDDI_INT},		/* 0x0018 */
+	{"MDDI_CMD", MDDI_CMD},	 	/* 0x0000 */
+	{"MDDI_VERSION", MDDI_VERSION},  /* 0x0004 */
+	{"MDDI_PRI_PTR", MDDI_PRI_PTR},  /* 0x0008 */
+	{"MDDI_BPS",  MDDI_BPS}, 	/* 0x0010 */
+	{"MDDI_SPM", MDDI_SPM}, 	/* 0x0014 */
+	{"MDDI_INT", MDDI_INT}, 	/* 0x0018 */
 	{"MDDI_INTEN", MDDI_INTEN},	/* 0x001c */
 	{"MDDI_REV_PTR", MDDI_REV_PTR},	/* 0x0020 */
 	{"MDDI_	REV_SIZE", MDDI_REV_SIZE},/* 0x0024 */
@@ -582,7 +586,7 @@ static struct mddi_reg mddi_regs_list[] = {
 	{"MDDI_REV_CRC_ERR", MDDI_REV_CRC_ERR}, /* 0x0030 */
 	{"MDDI_TA1_LEN", MDDI_TA1_LEN}, /* 0x0034 */
 	{"MDDI_TA2_LEN", MDDI_TA2_LEN}, /* 0x0038 */
-	{"MDDI_TEST", MDDI_TEST},		/* 0x0040 */
+	{"MDDI_TEST", MDDI_TEST}, 	/* 0x0040 */
 	{"MDDI_REV_PKT_CNT", MDDI_REV_PKT_CNT}, /* 0x0044 */
 	{"MDDI_DRIVE_HI", MDDI_DRIVE_HI},/* 0x0048 */
 	{"MDDI_DRIVE_LO", MDDI_DRIVE_LO},	/* 0x004c */
@@ -1106,125 +1110,6 @@ static const struct file_operations dbg_reg_fops = {
 	.write = dbg_reg_write,
 };
 
-u32 dbg_force_ov0_blt;
-u32 dbg_force_ov1_blt;
-
-static ssize_t dbg_force_ov0_blt_read(
-	struct file *file,
-	char __user *buff,
-	size_t count,
-	loff_t *ppos) {
-	int len;
-
-	if (*ppos)
-		return 0;
-
-	len = snprintf(debug_buf, sizeof(debug_buf),
-		       "%d\n", dbg_force_ov0_blt);
-
-	if (len < 0)
-		return 0;
-
-	if (copy_to_user(buff, debug_buf, len))
-		return -EFAULT;
-
-	*ppos += len;
-
-	return len;
-}
-
-static ssize_t dbg_force_ov0_blt_write(
-	struct file *file,
-	const char __user *buff,
-	size_t count,
-	loff_t *ppos)
-{
-	u32 cnt;
-
-	if (count >= sizeof(debug_buf))
-		return -EFAULT;
-
-	if (copy_from_user(debug_buf, buff, count))
-		return -EFAULT;
-
-	debug_buf[count] = 0;	/* end of string */
-
-	cnt = sscanf(debug_buf, "%d", &dbg_force_ov0_blt);
-
-	if (dbg_force_ov0_blt)
-		dbg_force_ov0_blt = 1;
-
-	pr_info("%s: dbg_force_ov0_blt = %d\n",
-		__func__, dbg_force_ov0_blt);
-
-	return count;
-}
-
-static const struct file_operations dbg_force_ov0_blt_fops = {
-	.open = dbg_open,
-	.release = dbg_release,
-	.read = dbg_force_ov0_blt_read,
-	.write = dbg_force_ov0_blt_write,
-};
-
-static ssize_t dbg_force_ov1_blt_read(
-	struct file *file,
-	char __user *buff,
-	size_t count,
-	loff_t *ppos) {
-	int len;
-
-	if (*ppos)
-		return 0;
-
-	len = snprintf(debug_buf, sizeof(debug_buf),
-		       "%d\n", dbg_force_ov1_blt);
-
-	if (len < 0)
-		return 0;
-
-	if (copy_to_user(buff, debug_buf, len))
-		return -EFAULT;
-
-	*ppos += len;
-
-	return len;
-}
-
-static ssize_t dbg_force_ov1_blt_write(
-	struct file *file,
-	const char __user *buff,
-	size_t count,
-	loff_t *ppos)
-{
-	u32 cnt;
-
-	if (count >= sizeof(debug_buf))
-		return -EFAULT;
-
-	if (copy_from_user(debug_buf, buff, count))
-		return -EFAULT;
-
-	debug_buf[count] = 0;	/* end of string */
-
-	cnt = sscanf(debug_buf, "%d", &dbg_force_ov1_blt);
-
-	if (dbg_force_ov1_blt)
-		dbg_force_ov1_blt = 1;
-
-	pr_info("%s: dbg_force_ov1_blt = %d\n",
-		__func__, dbg_force_ov1_blt);
-
-	return count;
-}
-
-static const struct file_operations dbg_force_ov1_blt_fops = {
-	.open = dbg_open,
-	.release = dbg_release,
-	.read = dbg_force_ov1_blt_read,
-	.write = dbg_force_ov1_blt_write,
-};
-
 #ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
 static uint32 hdmi_offset;
 static uint32 hdmi_count;
@@ -1444,22 +1329,6 @@ int mdp_debugfs_init(void)
 		return -1;
 	}
 #endif
-
-	if (debugfs_create_file("force_ov0_blt", 0644, dent, 0,
-				&dbg_force_ov0_blt_fops)
-			== NULL) {
-		pr_err("%s(%d): debugfs_create_file: debug fail\n",
-			__FILE__, __LINE__);
-		return -EFAULT;
-	}
-
-	if (debugfs_create_file("force_ov1_blt", 0644, dent, 0,
-				&dbg_force_ov1_blt_fops)
-			== NULL) {
-		pr_err("%s(%d): debugfs_create_file: debug fail\n",
-			__FILE__, __LINE__);
-		return -EFAULT;
-	}
 
 	dent = debugfs_create_dir("mddi", NULL);
 

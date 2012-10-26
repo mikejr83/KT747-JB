@@ -199,7 +199,7 @@ struct msm_camera_sensor_platform_info {
 	struct camera_vreg_t *cam_vreg;
 	int num_vreg;
 	int32_t (*ext_power_ctrl) (int enable);
-#if defined(CONFIG_S5C73M3) || defined(CONFIG_S5K6A3YX) /* D2 */
+#if defined(CONFIG_S5C73M3) && defined(CONFIG_S5K6A3YX) /* D2 */
 	void(*sensor_power_on) (int, int);
 #else
 	void(*sensor_power_on) (int);
@@ -226,7 +226,7 @@ struct msm_gpio_set_tbl {
 	uint32_t delay;
 };
 
-#if defined(CONFIG_S5C73M3) || defined(CONFIG_S5K6A3YX) /* D2 */
+#if defined(CONFIG_S5C73M3) && defined(CONFIG_S5K6A3YX) /* D2 */
 struct msm_camera_gpio_conf {
 	void *cam_gpiomux_conf_tbl;
 	uint8_t cam_gpiomux_conf_tbl_size;
@@ -271,7 +271,7 @@ struct msm_camera_sensor_info {
 	struct msm_camera_csi_params csi_params;
 	struct msm_camera_sensor_strobe_flash_data *strobe_flash_data;
 	char *eeprom_data;
-#if defined(CONFIG_S5C73M3) || defined(CONFIG_S5K6A3YX) /* D2 */
+#if defined(CONFIG_S5C73M3) && defined(CONFIG_S5K6A3YX) /* D2 */
 	struct msm_camera_gpio_conf *gpio_conf;
 #endif
 	enum msm_camera_type camera_type;
@@ -370,9 +370,7 @@ struct msm_panel_common_pdata {
 	void (*panel_config_gpio)(int);
 	int (*vga_switch)(int select_vga);
 	int *gpio_num;
-	int mdp_core_clk_rate;
-	unsigned num_mdp_clk;
-	int *mdp_core_clk_table;
+	u32 mdp_max_clk;
 #ifdef CONFIG_MSM_BUS_SCALING
 	struct msm_bus_scale_pdata *mdp_bus_scale_table;
 #endif
@@ -381,7 +379,6 @@ struct msm_panel_common_pdata {
 	u32 ov1_wb_size;  /* overlay1 writeback size */
 	u32 mem_hid;
 	char cont_splash_enabled;
-	char mdp_iommu_split_domain;
 };
 
 
@@ -446,10 +443,6 @@ struct mipi_dsi_panel_platform_data {
 	char dlane_swap;
 };
 
-struct msm_wfd_platform_data {
-	char (*wfd_check_mdp_iommu_split)(void);
-};
-
 #define PANEL_NAME_MAX_LEN 50
 struct msm_fb_platform_data {
 	int (*detect_client)(const char *name);
@@ -466,6 +459,8 @@ struct msm_hdmi_platform_data {
 	int (*enable_5v)(int on);
 	int (*core_power)(int on, int show);
 	int (*cec_power)(int on);
+	int (*panel_power)(int on);
+	int (*gpio_config)(int on);
 	int (*init_irq)(void);
 	bool (*check_hdcp_hw_support)(void);
 	int (*hdmi_enable)(void);
@@ -499,6 +494,7 @@ struct msm_vidc_platform_data {
 #ifdef CONFIG_MSM_BUS_SCALING
 	struct msm_bus_scale_pdata *vidc_bus_client_pdata;
 #endif
+	int disable_turbo;
 };
 
 #if defined(CONFIG_USB_PEHCI_HCD) || defined(CONFIG_USB_PEHCI_HCD_MODULE)

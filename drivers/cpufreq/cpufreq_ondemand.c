@@ -423,11 +423,8 @@ static ssize_t store_powersave_bias(struct kobject *a, struct attribute *b,
 {
 	int input  = 0;
 	int bypass = 0;
-	int ret, cpu, reenable_timer, j;
+	int ret, cpu, reenable_timer;
 	struct cpu_dbs_info_s *dbs_info;
-
-	struct cpumask cpus_timer_done;
-	cpumask_clear(&cpus_timer_done);
 
 	ret = sscanf(buf, "%d", &input);
 
@@ -461,23 +458,10 @@ static ssize_t store_powersave_bias(struct kobject *a, struct attribute *b,
 					continue;
 
 				dbs_info = &per_cpu(od_cpu_dbs_info, cpu);
-
-				for_each_cpu(j, &cpus_timer_done) {
-					if (!dbs_info->cur_policy) {
-						pr_err("Dbs policy is NULL\n");
-						goto skip_this_cpu;
-					}
-					if (cpumask_test_cpu(j, dbs_info->
-							cur_policy->cpus))
-						goto skip_this_cpu;
-				}
-
-				cpumask_set_cpu(cpu, &cpus_timer_done);
 				if (dbs_info->cur_policy) {
 					/* restart dbs timer */
 					dbs_timer_init(dbs_info);
 				}
-skip_this_cpu:
 				unlock_policy_rwsem_write(cpu);
 			}
 		}
@@ -490,19 +474,6 @@ skip_this_cpu:
 				continue;
 
 			dbs_info = &per_cpu(od_cpu_dbs_info, cpu);
-
-			for_each_cpu(j, &cpus_timer_done) {
-				if (!dbs_info->cur_policy) {
-					pr_err("Dbs policy is NULL\n");
-					goto skip_this_cpu_bypass;
-				}
-				if (cpumask_test_cpu(j, dbs_info->
-							cur_policy->cpus))
-					goto skip_this_cpu_bypass;
-			}
-
-			cpumask_set_cpu(cpu, &cpus_timer_done);
-
 			if (dbs_info->cur_policy) {
 				/* cpu using ondemand, cancel dbs timer */
 				mutex_lock(&dbs_info->timer_mutex);
@@ -515,7 +486,6 @@ skip_this_cpu:
 
 				mutex_unlock(&dbs_info->timer_mutex);
 			}
-skip_this_cpu_bypass:
 			unlock_policy_rwsem_write(cpu);
 		}
 	}
@@ -670,14 +640,14 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	}
 #if defined(__MP_DECISION_PATCH__)
 	/* calculate the scaled load across CPU */
-	load_at_max_freq += (cur_load * policy->cur) /
-	    policy->cpuinfo.max_freq;
+	load_at_max_freq = (cur_load * policy->cur)/policy->cpuinfo.max_freq;
 
 	/* add cpu_utilization */
 	dbs_tuners_ins.cpu_utilization = load_at_max_freq;
 	cpufreq_notify_utilization(policy, dbs_tuners_ins.cpu_utilization);
 #endif
 
+	/* Check for frequency increase *//*increasing by freq_step*/
 	if (max_load_freq > dbs_tuners_ins.up_threshold * policy->cur) {
 		int inc = (policy->max * dbs_tuners_ins.freq_step) / 100;
 		int target = min(policy->max, policy->cur + inc);
@@ -811,16 +781,15 @@ static void dbs_refresh_callback(struct work_struct *unused)
 	struct cpu_dbs_info_s *this_dbs_info;
 	unsigned int cpu = smp_processor_id();
 
-	get_online_cpus();
-
 	if (lock_policy_rwsem_write(cpu) < 0)
-		goto bail_acq_sema_failed;
+		return;
 
 	this_dbs_info = &per_cpu(od_cpu_dbs_info, cpu);
 	policy = this_dbs_info->cur_policy;
 	if (!policy) {
 		/* CPU not using ondemand governor */
-		goto bail_incorrect_governor;
+		unlock_policy_rwsem_write(cpu);
+		return;
 	}
 
 	if (policy->cur < policy->max) {
@@ -831,13 +800,7 @@ static void dbs_refresh_callback(struct work_struct *unused)
 		this_dbs_info->prev_cpu_idle = get_cpu_idle_time(cpu,
 				&this_dbs_info->prev_cpu_wall);
 	}
-
-bail_incorrect_governor:
 	unlock_policy_rwsem_write(cpu);
-
-bail_acq_sema_failed:
-	put_online_cpus();
-	return;
 }
 
 static void dbs_input_event(struct input_handle *handle, unsigned int type,
@@ -1005,11 +968,12 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 static int __init cpufreq_gov_dbs_init(void)
 {
+	cputime64_t wall;
 	u64 idle_time;
 	unsigned int i;
 	int cpu = get_cpu();
 
-	idle_time = get_cpu_idle_time_us(cpu, NULL);
+	idle_time = get_cpu_idle_time_us(cpu, &wall);
 	put_cpu();
 	if (idle_time != -1ULL) {
 		/* Idle micro accounting is supported. Use finer thresholds */

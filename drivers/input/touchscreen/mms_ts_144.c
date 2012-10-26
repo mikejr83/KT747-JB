@@ -131,8 +131,11 @@ enum {
 #define TSP_CMD_PARAM_NUM 8
 #endif /* SEC_TSP_FACTORY_TEST */
 
-
-#define ISC_DL_MODE	1
+#if defined(CONFIG_MACH_STRETTO) || defined(CONFIG_MACH_SUPERIORLTE_SKT)
+#define ISC_DL_MODE 0
+#else
+#define ISC_DL_MODE 1
+#endif
 
 #if ISC_DL_MODE
 /* Default configuration of ISC mode */
@@ -407,8 +410,8 @@ static void change_dvfs_lock(struct work_struct *work)
 	if (ret < 0)
 		pr_err("%s: 1booster stop failed(%d)\n",\
 					__func__, __LINE__);
-	//else
-	//	pr_info("[TSP] %s", __func__);
+	else
+		pr_info("[TSP] %s", __func__);
 }
 
 static void set_dvfs_off(struct work_struct *work)
@@ -420,6 +423,8 @@ static void set_dvfs_off(struct work_struct *work)
 	cpufreq_set_limit(TOUCH_BOOSTER_SECOND_STOP, 0);
 	info->dvfs_lock_status = false;
 	mutex_unlock(&info->dvfs_lock);
+
+	pr_info("[TSP] DVFS Off!");
 }
 
 static void set_dvfs_lock(struct mms_ts_info *info, uint32_t on)
@@ -445,6 +450,7 @@ static void set_dvfs_lock(struct mms_ts_info *info, uint32_t on)
 			schedule_delayed_work(&info->work_dvfs_chg,
 				msecs_to_jiffies(TOUCH_BOOSTER_CHG_TIME));
 			info->dvfs_lock_status = true;
+			pr_info("[TSP] DVFS On!");
 		}
 	} else if (on == 2) {
 		cancel_delayed_work(&info->work_dvfs_off);
@@ -553,108 +559,6 @@ static void melfas_ta_cb(struct tsp_callbacks *cb, bool ta_status)
 	}
 }
 
-static bool isasleep = false;
-static unsigned int wake_start = 0;
-static unsigned int x_lo;
-static unsigned int x_onethird;
-static unsigned int x_twothird;
-static unsigned int x_hi;
-static struct input_dev *slide2wake_dev;
-static DEFINE_MUTEX(s2w_lock);
-static DEFINE_SEMAPHORE(s2w_sem);
-extern int get_suspend_state(void);
-extern void request_suspend_state(int);
-bool s2w_enabled = false;
-
-static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
-{
-	mutex_lock(&info->lock);
-	if (info->enabled)
-		goto out;
-	/* wake up the touch controller. */
-	if (wakeupcmd == 1) {
-		i2c_smbus_write_byte_data(info->client, 0, 0);
-		usleep_range(3000, 5000);
-	}
-out:
-	if (isasleep)
-	{
-		if (s2w_enabled)
-			disable_irq_wake(info->irq);
-		else
-		{
-			if (!info->enabled)
-				enable_irq(info->irq);
-		}
-	}
-	info->enabled = true;
-	isasleep = false;
-	mutex_unlock(&info->lock);
-	return 0;
-}
-
-static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
-{
-	mutex_lock(&info->lock);
-	if (!info->enabled)
-		goto out;
-	if (sleepcmd == 1) {
-		i2c_smbus_write_byte_data(info->client, MMS_MODE_CONTROL, 0);
-		usleep_range(10000, 12000);
-	}
-out:
-	if (!isasleep)
-	{
-		if (!isasleep && s2w_enabled)
-			enable_irq_wake(info->irq);
-		else
-			disable_irq(info->irq);
-	}
-	if (!s2w_enabled)
-		info->enabled = false;
-	isasleep = true;
-	touch_is_pressed = 0;
-	mutex_unlock(&info->lock);
-	return 0;
-}
-
-void slide2wake_setdev(struct input_dev *input_device)
-{
-	slide2wake_dev = input_device;
-}
-
-static void slide2wake_force_wakeup(void)
-{
-	int state;
-	mutex_lock(&s2w_lock);
-	state = get_suspend_state();
-	pr_info("WAKE_START suspend state: %d\n", state);
-	if (state != 0)
-		request_suspend_state(0);
-	msleep(100);
-	mutex_unlock(&s2w_lock);
-}
-
-static void slide2wake_presspwr(struct work_struct *slide2wake_presspwr_work)
-{
-	input_event(slide2wake_dev, EV_KEY, KEY_POWER, 1);
-	input_event(slide2wake_dev, EV_SYN, 0, 0);
-	msleep(250);
-	input_event(slide2wake_dev, EV_KEY, KEY_POWER, 0);
-	input_event(slide2wake_dev, EV_SYN, 0, 0);
-	mutex_unlock(&s2w_lock);
-	msleep(1000);
-	pr_info("WAKE_START OFF-2 %d\n", slide2wake_dev->id.version);
-}
-
-static DECLARE_WORK(slide2wake_presspwr_work, slide2wake_presspwr);
-
-void slide2wake_pwrtrigger(void)
-{
-	if (mutex_trylock(&s2w_lock))
-		schedule_work(&slide2wake_presspwr_work);
-}
-
 static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 {
 	struct mms_ts_info *info = dev_id;
@@ -676,11 +580,6 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 			.buf    = buf,
 		},
 	};
-	if (s2w_enabled) {
-		ret = down_trylock(&s2w_sem);
-		if (ret)
-			printk(KERN_ERR "[TSP] slide2wake SEM cannot be aquired\n");
-	}
 
 	sz = i2c_smbus_read_byte_data(client, MMS_INPUT_EVENT_PKT_SZ);
 	if (sz < 0) {
@@ -759,19 +658,13 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 		}
 
 		if ((tmp[0] & 0x80) == 0) {
-			//pr_info("WAKE_START BAD %d-%d-%d\n", wake_start, x, x_hi);
-			if (s2w_enabled && wake_start == 3 && x > x_hi) {
-				//slide2wake_force_wakeup();
-				slide2wake_pwrtrigger();
-				pr_info("WAKE_START OFF-1 %d-%d\n", x, x_hi);
-			}
-			wake_start = 0;
 #if defined(SEC_TSP_DEBUG)
 			dev_dbg(&client->dev,
 				"finger id[%d]: x=%d y=%d p=%d w=%d major=%d minor=%d angle=%d palm=%d\n"
 				, id, x, y, tmp[5], tmp[4], tmp[6], tmp[7]
 				, angle, palm);
 #else
+			dev_notice(&client->dev, "finger [%d] up\n", id);
 #endif
 			input_mt_slot(info->input_dev, id);
 			input_mt_report_slot_state(info->input_dev,
@@ -787,8 +680,15 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 		input_mt_report_slot_state(info->input_dev,
 					   MT_TOOL_FINGER, true);
 		input_report_abs(info->input_dev, ABS_MT_WIDTH_MAJOR, tmp[4]);
+#if defined(CONFIG_MACH_K2_KDI)
+		input_report_abs(info->input_dev, ABS_MT_POSITION_X,
+			(info->max_x - x));
+		input_report_abs(info->input_dev, ABS_MT_POSITION_Y,
+			(info->max_y - y));
+#else
 		input_report_abs(info->input_dev, ABS_MT_POSITION_X, x);
 		input_report_abs(info->input_dev, ABS_MT_POSITION_Y, y);
+#endif
 		input_report_abs(info->input_dev, ABS_MT_TOUCH_MAJOR, tmp[6]);
 		input_report_abs(info->input_dev, ABS_MT_TOUCH_MINOR, tmp[7]);
 		input_report_abs(info->input_dev, ABS_MT_ANGLE, angle);
@@ -796,51 +696,15 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 #if defined(SEC_TSP_DEBUG)
 		if (info->finger_state[id] == 0) {
 			info->finger_state[id] = 1;
-			if (s2w_enabled && x < x_lo && isasleep == true)
-			{
-				wake_start = 1;
-				pr_info("WAKE_START ON1 %d-%d\n", x, x_lo);
-			}
 			dev_dbg(&client->dev,
 				"finger id[%d]: x=%d y=%d p=%d w=%d major=%d minor=%d angle=%d palm=%d\n"
 				, id, x, y, tmp[5], tmp[4], tmp[6], tmp[7]
 				, angle, palm);
 		}
-		else
-		{
-			if (s2w_enabled && wake_start == 1 && x >= (x_onethird-30) && x <= (x_onethird+30) && isasleep == true)
-			{
-				wake_start = 2;
-				pr_info("WAKE_START ON2 %d-%d\n", x, x_lo);
-			}
-			if (s2w_enabled && wake_start == 2 && x >= (x_twothird-30) && x <= (x_twothird+30) && isasleep == true)
-			{
-				wake_start = 3;
-				pr_info("WAKE_START ON3 %d-%d\n", x, x_lo);
-			}
-		}
 #else
 		if (info->finger_state[id] == 0) {
 			info->finger_state[id] = 1;
-			if (s2w_enabled && x < x_lo && isasleep == true)
-			{
-				wake_start = 1;
-				pr_info("WAKE_START ON1 %d-%d\n", x, x_lo);
-			}
-			//dev_notice(&client->dev, "finger [%d] down\n", id);
-		}
-		else
-		{
-			if (s2w_enabled && wake_start == 1 && x >= (x_onethird-30) && x <= (x_onethird+30) && isasleep == true)
-			{
-				wake_start = 2;
-				pr_info("WAKE_START ON2 %d-%d\n", x, x_lo);
-			}
-			if (s2w_enabled && wake_start == 2 && x >= (x_twothird-30) && x <= (x_twothird+30) && isasleep == true)
-			{
-				wake_start = 3;
-				pr_info("WAKE_START ON3 %d-%d\n", x, x_lo);
-			}
+			dev_notice(&client->dev, "finger [%d] down\n", id);
 		}
 #endif
 	}
@@ -858,9 +722,6 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 #endif
 
 out:
-	if (s2w_enabled)
-		up(&s2w_sem);
-
 	return IRQ_HANDLED;
 }
 
@@ -1903,6 +1764,40 @@ static int get_hw_version(struct mms_ts_info *info)
 	} while (ret < 0 && retries-- > 0);
 
 	return ret;
+}
+
+static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
+{
+	mutex_lock(&info->lock);
+	if (info->enabled)
+		goto out;
+	/* wake up the touch controller. */
+	if (wakeupcmd == 1) {
+		i2c_smbus_write_byte_data(info->client, 0, 0);
+		usleep_range(3000, 5000);
+	}
+	info->enabled = true;
+	enable_irq(info->irq);
+out:
+	mutex_unlock(&info->lock);
+	return 0;
+}
+
+static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
+{
+	mutex_lock(&info->lock);
+	if (!info->enabled)
+		goto out;
+	disable_irq(info->irq);
+	if (sleepcmd == 1) {
+		i2c_smbus_write_byte_data(info->client, MMS_MODE_CONTROL, 0);
+		usleep_range(10000, 12000);
+	}
+	info->enabled = false;
+	touch_is_pressed = 0;
+out:
+	mutex_unlock(&info->lock);
+	return 0;
 }
 
 static int mms_ts_finish_config(struct mms_ts_info *info)
@@ -3006,28 +2901,6 @@ static ssize_t show_intensity_logging_off(struct device *dev,
 
 #endif
 
-static ssize_t slide2wake_show(struct device *dev, struct device_attribute *attr, char *buf)
-{
-	return sprintf(buf, "%d\n", s2w_enabled);
-}
-
-static ssize_t slide2wake_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
-{
-	int ret;
-	unsigned int value;
-	
-	ret = sscanf(buf, "%d\n", &value);
-	if (ret != 1)
-		return -EINVAL;
-	else
-		s2w_enabled = value ? true : false;
-
-	return size;
-}
-	
-static DEVICE_ATTR(slide2wake, S_IRUGO | S_IWUSR | S_IWGRP,
-	slide2wake_show, slide2wake_store);
-
 static DEVICE_ATTR(close_tsp_test, S_IRUGO, show_close_tsp_test, NULL);
 static DEVICE_ATTR(cmd, S_IWUSR | S_IWGRP, NULL, store_cmd);
 static DEVICE_ATTR(cmd_status, S_IRUGO, show_cmd_status, NULL);
@@ -3048,7 +2921,6 @@ static struct attribute *sec_touch_facotry_attributes[] = {
 		&dev_attr_intensity_logging_on.attr,
 		&dev_attr_intensity_logging_off.attr,
 #endif
-		&dev_attr_slide2wake.attr,
 		NULL,
 };
 
@@ -3103,10 +2975,6 @@ static int __devinit mms_ts_probe(struct i2c_client *client,
 		info->max_x = 720;
 		info->max_y = 1280;
 	}
-	x_lo = info->max_x / 10;
-	x_onethird = (info->max_x / 10) * 3;
-	x_twothird = (info->max_x / 10) * 6;
-	x_hi = (info->max_x / 10) * 9;
 
 	i2c_set_clientdata(client, info);
 

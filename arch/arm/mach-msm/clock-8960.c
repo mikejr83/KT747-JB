@@ -3392,36 +3392,6 @@ static unsigned long fmax_gfx3d_8960_v2[MAX_VDD_LEVELS] __initdata = {
 	[VDD_DIG_HIGH]    = 400000000
 };
 
-#ifdef CONFIG_GPU_OVERCLOCK
-static struct clk_freq_tbl clk_tbl_gfx3d_8960_oc[] = {
-	F_GFX3D(        0, gnd,  0,  0),
-	F_GFX3D( 27000000, pxo,  0,  0),
-	F_GFX3D( 48000000, pll8, 1,  8),
-	F_GFX3D( 54857000, pll8, 1,  7),
-	F_GFX3D( 64000000, pll8, 1,  6),
-	F_GFX3D( 76800000, pll8, 1,  5),
-	F_GFX3D( 96000000, pll8, 1,  4),
-	F_GFX3D(128000000, pll8, 1,  3),
-	F_GFX3D(145455000, pll2, 2, 11),
-	F_GFX3D(160000000, pll2, 1,  5),
-	F_GFX3D(177778000, pll2, 2,  9),
-	F_GFX3D(200000000, pll2, 1,  4),
-	F_GFX3D(228571000, pll2, 2,  7),
-	F_GFX3D(266667000, pll2, 1,  3),
-	F_GFX3D(300000000, pll3, 1,  4),
-	F_GFX3D(320000000, pll2, 2,  5),
-	F_GFX3D(400000000, pll2, 1,  2),
-	F_GFX3D(480000000, pll3, 2,  5),
-	F_END
-};
-
-static unsigned long fmax_gfx3d_8960_oc[MAX_VDD_LEVELS] __initdata = {
-	[VDD_DIG_LOW]     = 128000000,
-	[VDD_DIG_NOMINAL] = 320000000,
-	[VDD_DIG_HIGH]    = 480000000
-};
-#endif
-
 static struct clk_freq_tbl clk_tbl_gfx3d_8064[] = {
 	F_GFX3D(        0, gnd,   0,  0),
 	F_GFX3D( 27000000, pxo,   0,  0),
@@ -4450,7 +4420,6 @@ static struct rcg_clk pcm_clk = {
 		.ops = &clk_ops_rcg_8960,
 		VDD_DIG_FMAX_MAP1(LOW, 24576000),
 		CLK_INIT(pcm_clk.c),
-		.rate = ULONG_MAX,
 	},
 };
 
@@ -5167,6 +5136,7 @@ static struct clk_lookup msm_clocks_8064[] = {
 	CLK_DUMMY("dfab_clk",		DFAB_CLK,		NULL, 0),
 	CLK_DUMMY("bus_clk",		DFAB_SCM_CLK,	"scm", 0),
 	CLK_LOOKUP("bus_clk",		dfab_tzcom_clk.c,       "tzcom"),
+        CLK_LOOKUP("bus_clk",           dfab_qseecom_clk.c,     "qseecom"),
 	CLK_LOOKUP("alt_core_clk",    usb_hsic_xcvr_fs_clk.c,  "msm_hsic_host"),
 	CLK_LOOKUP("phy_clk",	      usb_hsic_hsic_clk.c,     "msm_hsic_host"),
 	CLK_LOOKUP("cal_clk",	      usb_hsic_hsio_cal_clk.c, "msm_hsic_host"),
@@ -5339,10 +5309,15 @@ static struct clk_lookup msm_clocks_8960_v1[] __initdata = {
 	CLK_LOOKUP("cam_clk",	cam0_clk.c,	"msm_camera_sr030pc50.0"),
 	CLK_LOOKUP("cam_clk",	cam0_clk.c,	"msm_camera_s5c73m3.0"),
 	CLK_LOOKUP("cam_clk",	cam0_clk.c,	"msm_camera_db8131m.0"),
+#if defined(CONFIG_MACH_STRETTO)
+	CLK_LOOKUP("cam_clk",		cam0_clk.c, "4-003d"),
+	CLK_LOOKUP("cam_clk",		cam2_clk.c, "4-0020"),
+#else
 	CLK_LOOKUP("cam_clk",		cam0_clk.c,	"4-001a"),
 	CLK_LOOKUP("cam_clk",		cam0_clk.c,	"4-006c"),
 	CLK_LOOKUP("cam_clk",		cam0_clk.c,	"4-0048"),
 	CLK_LOOKUP("cam_clk",		cam0_clk.c,	"4-0020"),
+#endif
 	CLK_LOOKUP("csi_src_clk",	csi0_src_clk.c,		"msm_csid.0"),
 	CLK_LOOKUP("csi_src_clk",	csi1_src_clk.c,		"msm_csid.1"),
 	CLK_LOOKUP("csi_clk",		csi0_clk.c,		"msm_csid.0"),
@@ -5480,7 +5455,6 @@ static struct clk_lookup msm_clocks_8960_v1[] __initdata = {
 	CLK_LOOKUP("bus_clk",		dfab_scm_clk.c,	"scm"),
 	CLK_LOOKUP("bus_clk",		dfab_tzcom_clk.c,	"tzcom"),
 	CLK_LOOKUP("bus_clk",		dfab_qseecom_clk.c,	"qseecom"),
-
 	CLK_LOOKUP("mem_clk",		ebi1_adm_clk.c, "msm_dmov"),
 
 	CLK_LOOKUP("l2_mclk",		l2_m_clk,     NULL),
@@ -5865,12 +5839,22 @@ static int get_mclk_rev(void)
 	return ((system_rev >= BOARD_REV08) ? 1 : 0);
 #elif defined(CONFIG_MACH_M2_SKT)
 	return ((system_rev >= BOARD_REV09) ? 1 : 0);
-#elif defined(CONFIG_MACH_M2_DCM)
+#elif defined(CONFIG_MACH_M2_DCM) || defined(CONFIG_MACH_K2_KDI)
 	return ((system_rev >= BOARD_REV03) ? 1 : 0);
 #elif defined(CONFIG_MACH_APEXQ)
 	return ((system_rev >= BOARD_REV04) ? 1 : 0);
 #elif defined(CONFIG_MACH_COMANCHE)
 	return ((system_rev >= BOARD_REV03) ? 1 : 0);
+#elif defined(CONFIG_MACH_AEGIS2)
+	return ((system_rev >= BOARD_REV07) ? 1 : 0);
+#elif defined(CONFIG_MACH_EXPRESS)
+	return ((system_rev >= BOARD_REV03) ? 1 : 0);
+#elif defined(CONFIG_MACH_JASPER)
+	return ((system_rev >= BOARD_REV08) ? 1 : 0);
+#elif defined(CONFIG_MACH_STRETTO)
+	return 1;
+#elif defined(CONFIG_MACH_SUPERIORLTE_SKT)
+	return 1;
 #else
 	return 0;
 #endif
@@ -5904,17 +5888,10 @@ static void __init msm8960_clock_init(void)
 		memcpy(msm_clocks_8960, msm_clocks_8960_v1,
 				sizeof(msm_clocks_8960_v1));
 		if (SOCINFO_VERSION_MAJOR(socinfo_get_version()) >= 2) {
-#ifdef CONFIG_GPU_OVERCLOCK
-			gfx3d_clk.freq_tbl = clk_tbl_gfx3d_8960_oc;
-
-			memcpy(gfx3d_clk.c.fmax, fmax_gfx3d_8960_oc,
-			       sizeof(gfx3d_clk.c.fmax));
-#else
 			gfx3d_clk.freq_tbl = clk_tbl_gfx3d_8960_v2;
 
 			memcpy(gfx3d_clk.c.fmax, fmax_gfx3d_8960_v2,
 			       sizeof(gfx3d_clk.c.fmax));
-#endif
 			memcpy(ijpeg_clk.c.fmax, fmax_ijpeg_8960_v2,
 			       sizeof(ijpeg_clk.c.fmax));
 			memcpy(vfe_clk.c.fmax, fmax_vfe_8960_v2,

@@ -19,6 +19,7 @@
 #include <linux/cpu.h>
 #include <linux/cpumask.h>
 #include <linux/cpufreq.h>
+#include <linux/mutex.h>
 #include <linux/sched.h>
 #include <linux/tick.h>
 #include <linux/time.h>
@@ -824,7 +825,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 	unsigned int j;
 	struct cpufreq_interactive_cpuinfo *pcpu;
 	struct cpufreq_frequency_table *freq_table;
-	struct sched_param param = { .sched_priority = MAX_RT_PRIO-1 };
 
 	switch (event) {
 	case CPUFREQ_GOV_START:
@@ -871,13 +871,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 			pr_warn("%s: failed to register input handler\n",
 				__func__);
 
-		up_task = kthread_create(cpufreq_interactive_up_task, NULL,
-					 "kinteractiveup");
-		if (IS_ERR(up_task))
-			return PTR_ERR(up_task);
-		sched_setscheduler_nocheck(up_task, SCHED_FIFO, &param);
-		get_task_struct(up_task);
-
 		break;
 
 	case CPUFREQ_GOV_STOP:
@@ -903,9 +896,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 		input_unregister_handler(&cpufreq_interactive_input_handler);
 		sysfs_remove_group(cpufreq_global_kobject,
 				&interactive_attr_group);
-
-		kthread_stop(up_task);
-		put_task_struct(up_task);
 
 		break;
 
@@ -945,6 +935,7 @@ static int __init cpufreq_interactive_init(void)
 {
 	unsigned int i;
 	struct cpufreq_interactive_cpuinfo *pcpu;
+	struct sched_param param = { .sched_priority = MAX_RT_PRIO-1 };
 
 	go_hispeed_load = DEFAULT_GO_HISPEED_LOAD;
 	min_sample_time = DEFAULT_MIN_SAMPLE_TIME;
@@ -958,6 +949,14 @@ static int __init cpufreq_interactive_init(void)
 		pcpu->cpu_timer.function = cpufreq_interactive_timer;
 		pcpu->cpu_timer.data = i;
 	}
+
+	up_task = kthread_create(cpufreq_interactive_up_task, NULL,
+				 "kinteractiveup");
+	if (IS_ERR(up_task))
+		return PTR_ERR(up_task);
+
+	sched_setscheduler_nocheck(up_task, SCHED_FIFO, &param);
+	get_task_struct(up_task);
 
 	/* No rescuer thread, bind to CPU queuing the work for possibly
 	   warm cache (probably doesn't matter much). */
@@ -1002,4 +1001,3 @@ MODULE_AUTHOR("Mike Chan <mike@android.com>");
 MODULE_DESCRIPTION("'cpufreq_interactive' - A cpufreq governor for "
 	"Latency sensitive workloads");
 MODULE_LICENSE("GPL");
-

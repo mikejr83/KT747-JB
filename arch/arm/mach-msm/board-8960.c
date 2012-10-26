@@ -891,7 +891,7 @@ static struct tabla_pdata tabla_platform_data = {
 	.micbias = {
 		.ldoh_v = TABLA_LDOH_2P85_V,
 		.cfilt1_mv = 1800,
-		.cfilt2_mv = 1800,
+		.cfilt2_mv = 2700,
 		.cfilt3_mv = 1800,
 		.bias1_cfilt_sel = TABLA_CFILT1_SEL,
 		.bias2_cfilt_sel = TABLA_CFILT2_SEL,
@@ -958,7 +958,7 @@ static struct tabla_pdata tabla20_platform_data = {
 	.micbias = {
 		.ldoh_v = TABLA_LDOH_2P85_V,
 		.cfilt1_mv = 1800,
-		.cfilt2_mv = 1800,
+		.cfilt2_mv = 2700,
 		.cfilt3_mv = 1800,
 		.bias1_cfilt_sel = TABLA_CFILT1_SEL,
 		.bias2_cfilt_sel = TABLA_CFILT2_SEL,
@@ -2188,7 +2188,6 @@ static struct platform_device *common_devices[] __initdata = {
 #endif
 	&msm8960_cpu_idle_device,
 	&msm8960_msm_gov_device,
-	&msm8960_iommu_domain_device,
 };
 
 static struct platform_device *sim_devices[] __initdata = {

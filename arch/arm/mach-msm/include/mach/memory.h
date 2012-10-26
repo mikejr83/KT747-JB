@@ -19,9 +19,6 @@
 
 /* physical offset of RAM */
 #define PLAT_PHYS_OFFSET UL(CONFIG_PHYS_OFFSET)
-#ifdef CONFIG_HAVE_END_MEM
-#define END_MEM          UL(CONFIG_END_MEM)
-#endif
 
 #define MAX_PHYSMEM_BITS 32
 #define SECTION_SIZE_BITS 28
@@ -102,6 +99,7 @@ extern void store_ttbr0(void);
 #ifdef CONFIG_DONT_MAP_HOLE_AFTER_MEMBANK0
 extern unsigned long membank0_size;
 extern unsigned long membank1_start;
+void find_membank0_hole(void);
 
 #define MEMBANK0_PHYS_OFFSET PHYS_OFFSET
 #define MEMBANK0_PAGE_OFFSET PAGE_OFFSET
