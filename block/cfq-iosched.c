@@ -2919,6 +2919,7 @@ static void changed_ioprio(struct io_context *ioc, struct cfq_io_context *cic)
 static void cfq_ioc_set_ioprio(struct io_context *ioc)
 {
 	call_for_each_cic(ioc, changed_ioprio);
+	ioc->ioprio_changed = 0;
 }
 
 static void cfq_init_cfqq(struct cfq_data *cfqd, struct cfq_queue *cfqq,
@@ -3210,13 +3211,8 @@ retry:
 		goto err_free;
 
 out:
-	/*
-	 * test_and_clear_bit() implies a memory barrier, paired with
-	 * the wmb() in fs/ioprio.c, so the value seen for ioprio is the
-	 * new one.
-	 */
-	if (unlikely(test_and_clear_bit(IOC_CFQ_IOPRIO_CHANGED,
-					ioc->ioprio_changed)))
+	smp_read_barrier_depends();
+	if (unlikely(ioc->ioprio_changed))
 		cfq_ioc_set_ioprio(ioc);
 
 #ifdef CONFIG_CFQ_GROUP_IOSCHED
@@ -3657,6 +3653,10 @@ static inline int __cfq_may_queue(struct cfq_queue *cfqq)
 		cfq_mark_cfqq_must_alloc_slice(cfqq);
 		return ELV_MQUEUE_MUST;
 	}
+
+	/* if realtime class, return 'must queue' to improve I/O */
+	if (cfq_class_rt(cfqq))
+		return ELV_MQUEUE_MUST;
 
 	return ELV_MQUEUE_MAY;
 }
@@ -4152,7 +4152,7 @@ SHOW_FUNCTION(cfq_fifo_expire_sync_show, cfqd->cfq_fifo_expire[1], 1);
 SHOW_FUNCTION(cfq_fifo_expire_async_show, cfqd->cfq_fifo_expire[0], 1);
 SHOW_FUNCTION(cfq_back_seek_max_show, cfqd->cfq_back_max, 0);
 SHOW_FUNCTION(cfq_back_seek_penalty_show, cfqd->cfq_back_penalty, 0);
-SHOW_FUNCTION(cfq_slice_idle_show, cfqd->cfq_slice_idle, 0);
+SHOW_FUNCTION(cfq_slice_idle_show, cfqd->cfq_slice_idle, 1);
 SHOW_FUNCTION(cfq_group_idle_show, cfqd->cfq_group_idle, 1);
 SHOW_FUNCTION(cfq_slice_sync_show, cfqd->cfq_slice[1], 1);
 SHOW_FUNCTION(cfq_slice_async_show, cfqd->cfq_slice[0], 1);
@@ -4184,7 +4184,7 @@ STORE_FUNCTION(cfq_fifo_expire_async_store, &cfqd->cfq_fifo_expire[0], 1,
 STORE_FUNCTION(cfq_back_seek_max_store, &cfqd->cfq_back_max, 0, UINT_MAX, 0);
 STORE_FUNCTION(cfq_back_seek_penalty_store, &cfqd->cfq_back_penalty, 1,
 		UINT_MAX, 0);
-STORE_FUNCTION(cfq_slice_idle_store, &cfqd->cfq_slice_idle, 0, UINT_MAX, 0);
+STORE_FUNCTION(cfq_slice_idle_store, &cfqd->cfq_slice_idle, 0, UINT_MAX, 1);
 STORE_FUNCTION(cfq_group_idle_store, &cfqd->cfq_group_idle, 0, UINT_MAX, 1);
 STORE_FUNCTION(cfq_slice_sync_store, &cfqd->cfq_slice[1], 1, UINT_MAX, 1);
 STORE_FUNCTION(cfq_slice_async_store, &cfqd->cfq_slice[0], 1, UINT_MAX, 1);

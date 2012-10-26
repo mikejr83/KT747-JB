@@ -2,7 +2,7 @@
 export KERNELDIR=`readlink -f .`
 export PARENT_DIR=`readlink -f ..`
 export INITRAMFS_DEST=$KERNELDIR/kernel/usr/initramfs
-export INITRAMFS_SOURCE=`readlink -f ..`/Ramdisks/TW_JB
+export INITRAMFS_SOURCE=`readlink -f ..`/Ramdisks/TW_JB_LJ7
 export CONFIG_SAMMY_BUILD=y
 export PACKAGEDIR=$PARENT_DIR/Packages/TW_JB_ATT
 #Enable FIPS mode
@@ -49,12 +49,12 @@ else
 fi;
 
 echo "Copy modules to Package"
-cp ../lib/modules/* $PACKAGEDIR/system/lib/modules/
+# cp ../lib/modules/* $PACKAGEDIR/system/lib/modules/
 cp -a $(find . -name *.ko -print |grep -v initramfs) $PACKAGEDIR/system/lib/modules/
 cp 00post-init.sh $PACKAGEDIR/system/etc/init.d/00post-init.sh
 cp enable-oc.sh $PACKAGEDIR/system/etc/init.d/enable-oc.sh
 cp /home/ktoonsez/workspace/com.ktoonsez.KTweaker.apk $PACKAGEDIR/system/app/com.ktoonsez.KTweaker.apk
-cp ../Ramdisks/libsqlite.so $PACKAGEDIR/system/lib/libsqlite.so
+# cp ../Ramdisks/libsqlite.so $PACKAGEDIR/system/lib/libsqlite.so
 
 echo "Copy zImage to Package"
 cp arch/arm/boot/zImage $PACKAGEDIR/zImage
