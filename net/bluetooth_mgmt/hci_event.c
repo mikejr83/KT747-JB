@@ -3441,6 +3441,7 @@ void hci_event_packet(struct hci_dev *hdev, struct sk_buff *skb)
 	case HCI_EV_CONN_COMPLETE:
 		hci_conn_complete_evt(hdev, skb);
 		pr_info("HCI_EV_CONN_COMPLETE\n");
+		set_bluetooth_state(1, hdev->dev_name);
 		break;
 
 	case HCI_EV_CONN_REQUEST:
@@ -3457,7 +3458,6 @@ void hci_event_packet(struct hci_dev *hdev, struct sk_buff *skb)
 	case HCI_EV_AUTH_COMPLETE:
 		hci_auth_complete_evt(hdev, skb);
 		pr_info("HCI_EV_AUTH_COMPLETE\n");
-		set_bluetooth_state(1, hdev->dev_name);
 		break;
 
 	case HCI_EV_REMOTE_NAME:
