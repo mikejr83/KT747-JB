@@ -4,7 +4,7 @@ export PARENT_DIR=`readlink -f ..`
 export INITRAMFS_DEST=$KERNELDIR/kernel/usr/initramfs
 export INITRAMFS_SOURCE=`readlink -f ..`/Ramdisks/TW_JB_LJ7
 export CONFIG_SAMMY_BUILD=y
-export PACKAGEDIR=$PARENT_DIR/Packages/TW_JB_ATT
+export PACKAGEDIR=$PARENT_DIR/Packages/TW_JB_SPR
 #Enable FIPS mode
 export USE_SEC_FIPS_MODE=true
 export ARCH=arm
@@ -68,7 +68,7 @@ if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
 	cp -R ../META-INF .
 	rm ramdisk.gz
 	rm zImage
-	rm ../KT747-Kernel-TW-JB-ATT*.zip
+	rm ../KT747-Kernel-TW-JB-SPR*.zip
 	zip -r ../KT747-Kernel-TW-JB-SPR-$curdate.zip .
 	cd $KERNELDIR
 else
