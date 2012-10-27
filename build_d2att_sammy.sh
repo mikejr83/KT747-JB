@@ -69,7 +69,7 @@ if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
 	rm ramdisk.gz
 	rm zImage
 	rm ../KT747-Kernel-TW-JB-ATT*.zip
-	zip -r ../KT747-Kernel-TW-JB-SPR-$curdate.zip .
+	zip -r ../KT747-Kernel-TW-JB-ATT-$curdate.zip .
 	cd $KERNELDIR
 else
 	echo "KERNEL DID NOT BUILD! no zImage exist"
