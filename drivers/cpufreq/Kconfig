@@ -112,7 +112,13 @@ config CPU_FREQ_DEFAULT_GOV_KTOONSERVATIVE
 	  governor. If unsure have a look at the help section of the
 	  driver. Fallback governor will be the performance governor.  This
 	  governor adds the capability of hotpluging.
-  
+
+config CPU_FREQ_DEFAULT_GOV_INTELLIDEMAND
+	bool "intellidemand"
+	select CPU_FREQ_GOV_INTELLIDEMAND
+	---help---
+          Use the CPUFreq governor 'intellidemand' as default.
+
 config CPU_FREQ_DEFAULT_GOV_LAZY
     bool "lazy"
 	select CPU_FREQ_GOV_LAZY
@@ -375,6 +381,12 @@ config CPU_FREQ_GOV_KTOONSERVATIVE
 	  For details, take a look at linux/Documentation/cpu-freq.
 
 	  If in doubt, say N.
+
+config CPU_FREQ_GOV_INTELLIDEMAND
+	tristate "'intellidemand' cpufreq governor"
+	depends on CPU_FREQ
+	---help---
+	  'intellidemand' - an intelligent ondemand governor
 
 config CPU_FREQ_GOV_LAZY
 	tristate "'lazy' cpufreq governor"
