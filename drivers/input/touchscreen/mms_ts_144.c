@@ -3074,8 +3074,16 @@ static ssize_t slide2wake_plug_store(struct device *dev, struct device_attribute
 		s2w_enabled_plug = value ? true : false;
 		if (s2w_enabled_req == 20 || s2w_enabled_req == 21)
 		{
-			s2w_enabled = s2w_enabled_plug; //(s2w_enabled_req - 20) ? true : false;
-			s2w_enabled_req = 0;
+			//s2w_enabled = s2w_enabled_plug; //(s2w_enabled_req - 20) ? true : false;
+			if (s2w_enabled_plug)
+			{
+				if (isasleep)
+					s2w_enabled_req = s2w_enabled_req - 10;
+				else
+					s2w_enabled = (s2w_enabled_req - 20) ? true : false;
+			}
+			else
+				s2w_enabled_req = 0;
 		}
 	}
 
