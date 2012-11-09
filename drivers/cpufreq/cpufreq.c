@@ -2670,7 +2670,7 @@ static void cpufreq_gov_suspend(struct early_suspend *h){
 	else
 		pr_alert("cpufreq_gov_suspend_gov_DENIED2: %s\n", scaling_governor_screen_off_sel);
 
-	if ((bluetooth_scaling_mhz_active == true && Lscreen_off_scaling_mhz > Lbluetooth_scaling_mhz_orig) || (bluetooth_scaling_mhz_active == false))
+	if ((bluetooth_scaling_mhz_active == true && Lscreen_off_scaling_mhz > Lbluetooth_scaling_mhz) || (bluetooth_scaling_mhz_active == false))
 	{
 		if (Lscreen_off_scaling_enable == 1)
 		{
