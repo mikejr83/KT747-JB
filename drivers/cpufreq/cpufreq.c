@@ -2710,7 +2710,7 @@ static void cpufreq_gov_resume(struct early_suspend *h){
 	{
 		pr_alert("cpufreq_gov_resume_gov_DENIED: %s\n", scaling_governor_screen_off_sel_prev);
 	}
-	if (Lscreen_off_scaling_enable == 1)
+	if (Lscreen_off_scaling_enable == 1 && !call_in_progress)
 	{
 		if (vfreq_lock == 1)
 		{
