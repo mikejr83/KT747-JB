@@ -674,6 +674,8 @@ int a2220_filter_vp_cmd(int cmd, int mode)
 	return filtered_cmd;
 }
 
+extern void set_call_in_progress(bool state);
+
 int a2220_set_config(struct a2220_data *a2220, char newid, int mode)
 {
 	int i = 0, rc = 0, size = 0;
@@ -703,15 +705,18 @@ int a2220_set_config(struct a2220_data *a2220, char newid, int mode)
 	case A2220_PATH_INCALL_RECEIVER_NSON:
 		i2c_cmds = phonecall_receiver_nson;
 		size = sizeof(phonecall_receiver_nson);
+		set_call_in_progress(true);
 		break;
 	case A2220_PATH_INCALL_RECEIVER_NSON_WB:
 		i2c_cmds = phonecall_receiver_nson_wb;
 		size = sizeof(phonecall_receiver_nson_wb);
+		set_call_in_progress(true);
 		break;
 	case A2220_PATH_INCALL_RECEIVER_NSOFF:
 		i2c_cmds = phonecall_receiver_nsoff;
 		size = sizeof(phonecall_receiver_nsoff);
-	break;
+		set_call_in_progress(false);
+		break;
 #ifdef AUDIENCE_BYPASS
 	case A2220_PATH_BYPASS_MULTIMEDIA:
 		pr_info("%s:A2220_PATH_BYPASS_MULTIMEDIA\n", __func__);
