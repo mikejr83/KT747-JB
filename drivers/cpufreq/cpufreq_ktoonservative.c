@@ -30,9 +30,9 @@
  */
 
 #define DEF_FREQUENCY_UP_THRESHOLD		(67)
-#define DEF_FREQUENCY_UP_THRESHOLD_HOTPLUG	(65)
-#define DEF_FREQUENCY_DOWN_THRESHOLD		(42)
-#define DEF_FREQUENCY_DOWN_THRESHOLD_HOTPLUG	(30)
+#define DEF_FREQUENCY_UP_THRESHOLD_HOTPLUG	(68)
+#define DEF_FREQUENCY_DOWN_THRESHOLD		(52)
+#define DEF_FREQUENCY_DOWN_THRESHOLD_HOTPLUG	(35)
 
 /*
  * The polling frequency of this governor depends on the capability of
@@ -50,7 +50,7 @@ static unsigned int min_sampling_rate;
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
-#define DEF_SAMPLING_DOWN_FACTOR		(4)
+#define DEF_SAMPLING_DOWN_FACTOR		(1)
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
 #define TRANSITION_LATENCY_LIMIT		(10 * 1000 * 1000)
 
@@ -97,7 +97,7 @@ static struct dbs_tuners {
 	.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD,
 	.down_threshold_hotplug = DEF_FREQUENCY_DOWN_THRESHOLD_HOTPLUG,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
-	.ignore_nice = 1,
+	.ignore_nice = 0,
 	.freq_step = 5,
 };
 
@@ -585,7 +585,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			/* Bring kernel and HW constraints together */
 			min_sampling_rate = max(min_sampling_rate,
 					MIN_LATENCY_MULTIPLIER * latency);
-			dbs_tuners_ins.sampling_rate = 13500;
+			dbs_tuners_ins.sampling_rate = 45000;
 				//max((min_sampling_rate * 20),
 				    //latency * LATENCY_MULTIPLIER);
 
