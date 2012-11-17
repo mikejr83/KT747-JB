@@ -723,6 +723,26 @@ static struct attribute_group lulzactive_attr_group = {
 	.name = "lulzactive",
 };
 
+static void lulzactive_early_suspend(struct early_suspend *handler) {
+	early_suspended = 1;
+	if (debug_mode & LULZACTIVE_DEBUG_EARLY_SUSPEND) {
+		LOGI("%s\n", __func__);
+	}
+}
+
+static void lulzactive_late_resume(struct early_suspend *handler) {
+	early_suspended = 0;
+	if (debug_mode & LULZACTIVE_DEBUG_EARLY_SUSPEND) {
+		LOGI("%s\n", __func__);
+	}
+}
+
+static struct early_suspend lulzactive_power_suspend = {
+	.suspend = lulzactive_early_suspend,
+	.resume = lulzactive_late_resume,
+	.level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
+};
+
 static int cpufreq_governor_lulzactive(struct cpufreq_policy *new_policy,
 		unsigned int event)
 {
@@ -790,26 +810,6 @@ static int cpufreq_governor_lulzactive(struct cpufreq_policy *new_policy,
 	}
 	return 0;
 }
-
-static void lulzactive_early_suspend(struct early_suspend *handler) {
-	early_suspended = 1;
-	if (debug_mode & LULZACTIVE_DEBUG_EARLY_SUSPEND) {
-		LOGI("%s\n", __func__);
-	}
-}
-
-static void lulzactive_late_resume(struct early_suspend *handler) {
-	early_suspended = 0;
-	if (debug_mode & LULZACTIVE_DEBUG_EARLY_SUSPEND) {
-		LOGI("%s\n", __func__);
-	}
-}
-
-static struct early_suspend lulzactive_power_suspend = {
-	.suspend = lulzactive_early_suspend,
-	.resume = lulzactive_late_resume,
-	.level = EARLY_SUSPEND_LEVEL_DISABLE_FB + 1,
-};
 
 static int lulzactive_pm_notifier_event(struct notifier_block *this,
 		unsigned long event, void *ptr)
