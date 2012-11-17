@@ -759,6 +759,7 @@ static int cpufreq_governor_lulzactive(struct cpufreq_policy *new_policy,
 
 		pm_idle_old = pm_idle;
 		pm_idle = cpufreq_lulzactive_idle;
+		register_early_suspend(&lulzactive_power_suspend);
 		break;
 
 	case CPUFREQ_GOV_STOP:
@@ -775,6 +776,7 @@ static int cpufreq_governor_lulzactive(struct cpufreq_policy *new_policy,
 
 		pm_idle = pm_idle_old;
 		del_timer(&pcpu->cpu_timer);
+		unregister_early_suspend(&lulzactive_power_suspend);
 		break;
 
 	case CPUFREQ_GOV_LIMITS:
@@ -915,7 +917,6 @@ static int __init cpufreq_lulzactive_init(void)
 	spin_lock_init(&up_cpumask_lock);
 	
 	register_pm_notifier(&lulzactive_pm_notifier);
-	register_early_suspend(&lulzactive_power_suspend);
 
 	return cpufreq_register_governor(&cpufreq_gov_lulzactive);
 
@@ -933,7 +934,6 @@ module_init(cpufreq_lulzactive_init);
 static void __exit cpufreq_lulzactive_exit(void)
 {
 	cpufreq_unregister_governor(&cpufreq_gov_lulzactive);
-	unregister_early_suspend(&lulzactive_power_suspend);
 	unregister_pm_notifier(&lulzactive_pm_notifier);
 	kthread_stop(up_task);
 	put_task_struct(up_task);
