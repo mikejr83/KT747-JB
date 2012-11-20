@@ -65,6 +65,8 @@ static unsigned bt_uart_off_table[] = {
 };
 #endif
 
+extern void set_bluetooth_state(unsigned int val, __u8  dev_name[248]);
+
 static int bcm4334_bt_rfkill_set_power(void *data, bool blocked)
 {
 	/* rfkill_ops callback. Turn transmitter on when blocked is false */
@@ -94,6 +96,7 @@ static int bcm4334_bt_rfkill_set_power(void *data, bool blocked)
 	}
 #endif
 		pr_info("[BT] Bluetooth Power Off.\n");
+		set_bluetooth_state(0, "");
 		gpio_set_value(gpio_rev(BT_EN), 0);
 	}
 	return 0;
