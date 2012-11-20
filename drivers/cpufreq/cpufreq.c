@@ -47,6 +47,7 @@ static unsigned int Lscreen_off_scaling_mhz_orig = 1512000;
 static unsigned int Lbluetooth_scaling_mhz = 0;
 static unsigned int Lbluetooth_scaling_mhz_orig = 384000;
 static bool bluetooth_scaling_mhz_active = false;
+static bool bluetooth_overwrote_screen_off = false;
 static bool call_in_progress=false;
 static unsigned int vfreq_lock = 0;
 static bool vfreq_lock_tempOFF = false;
@@ -898,15 +899,15 @@ void set_bluetooth_state(unsigned int val, __u8	dev_name[248])
 		}
 		if (val == 1)
 		{
+			bluetooth_scaling_mhz_active = true;
 			value = Lbluetooth_scaling_mhz;
 			cpufreq_set_limit_defered(USER_MIN_START, value);
-			bluetooth_scaling_mhz_active = true;
 		}
 		else
 		{
+			bluetooth_scaling_mhz_active = false;
 			value = Lbluetooth_scaling_mhz_orig;
 			cpufreq_set_limit_defered(USER_MIN_START, value);
-			bluetooth_scaling_mhz_active = false;
 		}
 	}
 }
@@ -2378,9 +2379,24 @@ int cpufreq_set_limit(unsigned int flag, unsigned int value)
 			min_value = user_min_freq_limit;
 	}
 
+	if (bluetooth_overwrote_screen_off && bluetooth_scaling_mhz_active == false)
+	{
+		if (Lscreen_off_scaling_enable == 1 && cpufreq_gov_lcd_status == 0)
+			max_value = Lscreen_off_scaling_mhz;
+		bluetooth_overwrote_screen_off = false;
+	}
+
 	/* max is important */
 	if (min_value > max_value)
-		min_value = max_value;
+	{
+		if (bluetooth_scaling_mhz_active && Lscreen_off_scaling_enable == 1 && cpufreq_gov_lcd_status == 0)
+		{
+			max_value = Lscreen_off_scaling_mhz_orig;
+			bluetooth_overwrote_screen_off = true;
+		}
+		else
+			min_value = max_value;
+	}
 
 	mutex_unlock(&set_cpu_freq_lock);
 
@@ -2645,6 +2661,7 @@ static void cpufreq_gov_suspend(struct early_suspend *h){
 	struct cpufreq_policy *policy = NULL;
 	unsigned int ret = -EINVAL;
 	unsigned int value;
+	cpufreq_gov_lcd_status = 0;
 	if (!cpu_is_offline(0) && scaling_governor_screen_off_sel != NULL && scaling_governor_screen_off_sel[0] != '\0')
 	{
 		policy = cpufreq_cpu_get(0);
@@ -2673,7 +2690,6 @@ static void cpufreq_gov_suspend(struct early_suspend *h){
 				}
 				value = Lscreen_off_scaling_mhz;
 				cpufreq_set_limit_defered(USER_MAX_START, value);
-				cpufreq_gov_lcd_status = 0;
 				pr_alert("cpufreq_gov_suspend_freq: %u\n", value);
 			}
 		}
@@ -2684,6 +2700,7 @@ static void cpufreq_gov_resume(struct early_suspend *h){
 
 	struct cpufreq_policy *policy = NULL;
 	unsigned int value;
+	cpufreq_gov_lcd_status = 1;
 	if (!cpu_is_offline(0) && scaling_governor_screen_off_sel_prev != NULL && scaling_governor_screen_off_sel_prev[0] != '\0')
 	{
 		policy = cpufreq_cpu_get(0);
@@ -2703,7 +2720,6 @@ static void cpufreq_gov_resume(struct early_suspend *h){
 		}
 		value = Lscreen_off_scaling_mhz_orig;
 		cpufreq_set_limit_defered(USER_MAX_START, value);
-		cpufreq_gov_lcd_status = 1;
 		pr_alert("cpufreq_gov_resume_freq: %u\n", value);
 	}
 }
