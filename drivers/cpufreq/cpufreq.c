@@ -49,6 +49,7 @@ static unsigned int Lbluetooth_scaling_mhz_orig = 384000;
 static bool bluetooth_scaling_mhz_active = false;
 static bool bluetooth_overwrote_screen_off = false;
 static bool call_in_progress=false;
+static unsigned int Ldisable_som_call_in_progress = 0;
 static unsigned int vfreq_lock = 0;
 static bool vfreq_lock_tempOFF = false;
 static char scaling_governor_screen_off_sel[16];
@@ -877,6 +878,25 @@ static ssize_t store_bluetooth_scaling_mhz(struct cpufreq_policy *policy,
 	return count;
 }
 
+static ssize_t show_disable_som_call_in_progress(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", Ldisable_som_call_in_progress);
+}
+static ssize_t store_disable_som_call_in_progress(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int value = 0;
+	unsigned int ret;
+	ret = sscanf(buf, "%u", &value);
+	if (value > 1)
+		value = 1;
+	if (value < 0)
+		value = 0;
+	Ldisable_som_call_in_progress = value;
+
+	return count;
+}
+
 void set_bluetooth_state(unsigned int val, __u8	dev_name[248])
 {
 	unsigned int value;
@@ -987,6 +1007,7 @@ cpufreq_freq_attr_rw(touch_booster_second_freq_limit);
 cpufreq_freq_attr_rw(screen_off_scaling_enable);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
 cpufreq_freq_attr_rw(bluetooth_scaling_mhz);
+cpufreq_freq_attr_rw(disable_som_call_in_progress);
 cpufreq_freq_attr_rw(freq_lock);
 cpufreq_freq_attr_rw(UV_mV_table);
 
@@ -1011,6 +1032,7 @@ static struct attribute *default_attrs[] = {
 	&screen_off_scaling_enable.attr,
 	&screen_off_scaling_mhz.attr,
 	&bluetooth_scaling_mhz.attr,
+	&disable_som_call_in_progress.attr,
 	&freq_lock.attr,
 	NULL
 };
@@ -2677,7 +2699,7 @@ static void cpufreq_gov_suspend(struct early_suspend *h){
 	else
 		pr_alert("cpufreq_gov_suspend_gov_DENIED2: %s\n", scaling_governor_screen_off_sel);
 
-	if (!call_in_progress)
+	if (!call_in_progress || Ldisable_som_call_in_progress == 0)
 	{
 		if ((bluetooth_scaling_mhz_active == true && Lscreen_off_scaling_mhz > Lbluetooth_scaling_mhz) || (bluetooth_scaling_mhz_active == false))
 		{
@@ -2711,7 +2733,7 @@ static void cpufreq_gov_resume(struct early_suspend *h){
 	{
 		pr_alert("cpufreq_gov_resume_gov_DENIED: %s\n", scaling_governor_screen_off_sel_prev);
 	}
-	if (Lscreen_off_scaling_enable == 1 && !call_in_progress)
+	if (Lscreen_off_scaling_enable == 1 && (!call_in_progress || Ldisable_som_call_in_progress == 0))
 	{
 		if (vfreq_lock == 1)
 		{
