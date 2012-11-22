@@ -46,10 +46,6 @@ static int dsi_video_enabled;
 
 #define MAX_CONTROLLER	1
 
-extern struct mdp4_overlay_perf perf_request; 
-static struct wake_lock blt_mode_perf_up; 
-static int blt_wake_lock_init = 0; 
-
 static struct vsycn_ctrl {
 	struct device *dev;
 	int inited;
@@ -163,9 +159,6 @@ int mdp4_dsi_video_pipe_commit(int cndx, int wait)
 	struct mdp4_overlay_pipe *real_pipe;
 	unsigned long flags;
 	int cnt = 0;
-	bool blt_mode_perf_backup = false;
-	u32 mdp_bw_backup = 0;
-	u32 mdp_clk_backup = 0;
 
 	vctrl = &vsync_ctrl_db[cndx];
 
@@ -202,18 +195,7 @@ int mdp4_dsi_video_pipe_commit(int cndx, int wait)
 	}
 	spin_unlock_irqrestore(&vctrl->spin_lock, flags);
 
-	if(vctrl->blt_change) {
-		blt_mode_perf_backup = true; 
-		mdp_bw_backup = perf_request.mdp_bw; 
-		mdp_clk_backup = perf_request.mdp_clk_rate; 
-		perf_request.mdp_bw = OVERLAY_PERF_LEVEL_MAX; 
-		perf_request.mdp_clk_rate = mdp_max_clk; 
-	}
-
-	mdp4_overlay_mdp_perf_upd(vctrl->mfd, 1);
-
 	if (vctrl->blt_change) {
-		wake_lock(&blt_mode_perf_up);
 		pipe = vctrl->base_pipe;
 		spin_lock_irqsave(&vctrl->spin_lock, flags);
 		INIT_COMPLETION(vctrl->dmap_comp);
@@ -223,11 +205,6 @@ int mdp4_dsi_video_pipe_commit(int cndx, int wait)
 		mdp4_dsi_video_wait4dmap(0);
 		if (pipe->ov_blt_addr)
 			mdp4_dsi_video_wait4ov(0);
-		if(blt_mode_perf_backup == true){
-			perf_request.mdp_bw = mdp_bw_backup;
-			perf_request.mdp_clk_rate = mdp_clk_backup;
-		}
-		wake_unlock(&blt_mode_perf_up);
 	}
 
 	pipe = vp->plist;
