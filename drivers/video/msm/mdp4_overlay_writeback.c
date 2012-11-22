@@ -83,17 +83,19 @@ int mdp4_overlay_writeback_on(struct platform_device *pdev)
 		pipe = mdp4_overlay_pipe_alloc(OVERLAY_TYPE_BF, MDP4_MIXER2);
 		if (pipe == NULL)
 			pr_info("%s: pipe_alloc failed\n", __func__);
+		else{
 		pipe->pipe_used++;
 		pipe->mixer_stage  = MDP4_MIXER_STAGE_BASE;
 		pipe->mixer_num  = MDP4_MIXER2;
 		pipe->src_format = MDP_ARGB_8888;
-		mdp4_overlay_panel_mode(pipe->mixer_num,
-		MDP4_PANEL_WRITEBACK);
+			mdp4_overlay_panel_mode(pipe->mixer_num,
+				MDP4_PANEL_WRITEBACK);
 		ret = mdp4_overlay_format2pipe(pipe);
 		if (ret < 0)
 			pr_info("%s: format2type failed\n", __func__);
 
 		writeback_pipe = pipe; /* keep it */
+			}
 
 	} else {
 		pipe = writeback_pipe;
