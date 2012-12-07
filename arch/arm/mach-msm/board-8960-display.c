@@ -1442,6 +1442,16 @@ static struct msm_bus_vectors mdp_1080p_vectors[] = {
 	},
 };
 
+static struct msm_bus_vectors mdp_max_vectors[] = { 
+	/* max */ 
+	{ 
+		.src = MSM_BUS_MASTER_MDP_PORT0, 
+		.dst = MSM_BUS_SLAVE_EBI_CH0, 
+		.ab = 2000000000, 
+		.ib = 2000000000, 
+	}, 
+}; 
+
 static struct msm_bus_paths mdp_bus_scale_usecases[] = {
 	{
 		ARRAY_SIZE(mdp_init_vectors),
@@ -1467,6 +1477,10 @@ static struct msm_bus_paths mdp_bus_scale_usecases[] = {
 		ARRAY_SIZE(mdp_1080p_vectors),
 		mdp_1080p_vectors,
 	},
+	{ 
+		ARRAY_SIZE(mdp_max_vectors), 
+		mdp_max_vectors, 
+	}, 
 };
 
 static struct msm_bus_scale_pdata mdp_bus_scale_pdata = {
