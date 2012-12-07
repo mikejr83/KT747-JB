@@ -2066,9 +2066,9 @@ void mdp4_mixer_blend_setup(int mixer)
 		}
 		/* alpha channel is lost on VG pipe when using QSEED or M/N */
 		if (s_pipe->pipe_type == OVERLAY_TYPE_VIDEO &&
-			((s_pipe->op_mode & MDP4_OP_SCALEY_EN) ||
-			(s_pipe->op_mode & MDP4_OP_SCALEX_EN)) &&
-			!(s_pipe->op_mode & (MDP4_OP_SCALEX_PIXEL_RPT | MDP4_OP_SCALEY_PIXEL_RPT)))
+			s_pipe->alpha_enable &&
+			(s_pipe->op_mode & (MDP4_OP_SCALEY_EN | MDP4_OP_SCALEX_EN)) &&
+			!(s_pipe->op_mode & (MDP4_OP_SCALEY_PIXEL_RPT | MDP4_OP_SCALEX_PIXEL_RPT)))
 			alpha_drop = 1;
 
 
@@ -2924,6 +2924,11 @@ void mdp4_overlay_mdp_perf_upd(struct msm_fb_data_type *mfd,
 	if (!mdp4_extn_disp)
 		perf_cur->use_ov1_blt = 0;
 
+#if defined(CONFIG_FB_MSM_MIPI_NOVATEK_BOE_CMD_WVGA_PT) \
+	|| defined(CONFIG_FB_MSM_MIPI_NOVATEK_CMD_WVGA_PT_PANE)
+	/* don't use blt mode in CMD panel */
+	perf_req->use_ov0_blt = 0;
+#endif
 	if (flag) {
 		if (perf_req->mdp_clk_rate > perf_cur->mdp_clk_rate) {
 			mdp_set_core_clk(perf_req->mdp_clk_rate);

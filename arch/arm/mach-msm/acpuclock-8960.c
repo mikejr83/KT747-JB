@@ -1265,28 +1265,19 @@ static void set_speed(struct scalable *sc, struct core_speed *tgt_s,
 		if (reason != SETRATE_HOTPLUG || sc == &scalable[L2]) {
 			set_sec_clk_src(sc, tgt_s->sec_src_sel);
 			set_pri_clk_src(sc, tgt_s->pri_src_sel);
-			hfpll_disable(sc);
-		} else if (reason == SETRATE_HOTPLUG
-			   && msm_pm_verify_cpu_pc(SCALABLE_TO_CPU(sc))) {
-			hfpll_disable(sc);
 		}
+		hfpll_disable(sc);
 	} else if (strt_s->src != HFPLL && tgt_s->src == HFPLL) {
+		hfpll_set_rate(sc, tgt_s);
+		hfpll_enable(sc);
 		/*
 		 * If responding to CPU_UP_PREPARE, we can't change CP15
 		 * registers for the CPU that's coming up since we're not
 		 * running on that CPU.  That's okay though, since the MUX
 		 * source was not changed on the way down, either.
 		 */
-		if (reason != SETRATE_HOTPLUG || sc == &scalable[L2]) {
-			hfpll_set_rate(sc, tgt_s);
-			hfpll_enable(sc);
+		if (reason != SETRATE_HOTPLUG || sc == &scalable[L2])
 			set_pri_clk_src(sc, tgt_s->pri_src_sel);
-		} else if (reason == SETRATE_HOTPLUG
-			   && msm_pm_verify_cpu_pc(SCALABLE_TO_CPU(sc))) {
-			/* PLL was disabled during hot-unplug. Re-enable it. */
-			hfpll_set_rate(sc, tgt_s);
-			hfpll_enable(sc);
-		}
 	} else {
 		if (reason != SETRATE_HOTPLUG || sc == &scalable[L2])
 			set_sec_clk_src(sc, tgt_s->sec_src_sel);
