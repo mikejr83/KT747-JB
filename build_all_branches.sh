@@ -49,6 +49,11 @@ make clean
 echo "Make Mrproper"
 make mrproper
 ./build_d2spr_sammy.sh
+echo "Make Clean"
+make clean
+echo "Make Mrproper"
+make mrproper
+./build_d2vzw_sammy.sh
 
 echo "Switch to JellyBean"
 git checkout jellybean
