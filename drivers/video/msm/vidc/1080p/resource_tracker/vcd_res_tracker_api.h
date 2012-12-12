@@ -17,14 +17,6 @@
 #include "vcd_ddl.h"
 #include "vcd_ddl_utils.h"
 
-#define RESTRK_1080P_VGA_PERF_LEVEL    VCD_MIN_PERF_LEVEL
-#define RESTRK_1080P_720P_PERF_LEVEL   108000
-#define RESTRK_1080P_1080P_PERF_LEVEL  244800
-
-#define RESTRK_1080P_MIN_PERF_LEVEL RESTRK_1080P_VGA_PERF_LEVEL
-#define RESTRK_1080P_MAX_PERF_LEVEL RESTRK_1080P_1080P_PERF_LEVEL
-#define RESTRK_1080P_TURBO_PERF_LEVEL (RESTRK_1080P_MAX_PERF_LEVEL + 1)
-
 void res_trk_init(struct device *device, u32 irq);
 u32 res_trk_power_up(void);
 u32 res_trk_power_down(void);

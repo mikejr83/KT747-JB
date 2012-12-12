@@ -38,20 +38,30 @@
 
 #include "msm_fb_panel.h"
 
+#if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_VIDEO_HD_PT)
+#define MDP_HANG_DEBUG
+#endif
 extern uint32 mdp_hw_revision;
 extern ulong mdp4_display_intf;
 extern spinlock_t mdp_spin_lock;
+#ifdef MDP_UNDERFLOW_RESET_CTRL_CMD
+extern spinlock_t mixer_reset_lock;
+#endif
 extern int mdp_rev;
 extern int mdp_iommu_split_domain;
 extern struct mdp_csc_cfg mdp_csc_convert[4];
+
 extern struct workqueue_struct *mdp_hist_wq;
+
+extern uint32 mdp_intr_mask;
 
 extern int mdp_lut_i;
 extern int mdp_lut_push;
 extern int mdp_lut_push_i;
 extern struct mutex mdp_lut_push_sem;
-extern uint32 mdp_intr_mask;
-
+#ifdef MDP_HANG_DEBUG
+extern void mdp4_dump_regs(void);//JSJEONG
+#endif
 #define MDP4_REVISION_V1		0
 #define MDP4_REVISION_V2		1
 #define MDP4_REVISION_V2_1	2
@@ -96,16 +106,9 @@ extern unsigned char hdmi_prim_display;
 
 struct vsync {
 	ktime_t vsync_time;
-	struct completion vsync_comp;
 	struct device *dev;
 	struct work_struct vsync_work;
 	int vsync_irq_enabled;
-	int vsync_dma_enabled;
-	int disabled_clocks;
-	struct completion vsync_wait;
-	atomic_t suspend;
-	atomic_t vsync_resume;
-	int sysfs_created;
 };
 
 extern struct vsync vsync_cntrl;
@@ -264,7 +267,6 @@ struct mdp_hist_lut_info {
 struct mdp_hist_mgmt {
 	uint32_t block;
 	uint32_t irq_term;
-	uint32_t intr;
 	uint32_t base;
 	struct completion mdp_hist_comp;
 	struct mutex mdp_hist_mutex;
@@ -332,14 +334,6 @@ extern struct mdp_hist_mgmt *mdp_hist_mgmt_array[];
 #define TV_OUT_DMA3_START   BIT(13)
 #define MDP_HIST_DONE       BIT(20)
 
-/*MDP4 MDP histogram interrupts*/
-/*note: these are only applicable on MDP4+ targets*/
-#define INTR_VG1_HISTOGRAM		BIT(5)
-#define INTR_VG2_HISTOGRAM		BIT(6)
-#define INTR_DMA_P_HISTOGRAM		BIT(17)
-#define INTR_DMA_S_HISTOGRAM		BIT(26)
-/*end MDP4 MDP histogram interrupts*/
-
 /* histogram interrupts */
 #define INTR_HIST_DONE			BIT(1)
 #define INTR_HIST_RESET_SEQ_DONE	BIT(0)
@@ -354,6 +348,7 @@ extern struct mdp_hist_mgmt *mdp_hist_mgmt_array[];
 			MDP_DMA_S_DONE| \
 			MDP_DMA_E_DONE| \
 			LCDC_UNDERFLOW| \
+			MDP_HIST_DONE| \
 			TV_ENC_UNDERRUN)
 #endif
 
@@ -735,7 +730,7 @@ extern struct mdp_hist_mgmt *mdp_hist_mgmt_array[];
 #define MDP_DMA_P_LUT_C2_EN   BIT(2)
 #define MDP_DMA_P_LUT_POST    BIT(4)
 
-void mdp_hw_init(int splash);
+void mdp_hw_init(void);
 int mdp_ppp_pipe_wait(void);
 void mdp_pipe_kickoff(uint32 term, struct msm_fb_data_type *mfd);
 void mdp_clk_ctrl(int on);
@@ -785,7 +780,7 @@ void mdp_lcdc_update(struct msm_fb_data_type *mfd);
 int mdp_dsi_video_on(struct platform_device *pdev);
 int mdp_dsi_video_off(struct platform_device *pdev);
 void mdp_dsi_video_update(struct msm_fb_data_type *mfd);
-void mdp3_dsi_cmd_dma_busy_wait(struct msm_fb_data_type *mfd)
+void mdp3_dsi_cmd_dma_busy_wait(struct msm_fb_data_type *mfd);
 static inline int mdp4_dsi_cmd_off(struct platform_device *pdev)
 {
 	return 0;
@@ -847,6 +842,8 @@ static inline int mdp_bus_scale_update_request(uint32_t index)
 void mdp_dma_vsync_ctrl(int enable);
 void mdp_dma_video_vsync_ctrl(int enable);
 void mdp_dma_lcdc_vsync_ctrl(int enable);
+void mdp3_vsync_irq_enable(int intr, int term);
+void mdp3_vsync_irq_disable(int intr, int term);
 
 #ifdef MDP_HW_VSYNC
 void vsync_clk_prepare_enable(void);
@@ -870,6 +867,7 @@ int mdp_histogram_block2mgmt(uint32_t block, struct mdp_hist_mgmt **mgmt);
 void mdp_histogram_handle_isr(struct mdp_hist_mgmt *mgmt);
 void __mdp_histogram_kickoff(struct mdp_hist_mgmt *mgmt);
 void __mdp_histogram_reset(struct mdp_hist_mgmt *mgmt);
+unsigned int mdp_check_suspended(void);
 void mdp_footswitch_ctrl(boolean on);
 
 #ifdef CONFIG_FB_MSM_MDP303
@@ -890,10 +888,13 @@ static inline int mdp4_overlay_dsi_state_get(void)
 {
 	return 0;
 }
+static inline void mdp4_iommu_detach(void)
+{
+	/*empty */
+}
 #endif
 
 void mdp_vid_quant_set(void);
-
 #ifndef CONFIG_FB_MSM_MDP40
 static inline void mdp_dsi_cmd_overlay_suspend(struct msm_fb_data_type *mfd)
 {
@@ -911,6 +912,5 @@ int mdp_ppp_v4l2_overlay_clear(void);
 int mdp_ppp_v4l2_overlay_play(struct fb_info *info,
 	unsigned long srcp0_addr, unsigned long srcp0_size,
 	unsigned long srcp1_addr, unsigned long srcp1_size);
-void mdp_update_pm(struct msm_fb_data_type *mfd, ktime_t pre_vsync);
 
 #endif /* MDP_H */

@@ -111,11 +111,17 @@ static void event_handler(uint32_t opcode,
 			break;
 		} else
 			atomic_set(&prtd->pending_buffer, 0);
-		
+
+		buf = prtd->audio_client->port[IN].buf;
+		if (runtime->status->hw_ptr >= runtime->control->appl_ptr) {
+			memset((void *)buf[0].data +
+				(prtd->out_head * prtd->pcm_count),
+				0, prtd->pcm_count);
+		}
+
 		pr_debug("%s:writing %d bytes of buffer to dsp 2\n",
 				__func__, prtd->pcm_count);
 
-		buf = prtd->audio_client->port[IN].buf;
 		param.paddr = (unsigned long)buf[0].phys
 				+ (prtd->out_head * prtd->pcm_count);
 		param.len = prtd->pcm_count;
@@ -286,6 +292,7 @@ static int msm_pcm_open(struct snd_pcm_substream *substream)
 		kfree(prtd);
 		return -ENOMEM;
 	}
+	prtd->audio_client->perf_mode = false;
 	if (substream->stream == SNDRV_PCM_STREAM_PLAYBACK) {
 		ret = q6asm_open_write(prtd->audio_client, FORMAT_LINEAR_PCM);
 		if (ret < 0) {
@@ -308,6 +315,7 @@ static int msm_pcm_open(struct snd_pcm_substream *substream)
 	pr_debug("%s: session ID %d\n", __func__, prtd->audio_client->session);
 	prtd->session_id = prtd->audio_client->session;
 	msm_pcm_routing_reg_phy_stream(soc_prtd->dai_link->be_id,
+		prtd->audio_client->perf_mode,
 		prtd->session_id, substream->stream);
 
 	ret = snd_pcm_hw_constraint_list(runtime, 0,

@@ -56,7 +56,7 @@ obj-$(CONFIG_SND_SOC_MSM8X60) += snd-soc-lpass-dma.o
 
 obj-$(CONFIG_SND_SOC_MSM_QDSP6_INTF) += qdsp6/
 
-snd-soc-qdsp6-objs := msm-dai-q6.o msm-pcm-q6.o msm-multi-ch-pcm-q6.o msm-pcm-routing.o msm-dai-fe.o msm-compr-q6.o
+snd-soc-qdsp6-objs := msm-dai-q6.o msm-pcm-q6.o msm-multi-ch-pcm-q6.o msm-lowlatency-pcm-q6.o msm-pcm-routing.o msm-dai-fe.o msm-compr-q6.o
 obj-$(CONFIG_SND_SOC_MSM_QDSP6_HDMI_AUDIO) += msm-dai-q6-hdmi.o
 obj-$(CONFIG_SND_SOC_VOICE) += msm-pcm-voice.o msm-pcm-voip.o
 snd-soc-qdsp6-objs += msm-pcm-lpa.o msm-pcm-afe.o
@@ -72,7 +72,11 @@ else ifdef CONFIG_MACH_M2_VZW
 snd-soc-msm8960-objs := msm8960-d2.o
 else ifdef CONFIG_MACH_M2_DCM
 snd-soc-msm8960-objs := msm8960-d2.o
+else ifdef CONFIG_MACH_K2_KDI
+snd-soc-msm8960-objs := msm8960-d2.o
 else ifdef CONFIG_MACH_GOGH
+snd-soc-msm8960-objs := msm8960-d2.o
+else ifdef CONFIG_MACH_INFINITE
 snd-soc-msm8960-objs := msm8960-d2.o
 else ifdef CONFIG_MACH_JASPER
 snd-soc-msm8960-objs := msm8960-d2.o
@@ -81,6 +85,12 @@ snd-soc-msm8960-objs := msm8960-d2.o
 else ifdef CONFIG_MACH_COMANCHE
 snd-soc-msm8960-objs := msm8960-d2.o
 else ifdef CONFIG_MACH_EXPRESS
+snd-soc-msm8960-objs := msm8960-d2.o
+else ifdef CONFIG_MACH_STRETTO
+snd-soc-msm8960-objs := msm8960-d2.o
+else ifdef CONFIG_MACH_APEXQ
+snd-soc-msm8960-objs := msm8960-jaguar.o
+else ifdef CONFIG_MACH_SUPERIORLTE_SKT
 snd-soc-msm8960-objs := msm8960-d2.o
 else ifdef CONFIG_MACH_JAGUAR
 snd-soc-msm8960-objs := msm8960-jaguar.o

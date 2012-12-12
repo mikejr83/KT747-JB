@@ -36,7 +36,7 @@
 #include <mach/rpm-regulator.h>
 
 #include "acpuclock.h"
-#ifdef CONFIG_SEC_DEBUG_DCVS_LOG
+#if defined(CONFIG_SEC_DEBUG_DCVS_LOG) || defined(CONFIG_SEC_L1_DCACHE_PANIC_CHK)
 #include <mach/sec_debug.h>
 #endif
 #include "pm.h"
@@ -80,7 +80,8 @@
 #define SECCLKAGD		BIT(4)
 
 /* PTE EFUSE register. */
-#define QFPROM_PTE_EFUSE_ADDR	(MSM_QFPROM_BASE + 0x00C0)
+#define QFPROM_PTE_ROW0_MSB	(MSM_QFPROM_BASE + 0x00BC)
+#define QFPROM_PTE_ROW1_LSB	(MSM_QFPROM_BASE + 0x00C0)
 
 enum scalables {
 	CPU0 = 0,
@@ -352,12 +353,11 @@ static struct scalable scalable_8627[] = {
 		},
 };
 
+static struct scalable *scalable;
 static struct l2_level *l2_freq_tbl;
 static struct acpu_level *acpu_freq_tbl;
 static int l2_freq_tbl_size;
 uint32_t global_pvs; /*  This code is temporary code */
-static struct scalable *scalable;
-#define SCALABLE_TO_CPU(sc) ((sc) - scalable)
 
 /* Instantaneous bandwidth requests in MB/s. */
 #define BW_MBPS(_bw) \
@@ -1174,37 +1174,28 @@ static void set_speed(struct scalable *sc, struct core_speed *tgt_s,
 		set_pri_clk_src(sc, tgt_s->pri_src_sel);
 	} else if (strt_s->src == HFPLL && tgt_s->src != HFPLL) {
 		/*
-		 * If responding to CPU_DEAD we must be running on another CPU.
-		 * Therefore, we can't access the downed CPU's clock MUX CP15
-		 * registers from here and can't change clock sources. If the
-		 * CPU is collapsed, however, it is still safe to turn off the
-		 * PLL without switching the MUX away from it.
+		 * If responding to CPU_DEAD we must be running on another
+		 * CPU.  Therefore, we can't access the downed CPU's CP15
+		 * clock MUX registers from here and can't change clock sources.
+		 * Just turn off the PLL- since the CPU is down already, halting
+		 * its clock should be safe.
 		 */
 		if (reason != SETRATE_HOTPLUG || sc == &scalable[L2]) {
 			set_sec_clk_src(sc, tgt_s->sec_src_sel);
 			set_pri_clk_src(sc, tgt_s->pri_src_sel);
-			hfpll_disable(sc);
-		} else if (reason == SETRATE_HOTPLUG
-			   && msm_pm_verify_cpu_pc(SCALABLE_TO_CPU(sc))) {
-			hfpll_disable(sc);
 		}
+		hfpll_disable(sc);
 	} else if (strt_s->src != HFPLL && tgt_s->src == HFPLL) {
+		hfpll_set_rate(sc, tgt_s);
+		hfpll_enable(sc);
 		/*
 		 * If responding to CPU_UP_PREPARE, we can't change CP15
 		 * registers for the CPU that's coming up since we're not
 		 * running on that CPU.  That's okay though, since the MUX
 		 * source was not changed on the way down, either.
 		 */
-		if (reason != SETRATE_HOTPLUG || sc == &scalable[L2]) {
-			hfpll_set_rate(sc, tgt_s);
-			hfpll_enable(sc);
+		if (reason != SETRATE_HOTPLUG || sc == &scalable[L2])
 			set_pri_clk_src(sc, tgt_s->pri_src_sel);
-		} else if (reason == SETRATE_HOTPLUG
-			   && msm_pm_verify_cpu_pc(SCALABLE_TO_CPU(sc))) {
-			/* PLL was disabled during hot-unplug. Re-enable it. */
-			hfpll_set_rate(sc, tgt_s);
-			hfpll_enable(sc);
-		}
 	} else {
 		if (reason != SETRATE_HOTPLUG || sc == &scalable[L2])
 			set_sec_clk_src(sc, tgt_s->sec_src_sel);
@@ -1736,16 +1727,38 @@ static void kraitv2_apply_vmin(struct acpu_level *tbl)
 			tbl->vdd_core = MIN_VDD_SC;
 }
 
+#ifdef CONFIG_SEC_L1_DCACHE_PANIC_CHK
+uint32_t global_sec_pvs_value;
+static int __init sec_pvs_setup(char *str)
+{
+	uint32_t sec_pvs_value = memparse(str, &str);
+
+	global_sec_pvs_value = sec_pvs_value;
+	pr_info("%s: global_sec_pvs_value=%x\n",
+			__func__, global_sec_pvs_value);
+
+	return 1;
+}
+
+__setup("sec_pvs=", sec_pvs_setup);
+
+static void boost_vdd_core(struct acpu_level *tbl)
+{
+	for (; tbl->speed.khz != 0; tbl++)
+		tbl->vdd_core += 25000;
+}
+#endif
+
 static struct acpu_level * __init select_freq_plan(void)
 {
 	struct acpu_level *l, *max_acpu_level = NULL;
 
 	/* Select frequency tables. */
 	if (cpu_is_msm8960()) {
-		uint32_t pte_efuse, pvs;
+		uint32_t pte_efuse, pvs, fmax, pvs_leakage;
 		struct acpu_level *v1, *v2;
 
-		pte_efuse = readl_relaxed(QFPROM_PTE_EFUSE_ADDR);
+		pte_efuse = readl_relaxed(QFPROM_PTE_ROW1_LSB);
 		pvs = (pte_efuse >> 10) & 0x7;
 		if (pvs == 0x7)
 			pvs = (pte_efuse >> 13) & 0x7;
@@ -1753,6 +1766,11 @@ static struct acpu_level * __init select_freq_plan(void)
 		/*  This code is temporary */
 		global_pvs = pvs;
 
+		pte_efuse = readl_relaxed(QFPROM_PTE_ROW0_MSB);
+		fmax = (pte_efuse >> 20) & 0x3;
+		pvs_leakage = (pte_efuse >> 16) & 0x3;
+
+		pr_alert("ACPU PVS:[%d],FMAX[%d]\n", pvs, fmax);
 		switch (pvs) {
 		case 0x0:
 		case 0x7:
@@ -1780,7 +1798,20 @@ static struct acpu_level * __init select_freq_plan(void)
 			v2 = acpu_freq_tbl_8960_kraitv2_stock; //acpu_freq_tbl_8960_kraitv2_slow;
 			break;
 		}
-
+#ifdef CONFIG_SEC_L1_DCACHE_PANIC_CHK
+#if defined(CONFIG_MSM_DCVS_FOR_MSM8260A)
+		if (((pvs == 0x3) && (global_sec_pvs_value == 0xfafa))
+				|| ((pvs == 0x1) && (fmax != 0x1)
+					&& (global_sec_pvs_value == 0xfafa))) {
+#else
+		if (((pvs == 0x3) && (global_sec_pvs_value == 0xfafa))
+				|| ((pvs == 0x1)
+					&& (global_sec_pvs_value == 0xfafa))) {
+#endif
+			pr_alert("ACPU PVS: pvs[%d]:fmax[%d]-r\n", pvs, fmax);
+			boost_vdd_core(v2);
+		}
+#endif
 		scalable = scalable_8960;
 		if (cpu_is_krait_v1()) {
 			acpu_freq_tbl = v1;

@@ -387,6 +387,10 @@ static ssize_t mdp_stat_read(
 	dlen -= len;
 	len = snprintf(bp, dlen, "dmas: %08lu\n",
 					mdp4_stat.kickoff_dmas);
+	bp += len;
+	dlen -= len;
+	len = snprintf(bp, dlen, "mixer_reset: %08lu\n",
+					mdp4_stat.mixer_reset);
 
 	bp += len;
 	dlen -= len;
@@ -486,19 +490,19 @@ static ssize_t mdp_stat_read(
 	len = snprintf(bp, dlen, "err_mixer : %08lu\t", mdp4_stat.err_mixer);
 	bp += len;
 	dlen -= len;
-	len = snprintf(bp, dlen, "err_size  : %08lu\n", mdp4_stat.err_size);
+	len = snprintf(bp, dlen, "err_size : %08lu\n", mdp4_stat.err_size);
 	bp += len;
 	dlen -= len;
-	len = snprintf(bp, dlen, "err_scale : %08lu\t", mdp4_stat.err_scale);
+	len = snprintf(bp, dlen, "err_scale: %08lu\t", mdp4_stat.err_scale);
 	bp += len;
 	dlen -= len;
 	len = snprintf(bp, dlen, "err_format: %08lu\n", mdp4_stat.err_format);
 	bp += len;
 	dlen -= len;
-	len = snprintf(bp, dlen, "err_play  : %08lu\t", mdp4_stat.err_play);
+	len = snprintf(bp, dlen, "err_play:  %08lu\t", mdp4_stat.err_play);
 	bp += len;
 	dlen -= len;
-	len = snprintf(bp, dlen, "err_stage : %08lu\n", mdp4_stat.err_stage);
+	len = snprintf(bp, dlen, "err_stage: %08lu\n", mdp4_stat.err_stage);
 	bp += len;
 	dlen -= len;
 	len = snprintf(bp, dlen, "err_underflow: %08lu\n\n",
@@ -568,12 +572,12 @@ struct mddi_reg {
 };
 
 static struct mddi_reg mddi_regs_list[] = {
-	{"MDDI_CMD", MDDI_CMD},		/* 0x0000 */
-	{"MDDI_VERSION", MDDI_VERSION},		/* 0x0004 */
-	{"MDDI_PRI_PTR", MDDI_PRI_PTR},		/* 0x0008 */
-	{"MDDI_BPS",  MDDI_BPS},		/* 0x0010 */
-	{"MDDI_SPM", MDDI_SPM},		/* 0x0014 */
-	{"MDDI_INT", MDDI_INT},		/* 0x0018 */
+	{"MDDI_CMD", MDDI_CMD},	 	/* 0x0000 */
+	{"MDDI_VERSION", MDDI_VERSION},  /* 0x0004 */
+	{"MDDI_PRI_PTR", MDDI_PRI_PTR},  /* 0x0008 */
+	{"MDDI_BPS",  MDDI_BPS}, 	/* 0x0010 */
+	{"MDDI_SPM", MDDI_SPM}, 	/* 0x0014 */
+	{"MDDI_INT", MDDI_INT}, 	/* 0x0018 */
 	{"MDDI_INTEN", MDDI_INTEN},	/* 0x001c */
 	{"MDDI_REV_PTR", MDDI_REV_PTR},	/* 0x0020 */
 	{"MDDI_	REV_SIZE", MDDI_REV_SIZE},/* 0x0024 */
@@ -582,7 +586,7 @@ static struct mddi_reg mddi_regs_list[] = {
 	{"MDDI_REV_CRC_ERR", MDDI_REV_CRC_ERR}, /* 0x0030 */
 	{"MDDI_TA1_LEN", MDDI_TA1_LEN}, /* 0x0034 */
 	{"MDDI_TA2_LEN", MDDI_TA2_LEN}, /* 0x0038 */
-	{"MDDI_TEST", MDDI_TEST},		/* 0x0040 */
+	{"MDDI_TEST", MDDI_TEST}, 	/* 0x0040 */
 	{"MDDI_REV_PKT_CNT", MDDI_REV_PKT_CNT}, /* 0x0044 */
 	{"MDDI_DRIVE_HI", MDDI_DRIVE_HI},/* 0x0048 */
 	{"MDDI_DRIVE_LO", MDDI_DRIVE_LO},	/* 0x004c */

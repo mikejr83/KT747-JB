@@ -71,6 +71,7 @@ static struct kgsl_iommu_device *get_iommu_device(struct kgsl_iommu_unit *unit,
 	return NULL;
 }
 
+#ifdef CONFIG_MSM_IOMMU
 static int kgsl_iommu_fault_handler(struct iommu_domain *domain,
 	struct device *dev, unsigned long addr, int flags)
 {
@@ -99,6 +100,7 @@ static int kgsl_iommu_fault_handler(struct iommu_domain *domain,
 
 	return 0;
 }
+#endif
 
 /*
  * kgsl_iommu_disable_clk - Disable iommu clocks
@@ -324,9 +326,11 @@ void *kgsl_iommu_create_pagetable(void)
 		KGSL_CORE_ERR("Failed to create iommu domain\n");
 		kfree(iommu_pt);
 		return NULL;
+#ifdef CONFIG_MSM_IOMMU
 	} else {
 		iommu_set_fault_handler(iommu_pt->domain,
 			kgsl_iommu_fault_handler);
+#endif
 	}
 
 	return iommu_pt;
@@ -918,7 +922,6 @@ static void kgsl_iommu_stop(struct kgsl_mmu *mmu)
 	 */
 
 	if (mmu->flags & KGSL_FLAGS_STARTED) {
-		kgsl_regwrite(mmu->device, MH_MMU_CONFIG, 0x00000000);
 		/* detach iommu attachment */
 		kgsl_detach_pagetable_iommu_domain(mmu);
 		mmu->hwpagetable = NULL;
@@ -1043,7 +1046,7 @@ static void kgsl_iommu_default_setstate(struct kgsl_mmu *mmu,
 	/* Mask off the lsb of the pt base address since lsb will not change */
 	pt_base &= (KGSL_IOMMU_TTBR0_PA_MASK << KGSL_IOMMU_TTBR0_PA_SHIFT);
 	if (flags & KGSL_MMUFLAGS_PTUPDATE) {
-		kgsl_idle(mmu->device, KGSL_TIMEOUT_DEFAULT);
+		kgsl_idle(mmu->device);
 		for (i = 0; i < iommu->unit_count; i++) {
 			/* get the lsb value which should not change when
 			 * changing ttbr0 */

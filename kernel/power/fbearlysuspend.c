@@ -83,6 +83,7 @@ static ssize_t wait_for_fb_sleep_show(struct kobject *kobj,
 			sysfs_notify(power_kobj, NULL, "wait_for_fb_status");
 		}
 	}
+
 	return s - buf;
 }
 
@@ -115,7 +116,7 @@ static ssize_t wait_for_fb_wake_show(struct kobject *kobj,
 }
 
 static ssize_t wait_for_fb_status_show(struct kobject *kobj,
-	struct kobj_attribute *attr, char *buf)
+				       struct kobj_attribute *attr, char *buf)
 {
 	int ret = 0;
 
@@ -127,14 +128,14 @@ static ssize_t wait_for_fb_status_show(struct kobject *kobj,
 	return ret;
 }
 
-#define power_ro_attr(_name)        \
-	static struct kobj_attribute _name##_attr = {  \
-		.attr  = {        \
-			.name = __stringify(_name),  \
-			.mode = 0444,      \
-		},          \
-		.show  = _name##_show,      \
-		.store  = NULL,        \
+#define power_ro_attr(_name)				\
+	static struct kobj_attribute _name##_attr = {	\
+		.attr	= {				\
+			.name = __stringify(_name),	\
+			.mode = 0444,			\
+		},					\
+		.show	= _name##_show,			\
+		.store	= NULL,				\
 	}
 
 power_ro_attr(wait_for_fb_sleep);

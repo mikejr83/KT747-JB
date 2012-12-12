@@ -88,7 +88,7 @@ static struct gpiomux_setting gsbi12 = {
 
 static struct gpiomux_setting cdc_mclk = {
 	.func = GPIOMUX_FUNC_1,
-	.drv = GPIOMUX_DRV_8MA,
+	.drv = GPIOMUX_DRV_2MA,
 	.pull = GPIOMUX_PULL_NONE,
 };
 
@@ -248,6 +248,27 @@ static struct gpiomux_setting hdmi_active_4_cfg = {
 };
 #endif
 
+#if defined(CONFIG_VIDEO_MHL_TAB_V2)
+static struct gpiomux_setting mhl_suspend_cfg = {
+	.func = GPIOMUX_FUNC_GPIO,
+	.drv = GPIOMUX_DRV_2MA,
+	.pull = GPIOMUX_PULL_DOWN,
+};
+
+static struct gpiomux_setting mhl_active_1_cfg = {
+	.func = GPIOMUX_FUNC_GPIO,
+	.drv = GPIOMUX_DRV_2MA,
+	.pull = GPIOMUX_PULL_DOWN,
+	.dir = GPIOMUX_OUT_LOW,
+};
+
+static struct gpiomux_setting mhl_active_2_cfg = {
+	.func = GPIOMUX_FUNC_GPIO,
+	.drv = GPIOMUX_DRV_2MA,
+	.pull = GPIOMUX_PULL_NONE,
+};
+
+#endif
 #ifdef CONFIG_USB_SWITCH_FSA9485
 static struct gpiomux_setting fsa9485_suspend_cfg = {
 	.func = GPIOMUX_FUNC_GPIO,
@@ -363,13 +384,6 @@ static struct msm_gpiomux_config msm8960_gsbi_configs[] __initdata = {
 		},
 	},
 	{
-		.gpio      = 7,		/* GSBI1 QUP SPI_DATA_MISO */
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &spi_suspended_config,
-			[GPIOMUX_ACTIVE] = &spi_active,
-		},
-	},
-	{
 		.gpio      = 8,		/* GSBI1 QUP SPI_CS_N */
 		.settings = {
 			[GPIOMUX_SUSPENDED] = &gsbi1,
@@ -379,13 +393,6 @@ static struct msm_gpiomux_config msm8960_gsbi_configs[] __initdata = {
 		.gpio      = 9,		/* GSBI1 QUP SPI_CLK */
 		.settings = {
 			[GPIOMUX_SUSPENDED] = &gsbi1,
-		},
-	},
-	{
-		.gpio      = 14,		/* GSBI1 SPI_CS_1 */
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &spi_suspended_config2,
-			[GPIOMUX_ACTIVE] = &spi_active_config2,
 		},
 	},
 	{
@@ -551,24 +558,6 @@ static struct msm_gpiomux_config nc_configs[] __initdata = {
 	},
 	{
 		.gpio = GPIO_NC_77,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &nc_cfg,
-		},
-	},
-	{
-		.gpio = GPIO_NC_99,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &nc_cfg,
-		},
-	},
-	{
-		.gpio = GPIO_NC_100,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &nc_cfg,
-		},
-	},
-	{
-		.gpio = GPIO_NC_101,
 		.settings = {
 			[GPIOMUX_SUSPENDED] = &nc_cfg,
 		},
@@ -782,13 +771,6 @@ static struct msm_gpiomux_config mdm_configs[] __initdata = {
 			[GPIOMUX_SUSPENDED] = &mdm2ap_errfatal_cfg,
 		}
 	},
-	/* AP2MDM_ERRFATAL */
-	{
-		.gpio = 95,
-		.settings = {
-			[GPIOMUX_SUSPENDED] = &ap2mdm_cfg,
-		}
-	},
 	/* AP2MDM_KPDPWR_N */
 	{
 		.gpio = 81,
@@ -810,46 +792,70 @@ static struct msm_gpiomux_config msm8960_mdp_vsync_configs[] __initdata = {
 
 #ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
 static struct msm_gpiomux_config msm8960_hdmi_configs[] __initdata = {
-	{
-		.gpio = 99,
-		.settings = {
-			[GPIOMUX_ACTIVE]    = &hdmi_active_1_cfg,
-			[GPIOMUX_SUSPENDED] = &hdmi_suspend_cfg,
-		},
-	},
-	{
+	{/*HDMI SCL*/
 		.gpio = 100,
 		.settings = {
 			[GPIOMUX_ACTIVE]    = &hdmi_active_1_cfg,
 			[GPIOMUX_SUSPENDED] = &hdmi_suspend_cfg,
 		},
 	},
-	{
+	{/*HDMI SDA*/
 		.gpio = 101,
 		.settings = {
 			[GPIOMUX_ACTIVE]    = &hdmi_active_1_cfg,
 			[GPIOMUX_SUSPENDED] = &hdmi_suspend_cfg,
 		},
 	},
-	{
+	{ /*HDMI HPD*/
 		.gpio = 102,
 		.settings = {
 			[GPIOMUX_ACTIVE]    = &hdmi_active_2_cfg,
 			[GPIOMUX_SUSPENDED] = &hdmi_suspend_cfg,
 		},
 	},
+};
+#endif
+
+#if defined(CONFIG_VIDEO_MHL_TAB_V2)
+static struct msm_gpiomux_config msm8960_mhl_configs[] __initdata = {
 	{
-		.gpio = 15,
+		.gpio = GPIO_MHL_WAKE_UP,
 		.settings = {
-			[GPIOMUX_ACTIVE]    = &hdmi_active_3_cfg,
+			[GPIOMUX_SUSPENDED] = &mhl_suspend_cfg,
+		},
+	},
+	{
+		.gpio = GPIO_MHL_INT,
+		.settings = {
+			[GPIOMUX_ACTIVE]    = &hdmi_active_1_cfg,
 			[GPIOMUX_SUSPENDED] = &hdmi_suspend_cfg,
 		},
 	},
 	{
-		.gpio = 66,
+		.gpio = GPIO_MHL_EN,
 		.settings = {
-			[GPIOMUX_ACTIVE]    = &hdmi_active_4_cfg,
-			[GPIOMUX_SUSPENDED] = &hdmi_suspend_cfg,
+			[GPIOMUX_ACTIVE]    = &mhl_active_1_cfg,
+			[GPIOMUX_SUSPENDED] = &mhl_suspend_cfg,
+		},
+	},
+	{
+		.gpio = GPIO_MHL_RST,
+		.settings = {
+			[GPIOMUX_ACTIVE]    = &mhl_active_1_cfg,
+			[GPIOMUX_SUSPENDED] = &mhl_suspend_cfg,
+		},
+	},
+
+	{
+		.gpio = GPIO_MHL_SDA,
+		.settings = {
+			[GPIOMUX_SUSPENDED] = &mhl_suspend_cfg,
+		},
+	},
+	{
+		.gpio = GPIO_MHL_SCL,
+		.settings = {
+			[GPIOMUX_SUSPENDED] = &mhl_suspend_cfg,
 		},
 	},
 };
@@ -950,6 +956,10 @@ int __init msm8960_init_gpiomux(void)
 #ifdef CONFIG_FB_MSM_HDMI_MSM_PANEL
 	msm_gpiomux_install(msm8960_hdmi_configs,
 			ARRAY_SIZE(msm8960_hdmi_configs));
+#endif
+#if defined(CONFIG_VIDEO_MHL_TAB_V2)
+	msm_gpiomux_install(msm8960_mhl_configs,
+			ARRAY_SIZE(msm8960_mhl_configs));
 #endif
 
 	msm_gpiomux_install(msm8960_mdp_vsync_configs,

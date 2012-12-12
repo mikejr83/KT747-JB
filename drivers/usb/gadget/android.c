@@ -52,7 +52,6 @@
 #include "f_rmnet_sdio.c"
 #include "f_rmnet_smd_sdio.c"
 #include "f_rmnet.c"
-#include "f_audio_source.c"
 #include "f_mass_storage.c"
 #include "u_serial.c"
 #include "u_sdio.c"
@@ -73,10 +72,12 @@
 #else
 #include "f_mtp.c"
 #endif
+
 #include "f_accessory.c"
 #define USB_ETH_RNDIS y
 #include "f_rndis.c"
 #include "rndis.c"
+#include "f_audio_source.c"
 
 #ifdef CONFIG_USB_G_ANDROID_SAMSUNG_DTF
 #include "f_dtf.c"
@@ -233,8 +234,8 @@ static void android_enable(struct android_dev *dev)
 {
 	struct usb_composite_dev *cdev = dev->cdev;
 
-	if (WARN_ON(!dev->disable_depth))
-		return;
+	BUG_ON(!mutex_is_locked(&dev->mutex));
+	BUG_ON(!dev->disable_depth);
 
 	if (--dev->disable_depth == 0) {
 		usb_add_config(cdev, &android_config_driver,
@@ -246,6 +247,8 @@ static void android_enable(struct android_dev *dev)
 static void android_disable(struct android_dev *dev)
 {
 	struct usb_composite_dev *cdev = dev->cdev;
+
+	BUG_ON(!mutex_is_locked(&dev->mutex));
 
 	if (dev->disable_depth++ == 0) {
 		usb_gadget_disconnect(cdev->gadget);
@@ -533,15 +536,13 @@ static struct android_usb_function serial_function = {
 };
 #endif
 
+/* ADB */
 struct adb_data {
 	bool opened;
 	bool enabled;
 };
 
-/* ADB */
-static int
-adb_function_init(struct android_usb_function *f,
-		struct usb_composite_dev *cdev)
+static int adb_function_init(struct android_usb_function *f, struct usb_composite_dev *cdev)
 {
 	f->config = kzalloc(sizeof(struct adb_data), GFP_KERNEL);
 	if (!f->config)
@@ -623,7 +624,6 @@ static void adb_closed_callback(void)
 
 	mutex_unlock(&dev->mutex);
 }
-
 
 #define MAX_ACM_INSTANCES 4
 struct acm_function_config {
@@ -1000,7 +1000,7 @@ static int mass_storage_function_init(struct android_usb_function *f,
 								GFP_KERNEL);
 	if (!config)
 		return -ENOMEM;
-#define CONFIG_USB_MASS_STORAGE_LUN_NUMBER_2
+
 #ifdef CONFIG_USB_MASS_STORAGE_LUN_NUMBER_2
 	config->fsg.nluns = 2;
 #else
@@ -1154,65 +1154,65 @@ static struct android_usb_function dtf_function = {
 #endif /* CONFIG_USB_G_ANDROID_SAMSUNG_DTF */
 
 static int audio_source_function_init(struct android_usb_function *f,
-			struct usb_composite_dev *cdev)
+                        struct usb_composite_dev *cdev)
 {
-	struct audio_source_config *config;
+        struct audio_source_config *config;
 
-	config = kzalloc(sizeof(struct audio_source_config), GFP_KERNEL);
-	if (!config)
-		return -ENOMEM;
-	config->card = -1;
-	config->device = -1;
-	f->config = config;
-	return 0;
+        config = kzalloc(sizeof(struct audio_source_config), GFP_KERNEL);
+        if (!config)
+                return -ENOMEM;
+        config->card = -1;
+        config->device = -1;
+        f->config = config;
+        return 0;
 }
 
 static void audio_source_function_cleanup(struct android_usb_function *f)
 {
-	kfree(f->config);
+        kfree(f->config);
 }
 
 static int audio_source_function_bind_config(struct android_usb_function *f,
-						struct usb_configuration *c)
+                                                struct usb_configuration *c)
 {
-	struct audio_source_config *config = f->config;
+        struct audio_source_config *config = f->config;
 
-	return audio_source_bind_config(c, config);
+        return audio_source_bind_config(c, config);
 }
 
 static void audio_source_function_unbind_config(struct android_usb_function *f,
-						struct usb_configuration *c)
+                                                struct usb_configuration *c)
 {
-	struct audio_source_config *config = f->config;
+        struct audio_source_config *config = f->config;
 
-	config->card = -1;
-	config->device = -1;
+        config->card = -1;
+        config->device = -1;
 }
 
 static ssize_t audio_source_pcm_show(struct device *dev,
-		struct device_attribute *attr, char *buf)
+                struct device_attribute *attr, char *buf)
 {
-	struct android_usb_function *f = dev_get_drvdata(dev);
-	struct audio_source_config *config = f->config;
+        struct android_usb_function *f = dev_get_drvdata(dev);
+        struct audio_source_config *config = f->config;
 
-	/* print PCM card and device numbers */
-	return sprintf(buf, "%d %d\n", config->card, config->device);
+        /* print PCM card and device numbers */
+        return sprintf(buf, "%d %d\n", config->card, config->device);
 }
 
 static DEVICE_ATTR(pcm, S_IRUGO | S_IWUSR, audio_source_pcm_show, NULL);
 
 static struct device_attribute *audio_source_function_attributes[] = {
-	&dev_attr_pcm,
-	NULL
+        &dev_attr_pcm,
+        NULL
 };
 
 static struct android_usb_function audio_source_function = {
-	.name		= "audio_source",
-	.init		= audio_source_function_init,
-	.cleanup	= audio_source_function_cleanup,
-	.bind_config	= audio_source_function_bind_config,
-	.unbind_config	= audio_source_function_unbind_config,
-	.attributes	= audio_source_function_attributes,
+        .name           = "audio_source",
+        .init           = audio_source_function_init,
+        .cleanup        = audio_source_function_cleanup,
+        .bind_config    = audio_source_function_bind_config,
+        .unbind_config  = audio_source_function_unbind_config,
+        .attributes     = audio_source_function_attributes,
 };
 
 static struct android_usb_function *supported_functions[] = {
@@ -1232,10 +1232,10 @@ static struct android_usb_function *supported_functions[] = {
 #endif
 	&mass_storage_function,
 	&accessory_function,
+	&audio_source_function,
 #ifdef CONFIG_USB_G_ANDROID_SAMSUNG_DTF
 	&dtf_function,
 #endif  /* CONFIG_USB_G_ANDROID_SAMSUNG_DTF */
-	&audio_source_function,
 	NULL
 };
 
@@ -1389,7 +1389,6 @@ functions_show(struct device *pdev, struct device_attribute *attr, char *buf)
 	char *buff = buf;
 
 	mutex_lock(&dev->mutex);
-
 	list_for_each_entry(f, &dev->enabled_functions, enabled_list) {
 		printk(KERN_DEBUG "usb: %s enabled_func=%s\n",
 				__func__, f->name);
@@ -1802,11 +1801,6 @@ static void android_disconnect(struct usb_gadget *gadget)
 	unsigned long flags;
 
 	composite_disconnect(gadget);
-	/* accessory HID support can be active while the
-	   accessory function is not actually enabled,
-	   so we need to inform it when we are disconnected.
-	 */
-	acc_disconnect();
 
 	spin_lock_irqsave(&cdev->lock, flags);
 	dev->connected = 0;

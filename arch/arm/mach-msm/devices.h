@@ -177,6 +177,7 @@ extern struct platform_device msm_device_vidc_720p;
 
 extern struct platform_device msm_pcm;
 extern struct platform_device msm_multi_ch_pcm;
+extern struct platform_device msm_lowlatency_pcm;
 extern struct platform_device msm_pcm_routing;
 extern struct platform_device msm_i2s_cpudai0;
 extern struct platform_device msm_i2s_cpudai1;
@@ -292,6 +293,12 @@ extern struct platform_device msm_etm_device;
 extern struct platform_device msm8960_cpu_idle_device;
 
 extern struct platform_device msm8960_msm_gov_device;
+
+
+extern struct platform_device msm_device_csic0;
+extern struct platform_device msm_device_csic1;
+extern struct platform_device msm_device_vfe;
+extern struct platform_device msm_device_vpe;
 
 extern struct platform_device msm8960_iommu_domain_device;
 extern struct platform_device msm8930_iommu_domain_device;

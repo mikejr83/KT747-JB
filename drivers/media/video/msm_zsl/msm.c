@@ -1679,6 +1679,7 @@ static int msm_close(struct file *f)
 	}
 
 	mutex_lock(&pcam->vid_lock);
+#if defined(CONFIG_MSM_IOMMU)
 	mutex_lock(&pcam_inst->inst_lock);
 
 	if (pcam_inst->streamon) {
@@ -1691,6 +1692,7 @@ static int msm_close(struct file *f)
 		}
 		pcam->mctl.mctl_release = NULL;/*so that it isn't closed again*/
 	}
+#endif
 
 	pcam_inst->streamon = 0;
 	pcam->use_count--;

@@ -1928,7 +1928,7 @@ __alloc_pages_direct_compact(gfp_t gfp_mask, unsigned int order,
 	if (!order)
 		return NULL;
 
-	if (compaction_deferred(preferred_zone, order)) {
+	if (compaction_deferred(preferred_zone)) {
 		*deferred_compaction = true;
 		return NULL;
 	}
@@ -1950,8 +1950,6 @@ __alloc_pages_direct_compact(gfp_t gfp_mask, unsigned int order,
 		if (page) {
 			preferred_zone->compact_considered = 0;
 			preferred_zone->compact_defer_shift = 0;
-			if (order >= preferred_zone->compact_order_failed)
-				preferred_zone->compact_order_failed = order + 1;
 			count_vm_event(COMPACTSUCCESS);
 			return page;
 		}
@@ -1968,7 +1966,7 @@ __alloc_pages_direct_compact(gfp_t gfp_mask, unsigned int order,
 		 * defer if the failure was a sync compaction failure.
 		 */
 		if (sync_migration)
-			defer_compaction(preferred_zone, order);
+			defer_compaction(preferred_zone);
 
 		cond_resched();
 	}
@@ -2218,14 +2216,7 @@ rebalance:
 					&did_some_progress);
 	if (page)
 		goto got_pg;
-
-	/*
-	 * Do not use sync migration if __GFP_NO_KSWAPD is used to indicate
-	 * the system should not be heavily disrupted. In practice, this is
-	 * to avoid THP callers being stalled in writeback during migration
-	 * as it's preferable for the the allocations to fail than to stall
-	 */
-	sync_migration = !(gfp_mask & __GFP_NO_KSWAPD);
+	sync_migration = true;
 
 	/*
 	 * If compaction is deferred for high-order allocations, it is because

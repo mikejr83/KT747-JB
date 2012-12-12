@@ -23,11 +23,13 @@
 #include <linux/delay.h>
 #include <linux/io.h>
 #include <linux/percpu.h>
+#include <linux/mm.h>
 
 #include <asm/mach/time.h>
 #include <asm/hardware/gic.h>
 #include <asm/sched_clock.h>
 #include <asm/smp_plat.h>
+#include <asm/user_accessible_timer.h>
 #include <mach/msm_iomap.h>
 #include <mach/irqs.h>
 #include <mach/socinfo.h>
@@ -1091,8 +1093,7 @@ static void __init msm_timer_init(void)
 			res = request_percpu_irq(ce->irq, msm_timer_interrupt,
 						 ce->name, clock->percpu_evt);
 			if (!res)
-				enable_percpu_irq(ce->irq,
-						 IRQ_TYPE_EDGE_RISING);
+				enable_percpu_irq(ce->irq, 0);
 		} else {
 			clock->evt = ce;
 			res = request_irq(ce->irq, msm_timer_interrupt,
@@ -1116,6 +1117,16 @@ static void __init msm_timer_init(void)
 		clockevents_register_device(ce);
 	}
 	msm_sched_clock_init();
+
+	if (use_user_accessible_timers()) {
+		if (cpu_is_msm8960() || cpu_is_msm8930() || cpu_is_apq8064()) {
+			struct msm_clock *gtclock = &msm_clocks[MSM_CLOCK_GPT];
+			void __iomem *addr = gtclock->regbase +
+				TIMER_COUNT_VAL + global_timer_offset;
+			setup_user_timer_offset(virt_to_phys(addr)&0xfff);
+			set_user_accessible_timer_flag(true);
+		}
+	}
 
 	if (is_smp()) {
 		__raw_writel(1,
@@ -1164,7 +1175,7 @@ int __cpuinit local_timer_setup(struct clock_event_device *evt)
 	*__this_cpu_ptr(clock->percpu_evt) = evt;
 
 	clockevents_register_device(evt);
-	enable_percpu_irq(evt->irq, IRQ_TYPE_EDGE_RISING);
+	enable_percpu_irq(evt->irq, 0);
 
 	return 0;
 }

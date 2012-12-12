@@ -24,7 +24,8 @@
 #include <linux/irq.h>
 #include <asm/system.h>
 #if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_CMD_QHD_PT) \
-	|| defined(CONFIG_FB_MSM_MIPI_NOVATEK_BOE_CMD_WVGA_PT)
+	|| defined(CONFIG_FB_MSM_MIPI_NOVATEK_BOE_CMD_WVGA_PT) \
+	|| defined(CONFIG_FB_MSM_MIPI_NOVATEK_CMD_WVGA_PT)
 #include <asm/cacheflush.h>
 #endif
 
@@ -95,7 +96,7 @@ int load_565rle_image(char *filename, bool bf_supported)
 		return -ENODEV;
 	}
 
-#ifndef CONFIG_FRAMEBUFFER_CONSOLE
+#if 0
 	owner = info->fbops->owner;
 	if (!try_module_get(owner))
 		return -ENODEV;
@@ -155,7 +156,8 @@ int load_565rle_image(char *filename, bool bf_supported)
 	}
 
 #if defined(CONFIG_FB_MSM_MIPI_SAMSUNG_OLED_CMD_QHD_PT) \
-	|| defined(CONFIG_FB_MSM_MIPI_NOVATEK_BOE_CMD_WVGA_PT)
+	|| defined(CONFIG_FB_MSM_MIPI_NOVATEK_BOE_CMD_WVGA_PT) \
+	|| defined(CONFIG_FB_MSM_MIPI_NOVATEK_CMD_WVGA_PT)
 	flush_cache_all();
 	outer_flush_all();
 #endif
@@ -165,7 +167,7 @@ err_logo_free_data:
 err_logo_close_file:
 	sys_close(fd);
 
-#ifndef CONFIG_FRAMEBUFFER_CONSOLE
+#if 0
 	err = fb_pan_display(info, &info->var);
 	if (err < 0) {
 		printk(KERN_WARNING "%s: Can not update framebuffer\n",

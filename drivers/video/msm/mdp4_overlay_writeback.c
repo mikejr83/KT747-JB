@@ -81,9 +81,10 @@ int mdp4_overlay_writeback_on(struct platform_device *pdev)
 
 	if (writeback_pipe == NULL) {
 		pipe = mdp4_overlay_pipe_alloc(OVERLAY_TYPE_BF, MDP4_MIXER2);
-		if (pipe == NULL)
+		if (pipe == NULL) {
 			pr_info("%s: pipe_alloc failed\n", __func__);
-		else{
+			return -EBUSY;
+		}
 		pipe->pipe_used++;
 		pipe->mixer_stage  = MDP4_MIXER_STAGE_BASE;
 		pipe->mixer_num  = MDP4_MIXER2;
@@ -95,7 +96,6 @@ int mdp4_overlay_writeback_on(struct platform_device *pdev)
 			pr_info("%s: format2type failed\n", __func__);
 
 		writeback_pipe = pipe; /* keep it */
-			}
 
 	} else {
 		pipe = writeback_pipe;
@@ -284,7 +284,7 @@ void mdp4_writeback_kickoff_video(struct msm_fb_data_type *mfd,
 
 	if (!writeback_pipe->ov_blt_addr) {
 		pr_err("%s: no writeback buffer 0x%x, %p\n", __func__,
-			(unsigned int)writeback_pipe->ov_blt_addr, node);
+				(unsigned int)writeback_pipe->ov_blt_addr, node);
 		mutex_unlock(&mfd->unregister_mutex);
 		return;
 	}
@@ -301,7 +301,7 @@ void mdp4_writeback_kickoff_video(struct msm_fb_data_type *mfd,
 
 	/* move current committed iommu to freelist */
 	mdp4_overlay_iommu_pipe_free(pipe->pipe_ndx, 0);
-
+	
 	mutex_lock(&mfd->writeback_mutex);
 	list_add_tail(&node->active_entry, &mfd->writeback_busy_queue);
 	mutex_unlock(&mfd->writeback_mutex);

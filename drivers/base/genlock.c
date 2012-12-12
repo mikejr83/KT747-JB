@@ -795,8 +795,6 @@ static int genlock_dev_release(struct inode *inodep, struct file *file)
 	genlock_release_lock(handle);
 	kfree(handle);
 
-	file->private_data = NULL; /*QC patch*/
-
 	return 0;
 }
 

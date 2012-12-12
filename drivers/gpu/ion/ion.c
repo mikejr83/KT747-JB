@@ -435,7 +435,7 @@ struct ion_handle *ion_alloc(struct ion_client *client, size_t len,
 					task_comm, client->pid);
 			}
 		}
-	
+
 		buffer = ion_buffer_create(heap, dev, len, align, flags);
 		if (!IS_ERR_OR_NULL(buffer))
 			break;

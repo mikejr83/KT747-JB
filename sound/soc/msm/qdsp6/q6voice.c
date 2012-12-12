@@ -44,7 +44,6 @@ static struct common_data common;
 static int loopback_state;
 static int dha_state;
 
-
 static int voice_send_enable_vocproc_cmd(struct voice_data *v);
 static int voice_send_netid_timing_cmd(struct voice_data *v);
 static int voice_send_attach_vocproc_cmd(struct voice_data *v);
@@ -3950,10 +3949,9 @@ static int32_t qdsp_cvp_callback(struct apr_client_data *data, void *priv)
 static int __init voice_init(void)
 {
 	int rc = 0, i = 0;
+	int len;
 	loopback_state = 0;
 	dha_state = 0;
-	int len;
-
 	memset(&common, 0, sizeof(struct common_data));
 
 	/* Allocate memory for VoIP calibration */

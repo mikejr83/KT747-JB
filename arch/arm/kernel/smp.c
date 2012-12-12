@@ -25,7 +25,6 @@
 #include <linux/percpu.h>
 #include <linux/clockchips.h>
 #include <linux/completion.h>
-#include <linux/cpufreq.h>
 
 #include <asm/atomic.h>
 #include <asm/cacheflush.h>
@@ -315,6 +314,8 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	struct mm_struct *mm = &init_mm;
 	unsigned int cpu;
 
+	pr_debug("CPU%u: Booted secondary processor\n", cpu);
+
 	/*
 	 * The identity mapping is uncached (strongly ordered), so
 	 * switch away from it before attempting any exclusive accesses.
@@ -332,7 +333,7 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	current->active_mm = mm;
 	cpumask_set_cpu(cpu, mm_cpumask(mm));
 
-	pr_debug("CPU%u: Booted secondary processor\n", cpu);
+	printk("CPU%u: Booted secondary processor\n", cpu);
 
 	cpu_init();
 	preempt_disable();
@@ -343,17 +344,7 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	 */
 	platform_secondary_init(cpu);
 
-	/*
-	 * Enable local interrupts.
-	 */
 	notify_cpu_starting(cpu);
-	local_irq_enable();
-	local_fiq_enable();
-
-	/*
-	 * Setup the percpu timer for this CPU.
-	 */
-	percpu_timer_setup();
 
 	if (skip_secondary_calibrate())
 		calibrate_delay();
@@ -366,8 +357,14 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	 * before we continue.
 	 */
 	set_cpu_online(cpu, true);
-	while (!cpu_active(cpu))
-		cpu_relax();
+
+	/*
+	 * Setup the percpu timer for this CPU.
+	 */
+	percpu_timer_setup();
+
+	local_irq_enable();
+	local_fiq_enable();
 
 	/*
 	 * OK, it's off to the idle thread for us
@@ -671,9 +668,7 @@ void handle_IPI(int ipinr, struct pt_regs *regs)
 		break;
 
 	case IPI_CPU_BACKTRACE:
-		irq_enter();
 		ipi_cpu_backtrace(cpu, regs);
-		irq_exit();
 		break;
 
 	default:
@@ -721,56 +716,3 @@ int setup_profiling_timer(unsigned int multiplier)
 {
 	return -EINVAL;
 }
-
-#ifdef CONFIG_CPU_FREQ
-
-static DEFINE_PER_CPU(unsigned long, l_p_j_ref);
-static DEFINE_PER_CPU(unsigned long, l_p_j_ref_freq);
-static unsigned long global_l_p_j_ref;
-static unsigned long global_l_p_j_ref_freq;
-
-static int cpufreq_callback(struct notifier_block *nb,
-					unsigned long val, void *data)
-{
-	struct cpufreq_freqs *freq = data;
-	int cpu = freq->cpu;
-
-	if (freq->flags & CPUFREQ_CONST_LOOPS)
-		return NOTIFY_OK;
-
-	if (!per_cpu(l_p_j_ref, cpu)) {
-		per_cpu(l_p_j_ref, cpu) =
-			per_cpu(cpu_data, cpu).loops_per_jiffy;
-		per_cpu(l_p_j_ref_freq, cpu) = freq->old;
-		if (!global_l_p_j_ref) {
-			global_l_p_j_ref = loops_per_jiffy;
-			global_l_p_j_ref_freq = freq->old;
-		}
-	}
-
-	if ((val == CPUFREQ_PRECHANGE  && freq->old < freq->new) ||
-	    (val == CPUFREQ_POSTCHANGE && freq->old > freq->new) ||
-	    (val == CPUFREQ_RESUMECHANGE || val == CPUFREQ_SUSPENDCHANGE)) {
-		loops_per_jiffy = cpufreq_scale(global_l_p_j_ref,
-						global_l_p_j_ref_freq,
-						freq->new);
-		per_cpu(cpu_data, cpu).loops_per_jiffy =
-			cpufreq_scale(per_cpu(l_p_j_ref, cpu),
-					per_cpu(l_p_j_ref_freq, cpu),
-					freq->new);
-	}
-	return NOTIFY_OK;
-}
-
-static struct notifier_block cpufreq_notifier = {
-	.notifier_call  = cpufreq_callback,
-};
-
-static int __init register_cpufreq_notifier(void)
-{
-	return cpufreq_register_notifier(&cpufreq_notifier,
-						CPUFREQ_TRANSITION_NOTIFIER);
-}
-core_initcall(register_cpufreq_notifier);
-
-#endif

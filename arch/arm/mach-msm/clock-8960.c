@@ -45,7 +45,6 @@
 #define ADM0_PBUS_CLK_CTL_REG			REG(0x2208)
 #define CE1_HCLK_CTL_REG			REG(0x2720)
 #define CE1_CORE_CLK_CTL_REG			REG(0x2724)
-#define PRNG_CLK_NS_REG				REG(0x2E80)
 #define CE3_HCLK_CTL_REG			REG(0x36C4)
 #define CE3_CORE_CLK_CTL_REG			REG(0x36CC)
 #define CE3_CLK_SRC_NS_REG			REG(0x36C0)
@@ -1498,12 +1497,7 @@ static struct branch_clk pmem_clk = {
 		.freq_hz = f, \
 		.src_clk = &s##_clk.c, \
 	}
-static struct clk_freq_tbl clk_tbl_prng_32[] = {
-	F_PRNG(32000000, pll8),
-	F_END
-};
-
-static struct clk_freq_tbl clk_tbl_prng_64[] = {
+static struct clk_freq_tbl clk_tbl_prng[] = {
 	F_PRNG(64000000, pll8),
 	F_END
 };
@@ -1517,12 +1511,12 @@ static struct rcg_clk prng_clk = {
 		.halt_bit = 10,
 	},
 	.set_rate = set_rate_nop,
-	.freq_tbl = clk_tbl_prng_32,
+	.freq_tbl = clk_tbl_prng,
 	.current_freq = &rcg_dummy_freq,
 	.c = {
 		.dbg_name = "prng_clk",
 		.ops = &clk_ops_rcg_8960,
-		VDD_DIG_FMAX_MAP2(LOW, 32000000, NOMINAL, 64000000),
+		VDD_DIG_FMAX_MAP2(LOW, 32000000, NOMINAL, 65000000),
 		CLK_INIT(prng_clk.c),
 	},
 };
@@ -4426,7 +4420,6 @@ static struct rcg_clk pcm_clk = {
 		.ops = &clk_ops_rcg_8960,
 		VDD_DIG_FMAX_MAP1(LOW, 24576000),
 		CLK_INIT(pcm_clk.c),
-		.rate = ULONG_MAX,
 	},
 };
 
@@ -5143,6 +5136,7 @@ static struct clk_lookup msm_clocks_8064[] = {
 	CLK_DUMMY("dfab_clk",		DFAB_CLK,		NULL, 0),
 	CLK_DUMMY("bus_clk",		DFAB_SCM_CLK,	"scm", 0),
 	CLK_LOOKUP("bus_clk",		dfab_tzcom_clk.c,       "tzcom"),
+        CLK_LOOKUP("bus_clk",           dfab_qseecom_clk.c,     "qseecom"),
 	CLK_LOOKUP("alt_core_clk",    usb_hsic_xcvr_fs_clk.c,  "msm_hsic_host"),
 	CLK_LOOKUP("phy_clk",	      usb_hsic_hsic_clk.c,     "msm_hsic_host"),
 	CLK_LOOKUP("cal_clk",	      usb_hsic_hsio_cal_clk.c, "msm_hsic_host"),
@@ -5315,10 +5309,15 @@ static struct clk_lookup msm_clocks_8960_v1[] __initdata = {
 	CLK_LOOKUP("cam_clk",	cam0_clk.c,	"msm_camera_sr030pc50.0"),
 	CLK_LOOKUP("cam_clk",	cam0_clk.c,	"msm_camera_s5c73m3.0"),
 	CLK_LOOKUP("cam_clk",	cam0_clk.c,	"msm_camera_db8131m.0"),
+#if defined(CONFIG_MACH_STRETTO)
+	CLK_LOOKUP("cam_clk",		cam0_clk.c, "4-003d"),
+	CLK_LOOKUP("cam_clk",		cam2_clk.c, "4-0020"),
+#else
 	CLK_LOOKUP("cam_clk",		cam0_clk.c,	"4-001a"),
 	CLK_LOOKUP("cam_clk",		cam0_clk.c,	"4-006c"),
 	CLK_LOOKUP("cam_clk",		cam0_clk.c,	"4-0048"),
 	CLK_LOOKUP("cam_clk",		cam0_clk.c,	"4-0020"),
+#endif
 	CLK_LOOKUP("csi_src_clk",	csi0_src_clk.c,		"msm_csid.0"),
 	CLK_LOOKUP("csi_src_clk",	csi1_src_clk.c,		"msm_csid.1"),
 	CLK_LOOKUP("csi_clk",		csi0_clk.c,		"msm_csid.0"),
@@ -5456,7 +5455,6 @@ static struct clk_lookup msm_clocks_8960_v1[] __initdata = {
 	CLK_LOOKUP("bus_clk",		dfab_scm_clk.c,	"scm"),
 	CLK_LOOKUP("bus_clk",		dfab_tzcom_clk.c,	"tzcom"),
 	CLK_LOOKUP("bus_clk",		dfab_qseecom_clk.c,	"qseecom"),
-
 	CLK_LOOKUP("mem_clk",		ebi1_adm_clk.c, "msm_dmov"),
 
 	CLK_LOOKUP("l2_mclk",		l2_m_clk,     NULL),
@@ -5554,7 +5552,7 @@ static void __init reg_init(void)
 	 */
 	if (cpu_is_msm8960() &&
 			SOCINFO_VERSION_MAJOR(socinfo_get_version()) >= 2) {
-		rmwreg(0x40000000, AHB_EN_REG,  0x6C000103);
+		rmwreg(0x44000000, AHB_EN_REG,  0x6C000103);
 		writel_relaxed(0x3C7097F9, AHB_EN2_REG);
 	} else {
 		rmwreg(0x00000003, AHB_EN_REG,  0x6C000103);
@@ -5841,12 +5839,22 @@ static int get_mclk_rev(void)
 	return ((system_rev >= BOARD_REV08) ? 1 : 0);
 #elif defined(CONFIG_MACH_M2_SKT)
 	return ((system_rev >= BOARD_REV09) ? 1 : 0);
-#elif defined(CONFIG_MACH_M2_DCM)
+#elif defined(CONFIG_MACH_M2_DCM) || defined(CONFIG_MACH_K2_KDI)
 	return ((system_rev >= BOARD_REV03) ? 1 : 0);
 #elif defined(CONFIG_MACH_APEXQ)
 	return ((system_rev >= BOARD_REV04) ? 1 : 0);
 #elif defined(CONFIG_MACH_COMANCHE)
 	return ((system_rev >= BOARD_REV03) ? 1 : 0);
+#elif defined(CONFIG_MACH_AEGIS2)
+	return ((system_rev >= BOARD_REV07) ? 1 : 0);
+#elif defined(CONFIG_MACH_EXPRESS)
+	return ((system_rev >= BOARD_REV03) ? 1 : 0);
+#elif defined(CONFIG_MACH_JASPER)
+	return ((system_rev >= BOARD_REV08) ? 1 : 0);
+#elif defined(CONFIG_MACH_STRETTO)
+	return 1;
+#elif defined(CONFIG_MACH_SUPERIORLTE_SKT)
+	return 1;
 #else
 	return 0;
 #endif
@@ -5930,8 +5938,6 @@ static void __init msm8960_clock_init(void)
 
 		gmem_axi_clk.c.depends = &gfx3d_axi_clk.c;
 	}
-	if ((readl_relaxed(PRNG_CLK_NS_REG) & 0x7F) == 0x2B)
-		prng_clk.freq_tbl = clk_tbl_prng_64;
 
 	vote_vdd_level(&vdd_dig, VDD_DIG_HIGH);
 
@@ -5942,7 +5948,7 @@ static void __init msm8960_clock_init(void)
 
 	/* Initialize rates for clocks that only support one. */
 	clk_set_rate(&pdm_clk.c, 27000000);
-	clk_set_rate(&prng_clk.c, prng_clk.freq_tbl->freq_hz);
+	clk_set_rate(&prng_clk.c, 64000000);
 	clk_set_rate(&mdp_vsync_clk.c, 27000000);
 	clk_set_rate(&tsif_ref_clk.c, 105000);
 	clk_set_rate(&tssc_clk.c, 27000000);
@@ -5997,22 +6003,22 @@ static int __init msm8960_clock_late_init(void)
 	struct clk *mmfpb_a_clk = clk_get_sys("clock-8960", "mmfpb_a_clk");
 	struct clk *cfpb_a_clk = clk_get_sys("clock-8960", "cfpb_a_clk");
 
-	/* Vote for MMFPB to be on when Apps is active. */
+	/* Vote for MMFPB to be at least 76.8MHz when an Apps CPU is active. */
 	if (WARN(IS_ERR(mmfpb_a_clk), "mmfpb_a_clk not found (%ld)\n",
 			PTR_ERR(mmfpb_a_clk)))
 		return PTR_ERR(mmfpb_a_clk);
-	rc = clk_set_rate(mmfpb_a_clk, 38400000);
+	rc = clk_set_rate(mmfpb_a_clk, 76800000);
 	if (WARN(rc, "mmfpb_a_clk rate was not set (%d)\n", rc))
 		return rc;
 	rc = clk_enable(mmfpb_a_clk);
 	if (WARN(rc, "mmfpb_a_clk not enabled (%d)\n", rc))
 		return rc;
 
-	/* Vote for CFPB to be on when Apps is active. */
+	/* Vote for CFPB to be at least 64MHz when an Apps CPU is active. */
 	if (WARN(IS_ERR(cfpb_a_clk), "cfpb_a_clk not found (%ld)\n",
 			PTR_ERR(cfpb_a_clk)))
 		return PTR_ERR(cfpb_a_clk);
-	rc = clk_set_rate(cfpb_a_clk, 32000000);
+	rc = clk_set_rate(cfpb_a_clk, 64000000);
 	if (WARN(rc, "cfpb_a_clk rate was not set (%d)\n", rc))
 		return rc;
 	rc = clk_enable(cfpb_a_clk);
