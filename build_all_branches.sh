@@ -1,4 +1,4 @@
-echo "Switch to JellyBean"
+echo "Switch to JellyBean AOSP 4.1.2"
 git checkout jellybean
 
 echo "Make Clean"
