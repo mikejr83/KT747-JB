@@ -13,6 +13,7 @@
 
 #ifndef __MSM_THERMAL_H
 #define __MSM_THERMAL_H
+#include <linux/errno.h>
 
 struct msm_thermal_data {
 	uint32_t sensor_id;
