@@ -7,6 +7,8 @@
  * Copyright (C) 2008 Fabio Checconi <fabio@gandalf.sssup.it>
  *		      Paolo Valente <paolo.valente@unimore.it>
  *
+ * Copyright (C) 2010 Paolo Valente <paolo.valente@unimore.it>
+ *
  * Licensed under the GPL-2 as detailed in the accompanying COPYING.BFQ file.
  *
  * BFQ is a proportional share disk scheduling algorithm based on the
@@ -141,6 +143,8 @@ static DEFINE_IDA(cic_index_ida);
 #define RQ_CIC(rq)		\
 	((struct cfq_io_context *) (rq)->elevator_private[0])
 #define RQ_BFQQ(rq)		((rq)->elevator_private[1])
+
+static inline void bfq_schedule_dispatch(struct bfq_data *bfqd);
 
 #include "bfq-ioc.c"
 #include "bfq-sched.c"
@@ -858,7 +862,7 @@ static inline unsigned long bfq_max_budget(struct bfq_data *bfqd)
 static inline unsigned long bfq_min_budget(struct bfq_data *bfqd)
 {
 	if (bfqd->budgets_assigned < 194)
-		return bfq_default_max_budget;
+		return bfq_default_max_budget / 32;
 	else
 		return bfqd->bfq_max_budget / 32;
 }
@@ -2794,6 +2798,8 @@ static ssize_t bfq_weights_show(struct elevator_queue *e, char *page)
 	struct bfq_data *bfqd = e->elevator_data;
 	ssize_t num_char = 0;
 
+	spin_lock_irq(bfqd->queue->queue_lock);
+
 	num_char += sprintf(page + num_char, "Active:\n");
 	list_for_each_entry(bfqq, &bfqd->active_list, bfqq_list) {
 		num_char += sprintf(page + num_char,
@@ -2814,6 +2820,9 @@ static ssize_t bfq_weights_show(struct elevator_queue *e, char *page)
 					bfqq->last_rais_start_finish),
 				jiffies_to_msecs(bfqq->raising_cur_max_time));
 	}
+
+	spin_unlock_irq(bfqd->queue->queue_lock);
+
 	return num_char;
 }
 
@@ -2831,7 +2840,7 @@ SHOW_FUNCTION(bfq_fifo_expire_sync_show, bfqd->bfq_fifo_expire[1], 1);
 SHOW_FUNCTION(bfq_fifo_expire_async_show, bfqd->bfq_fifo_expire[0], 1);
 SHOW_FUNCTION(bfq_back_seek_max_show, bfqd->bfq_back_max, 0);
 SHOW_FUNCTION(bfq_back_seek_penalty_show, bfqd->bfq_back_penalty, 0);
-SHOW_FUNCTION(bfq_slice_idle_show, bfqd->bfq_slice_idle, 0);
+SHOW_FUNCTION(bfq_slice_idle_show, bfqd->bfq_slice_idle, 1);
 SHOW_FUNCTION(bfq_max_budget_show, bfqd->bfq_user_max_budget, 0);
 SHOW_FUNCTION(bfq_max_budget_async_rq_show, bfqd->bfq_max_budget_async_rq, 0);
 SHOW_FUNCTION(bfq_timeout_sync_show, bfqd->bfq_timeout[BLK_RW_SYNC], 1);
@@ -2873,7 +2882,7 @@ STORE_FUNCTION(bfq_fifo_expire_async_store, &bfqd->bfq_fifo_expire[0], 1,
 STORE_FUNCTION(bfq_back_seek_max_store, &bfqd->bfq_back_max, 0, INT_MAX, 0);
 STORE_FUNCTION(bfq_back_seek_penalty_store, &bfqd->bfq_back_penalty, 1,
 		INT_MAX, 0);
-STORE_FUNCTION(bfq_slice_idle_store, &bfqd->bfq_slice_idle, 0, INT_MAX, 0);
+STORE_FUNCTION(bfq_slice_idle_store, &bfqd->bfq_slice_idle, 0, INT_MAX, 1);
 STORE_FUNCTION(bfq_max_budget_async_rq_store, &bfqd->bfq_max_budget_async_rq,
 		1, INT_MAX, 0);
 STORE_FUNCTION(bfq_timeout_async_store, &bfqd->bfq_timeout[BLK_RW_ASYNC], 0,
@@ -3050,4 +3059,3 @@ module_exit(bfq_exit);
 MODULE_AUTHOR("Fabio Checconi, Paolo Valente");
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Budget Fair Queueing IO scheduler");
-
