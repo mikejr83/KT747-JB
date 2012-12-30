@@ -43,7 +43,7 @@
  * towards the ideal frequency and slower after it has passed it. Similarly,
  * lowering the frequency towards the ideal frequency is faster than below it.
  */
-#define DEFAULT_AWAKE_IDEAL_FREQ 518400
+#define DEFAULT_AWAKE_IDEAL_FREQ 384000
 static unsigned int awake_ideal_freq;
 
 /*
@@ -52,7 +52,7 @@ static unsigned int awake_ideal_freq;
  * that practically when sleep_ideal_freq==0 the awake_ideal_freq is used
  * also when suspended).
  */
-#define DEFAULT_SLEEP_IDEAL_FREQ 540000
+#define DEFAULT_SLEEP_IDEAL_FREQ 384000
 static unsigned int sleep_ideal_freq;
 
 /*
@@ -670,7 +670,7 @@ static struct attribute * smartass_attributes[] = {
 
 static struct attribute_group smartass_attr_group = {
 	.attrs = smartass_attributes,
-	.name = "smartass",
+	.name = "smartassV2",
 };
 
 static int cpufreq_governor_smartass(struct cpufreq_policy *new_policy,
