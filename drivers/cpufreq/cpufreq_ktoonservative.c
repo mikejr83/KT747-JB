@@ -371,7 +371,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	unsigned int freq_target;
 
 	struct cpufreq_policy *policy;
-	unsigned int j;
+	//unsigned int j;
 	unsigned int cpu;
 	
 	u64 now_idle;
@@ -460,6 +460,16 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 			j_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &j_dbs_info->idle_exit_time);
 			printk(KERN_ERR "LOAD-EXIT2\n");
 			break;
+		}
+		if (dbs_tuners_ins.ignore_nice) {
+			cputime64_t cur_nice;
+			unsigned long cur_nice_jiffies;
+			cur_nice = cputime64_sub(kstat_cpu(cpu).cpustat.nice,
+					 j_dbs_info->prev_cpu_nice);
+			cur_nice_jiffies = (unsigned long)
+					cputime64_to_jiffies64(cur_nice);
+			j_dbs_info->prev_cpu_nice = kstat_cpu(cpu).cpustat.nice;
+			delta_idle += jiffies_to_usecs(cur_nice_jiffies);
 		}
 
 		if (delta_idle > delta_time)
