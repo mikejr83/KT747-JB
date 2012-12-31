@@ -57,6 +57,8 @@ static unsigned int min_sampling_rate;
 static void do_dbs_timer(struct work_struct *work);
 
 struct cpu_dbs_info_s {
+	u64 time_in_idle;
+	u64 idle_exit_time;
 	cputime64_t prev_cpu_idle;
 	cputime64_t prev_cpu_wall;
 	cputime64_t prev_cpu_nice;
@@ -370,7 +372,14 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 	struct cpufreq_policy *policy;
 	unsigned int j;
-
+	unsigned int cpu;
+	
+	u64 now_idle;
+	u64 update_time;
+	u64 delta_idle;
+	u64 delta_time;
+	int old_freq = 0;
+	
 	policy = this_dbs_info->cur_policy;
 
 	/*
@@ -385,6 +394,8 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	 */
 
 	/* Get Absolute Load */
+	
+	/*
 	for_each_cpu(j, policy->cpus) {
 		struct cpu_dbs_info_s *j_dbs_info;
 		cputime64_t cur_wall_time, cur_idle_time;
@@ -408,10 +419,10 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 			cur_nice = cputime64_sub(kstat_cpu(j).cpustat.nice,
 					 j_dbs_info->prev_cpu_nice);
-			/*
-			 * Assumption: nice time between sampling periods will
-			 * be less than 2^32 jiffies for 32 bit sys
-			 */
+			
+			//Assumption: nice time between sampling periods will
+			// be less than 2^32 jiffies for 32 bit sys
+			//
 			cur_nice_jiffies = (unsigned long)
 					cputime64_to_jiffies64(cur_nice);
 
@@ -423,10 +434,44 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 			continue;
 
 		load = 100 * (wall_time - idle_time) / wall_time;
+		printk(KERN_ERR "LOAD-UPDATE %d\n", load);
 
 		if (load > max_load)
 			max_load = load;
+	}*/
+	
+	for_each_cpu(cpu, policy->cpus) {
+		struct cpu_dbs_info_s *j_dbs_info;
+		j_dbs_info = &per_cpu(cs_cpu_dbs_info, cpu);
+		old_freq = policy->cur;
+		
+		now_idle = get_cpu_idle_time_us(cpu, &update_time);
+		if (j_dbs_info->idle_exit_time == 0 || update_time == j_dbs_info->idle_exit_time)
+		{
+			printk(KERN_ERR "LOAD-EXIT1 - %Lx - %Lx\n", update_time, j_dbs_info->idle_exit_time);
+			break;
+		}
+		
+		delta_idle = cputime64_sub(now_idle, j_dbs_info->time_in_idle);
+		delta_time = cputime64_sub(update_time, j_dbs_info->idle_exit_time);
+
+		// If timer ran less than 1ms after short-term sample started, retry.
+		if (delta_time < 1000) {
+			j_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &j_dbs_info->idle_exit_time);
+			printk(KERN_ERR "LOAD-EXIT2\n");
+			break;
+		}
+
+		if (delta_idle > delta_time)
+			load = 0;
+		else
+			load = 100 * (unsigned int)(delta_time - delta_idle) / (unsigned int)delta_time;
+
+		if (load > max_load)
+			max_load = load;
+		//printk(KERN_ERR "LOAD-UPDATE1 %d\n", load);
 	}
+	//printk(KERN_ERR "LOAD-UPDATE2 %d\n", load);
 
 	/*
 	 * break out if we 'cannot' reduce the speed as the user might
@@ -438,7 +483,10 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	/* Check for frequency increase is greater than hotplug value */
 	if (max_load > dbs_tuners_ins.up_threshold_hotplug) {
 		if (num_online_cpus() < 2)
+		{
+			printk(KERN_ERR "CPU_UP %d - %d\n", max_load, dbs_tuners_ins.up_threshold_hotplug);
 			cpu_up(1);
+		}
 	}
 
 	/* Check for frequency increase */
@@ -466,7 +514,10 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 	if (max_load < (dbs_tuners_ins.down_threshold_hotplug)) {
 		if (num_online_cpus() > 1)
+		{
+			printk(KERN_ERR "CPU_DOWN %d - %d\n", max_load, dbs_tuners_ins.down_threshold_hotplug);
 			cpu_down(1);
+		}
 	}
 
 	/*
@@ -490,6 +541,14 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		__cpufreq_driver_target(policy, this_dbs_info->requested_freq,
 				CPUFREQ_RELATION_H);
 		return;
+	}
+	if (old_freq != 0 && old_freq < policy->max)
+	{
+		for_each_cpu(cpu, policy->cpus) {
+			struct cpu_dbs_info_s *j_dbs_info;
+			j_dbs_info = &per_cpu(cs_cpu_dbs_info, cpu);
+			j_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &j_dbs_info->idle_exit_time);
+		}
 	}
 }
 
@@ -557,6 +616,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				j_dbs_info->prev_cpu_nice =
 						kstat_cpu(j).cpustat.nice;
 			}
+			j_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &j_dbs_info->idle_exit_time);
 		}
 		this_dbs_info->down_skip = 0;
 		this_dbs_info->requested_freq = policy->cur;
@@ -601,7 +661,9 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 	case CPUFREQ_GOV_STOP:
 		dbs_timer_exit(this_dbs_info);
-
+		
+		this_dbs_info->idle_exit_time = 0;
+		
 		mutex_lock(&dbs_mutex);
 		dbs_enable--;
 		mutex_destroy(&this_dbs_info->timer_mutex);
@@ -634,6 +696,8 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 					policy->min, CPUFREQ_RELATION_L);
 		mutex_unlock(&this_dbs_info->timer_mutex);
 
+		this_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &this_dbs_info->idle_exit_time);
+
 		break;
 	}
 	return 0;
@@ -651,6 +715,15 @@ struct cpufreq_governor cpufreq_gov_ktoonservative = {
 
 static int __init cpufreq_gov_dbs_init(void)
 {
+	unsigned int i;
+	struct cpu_dbs_info_s *this_dbs_info;
+	/* Initalize per-cpu data: */
+	for_each_possible_cpu(i) {
+		this_dbs_info = &per_cpu(cs_cpu_dbs_info, i);
+		this_dbs_info->time_in_idle = 0;
+		this_dbs_info->idle_exit_time = 0;
+	}
+
 	return cpufreq_register_governor(&cpufreq_gov_ktoonservative);
 }
 
