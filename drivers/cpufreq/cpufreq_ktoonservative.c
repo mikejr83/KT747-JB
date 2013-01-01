@@ -54,6 +54,9 @@ static unsigned int min_sampling_rate;
 #define MAX_SAMPLING_DOWN_FACTOR		(10)
 #define TRANSITION_LATENCY_LIMIT		(10 * 1000 * 1000)
 
+struct work_struct hotplug_offline_work;
+struct work_struct hotplug_online_work;
+
 static void do_dbs_timer(struct work_struct *work);
 
 struct cpu_dbs_info_s {
@@ -448,8 +451,12 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	if (max_load > dbs_tuners_ins.up_threshold_hotplug) {
 		if (num_online_cpus() < 2)
 		{
-			printk(KERN_ERR "CPU_UP %d - %d\n", max_load, dbs_tuners_ins.up_threshold_hotplug);
-			cpu_up(1);
+			//printk(KERN_ERR "CPU_UP %d - %d\n", max_load, dbs_tuners_ins.up_threshold_hotplug);
+			//if (!(delayed_work_pending(&hotplug_online_work)))
+			//{
+				schedule_work_on(0, &hotplug_online_work);
+			//}
+			//cpu_up(1);
 		}
 	}
 
@@ -479,8 +486,12 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	if (max_load < (dbs_tuners_ins.down_threshold_hotplug)) {
 		if (num_online_cpus() > 1)
 		{
-			printk(KERN_ERR "CPU_DOWN %d - %d\n", max_load, dbs_tuners_ins.down_threshold_hotplug);
-			cpu_down(1);
+			//printk(KERN_ERR "CPU_DOWN %d - %d\n", max_load, dbs_tuners_ins.down_threshold_hotplug);
+			//if (!(delayed_work_pending(&hotplug_offline_work)))
+			//{
+				schedule_work_on(0, &hotplug_offline_work);
+			//}
+			//cpu_down(1);
 		}
 	}
 
@@ -512,6 +523,32 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 			struct cpu_dbs_info_s *j_dbs_info;
 			j_dbs_info = &per_cpu(cs_cpu_dbs_info, cpu);
 			j_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &j_dbs_info->idle_exit_time);
+		}
+	}
+}
+
+static void hotplug_offline_work_fn(struct work_struct *work)
+{
+	int cpu;
+	//pr_info("ENTER OFFLINE");
+	for_each_online_cpu(cpu) {
+		if (likely(cpu_online(cpu) && (cpu))) {
+			cpu_down(cpu);
+			//pr_info("auto_hotplug: CPU%d down.\n", cpu);
+			break;
+		}
+	}
+}
+
+static void hotplug_online_work_fn(struct work_struct *work)
+{
+	int cpu;
+	//pr_info("ENTER ONLINE");
+	for_each_possible_cpu(cpu) {
+		if (likely(!cpu_online(cpu) && (cpu))) {
+			cpu_up(cpu);
+			//pr_info("auto_hotplug: CPU%d up.\n", cpu);
+			break;
 		}
 	}
 }
@@ -687,7 +724,9 @@ static int __init cpufreq_gov_dbs_init(void)
 		this_dbs_info->time_in_idle = 0;
 		this_dbs_info->idle_exit_time = 0;
 	}
-
+	INIT_WORK(&hotplug_offline_work, hotplug_offline_work_fn);
+	INIT_WORK(&hotplug_online_work, hotplug_online_work_fn);
+	
 	return cpufreq_register_governor(&cpufreq_gov_ktoonservative);
 }
 
