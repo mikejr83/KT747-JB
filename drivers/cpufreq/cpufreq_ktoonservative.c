@@ -49,6 +49,7 @@
 
 static unsigned int min_sampling_rate;
 static unsigned int Lcpu_down_block_cycles = 0;
+static unsigned int Lcpu_up_block_cycles = 0;
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
@@ -60,6 +61,8 @@ struct work_struct hotplug_offline_work;
 struct work_struct hotplug_online_work;
 
 static void do_dbs_timer(struct work_struct *work);
+unsigned int get_cpu_usage_normal(struct cpufreq_policy *policy, int *old_freq);
+unsigned int get_cpu_usage_yoyo(struct cpufreq_policy *policy);
 
 struct cpu_dbs_info_s {
 	u64 time_in_idle;
@@ -98,6 +101,7 @@ static struct dbs_tuners {
 	unsigned int down_threshold_hotplug;
 	unsigned int cpu_down_block_cycles;
 	unsigned int ignore_nice;
+	unsigned int use_yoyo_cpuload;
 	unsigned int freq_step;
 } dbs_tuners_ins = {
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
@@ -107,6 +111,7 @@ static struct dbs_tuners {
 	.cpu_down_block_cycles = DEF_CPU_DOWN_BLOCK_CYCLES,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice = 0,
+	.use_yoyo_cpuload = 0,
 	.freq_step = 5,
 };
 
@@ -199,6 +204,7 @@ show_one(down_threshold, down_threshold);
 show_one(down_threshold_hotplug, down_threshold_hotplug);
 show_one(cpu_down_block_cycles, cpu_down_block_cycles);
 show_one(ignore_nice_load, ignore_nice);
+show_one(use_yoyo_cpuload, use_yoyo_cpuload);
 show_one(freq_step, freq_step);
 
 static ssize_t store_sampling_down_factor(struct kobject *a,
@@ -358,6 +364,20 @@ static ssize_t store_freq_step(struct kobject *a, struct attribute *b,
 	return count;
 }
 
+static ssize_t store_use_yoyo_cpuload(struct kobject *a, struct attribute *b,
+			       const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+
+	dbs_tuners_ins.use_yoyo_cpuload = input;
+	return count;
+}
+
 define_one_global_rw(sampling_rate);
 define_one_global_rw(sampling_down_factor);
 define_one_global_rw(up_threshold);
@@ -367,6 +387,7 @@ define_one_global_rw(down_threshold_hotplug);
 define_one_global_rw(cpu_down_block_cycles);
 define_one_global_rw(ignore_nice_load);
 define_one_global_rw(freq_step);
+define_one_global_rw(use_yoyo_cpuload);
 
 static struct attribute *dbs_attributes[] = {
 	&sampling_rate_min.attr,
@@ -379,6 +400,7 @@ static struct attribute *dbs_attributes[] = {
 	&cpu_down_block_cycles.attr,
 	&ignore_nice_load.attr,
 	&freq_step.attr,
+	&use_yoyo_cpuload.attr,
 	NULL
 };
 
@@ -391,7 +413,6 @@ static struct attribute_group dbs_attr_group = {
 
 static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 {
-	unsigned int load = 0;
 	unsigned int max_load = 0;
 	unsigned int freq_target;
 
@@ -399,10 +420,6 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	//unsigned int j;
 	unsigned int cpu;
 	
-	u64 now_idle;
-	u64 update_time;
-	u64 delta_idle;
-	u64 delta_time;
 	int old_freq = 0;
 	
 	policy = this_dbs_info->cur_policy;
@@ -419,48 +436,10 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	 */
 
 	/* Get Absolute Load */
-	for_each_cpu(cpu, policy->cpus) {
-		struct cpu_dbs_info_s *j_dbs_info;
-		j_dbs_info = &per_cpu(cs_cpu_dbs_info, cpu);
-		old_freq = policy->cur;
-		
-		now_idle = get_cpu_idle_time_us(cpu, &update_time);
-		if (j_dbs_info->idle_exit_time == 0 || update_time == j_dbs_info->idle_exit_time)
-		{
-			printk(KERN_ERR "LOAD-EXIT1 - %Lx - %Lx\n", update_time, j_dbs_info->idle_exit_time);
-			break;
-		}
-		
-		delta_idle = cputime64_sub(now_idle, j_dbs_info->time_in_idle);
-		delta_time = cputime64_sub(update_time, j_dbs_info->idle_exit_time);
-
-		// If timer ran less than 1ms after short-term sample started, retry.
-		if (delta_time < 1000) {
-			j_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &j_dbs_info->idle_exit_time);
-			printk(KERN_ERR "LOAD-EXIT2\n");
-			break;
-		}
-		if (dbs_tuners_ins.ignore_nice) {
-			cputime64_t cur_nice;
-			unsigned long cur_nice_jiffies;
-			cur_nice = cputime64_sub(kstat_cpu(cpu).cpustat.nice,
-					 j_dbs_info->prev_cpu_nice);
-			cur_nice_jiffies = (unsigned long)
-					cputime64_to_jiffies64(cur_nice);
-			j_dbs_info->prev_cpu_nice = kstat_cpu(cpu).cpustat.nice;
-			delta_idle += jiffies_to_usecs(cur_nice_jiffies);
-		}
-
-		if (delta_idle > delta_time)
-			load = 0;
-		else
-			load = 100 * (unsigned int)(delta_time - delta_idle) / (unsigned int)delta_time;
-
-		if (load > max_load)
-			max_load = load;
-		//printk(KERN_ERR "LOAD-UPDATE1 %d\n", load);
-	}
-	//printk(KERN_ERR "LOAD-UPDATE2 %d\n", load);
+	if (dbs_tuners_ins.use_yoyo_cpuload)
+		max_load = get_cpu_usage_yoyo(policy);
+	else
+		max_load = get_cpu_usage_normal(policy, &old_freq);
 
 	/*
 	 * break out if we 'cannot' reduce the speed as the user might
@@ -473,10 +452,20 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	if (max_load > dbs_tuners_ins.up_threshold_hotplug) {
 		if (num_online_cpus() < 2)
 		{
+			if (dbs_tuners_ins.use_yoyo_cpuload)
+			{
+			if (Lcpu_up_block_cycles > dbs_tuners_ins.cpu_down_block_cycles)
+			{
+				schedule_work_on(0, &hotplug_online_work);
+				Lcpu_up_block_cycles = 0;
+			}
+			Lcpu_up_block_cycles++;
+			}
+			else
+				schedule_work_on(0, &hotplug_online_work);
 			//printk(KERN_ERR "CPU_UP %d - %d\n", max_load, dbs_tuners_ins.up_threshold_hotplug);
 			//if (!(delayed_work_pending(&hotplug_online_work)))
 			//{
-				schedule_work_on(0, &hotplug_online_work);
 			//}
 			//cpu_up(1);
 		}
@@ -544,14 +533,125 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 				CPUFREQ_RELATION_H);
 		return;
 	}
-	if (old_freq != 0 && old_freq < policy->max)
+	
+	if (!dbs_tuners_ins.use_yoyo_cpuload)
 	{
-		for_each_cpu(cpu, policy->cpus) {
-			struct cpu_dbs_info_s *j_dbs_info;
-			j_dbs_info = &per_cpu(cs_cpu_dbs_info, cpu);
-			j_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &j_dbs_info->idle_exit_time);
+		if (old_freq > 0 && old_freq < policy->max)
+		{
+			for_each_cpu(cpu, policy->cpus) {
+				struct cpu_dbs_info_s *j_dbs_info;
+				j_dbs_info = &per_cpu(cs_cpu_dbs_info, cpu);
+				j_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &j_dbs_info->idle_exit_time);
+			}
 		}
 	}
+}
+
+unsigned int get_cpu_usage_normal(struct cpufreq_policy *policy, int *old_freq)
+{
+	unsigned int load = 0;
+	unsigned int max_load = 0;
+	u64 now_idle;
+	u64 update_time;
+	u64 delta_idle;
+	u64 delta_time;
+	unsigned int cpu;
+
+	for_each_cpu(cpu, policy->cpus) {
+		struct cpu_dbs_info_s *j_dbs_info;
+		j_dbs_info = &per_cpu(cs_cpu_dbs_info, cpu);
+		*old_freq = (int)policy->cur;
+	
+		now_idle = get_cpu_idle_time_us(cpu, &update_time);
+		if (j_dbs_info->idle_exit_time == 0 || update_time == j_dbs_info->idle_exit_time)
+		{
+			printk(KERN_ERR "LOAD-EXIT1 - %Lx - %Lx\n", update_time, j_dbs_info->idle_exit_time);
+			break;
+		}
+	
+		delta_idle = cputime64_sub(now_idle, j_dbs_info->time_in_idle);
+		delta_time = cputime64_sub(update_time, j_dbs_info->idle_exit_time);
+
+		// If timer ran less than 1ms after short-term sample started, retry.
+		if (delta_time < 1000) {
+			j_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &j_dbs_info->idle_exit_time);
+			printk(KERN_ERR "LOAD-EXIT2\n");
+			break;
+		}
+		if (dbs_tuners_ins.ignore_nice) {
+			cputime64_t cur_nice;
+			unsigned long cur_nice_jiffies;
+			cur_nice = cputime64_sub(kstat_cpu(cpu).cpustat.nice,
+					 j_dbs_info->prev_cpu_nice);
+			cur_nice_jiffies = (unsigned long)
+					cputime64_to_jiffies64(cur_nice);
+			j_dbs_info->prev_cpu_nice = kstat_cpu(cpu).cpustat.nice;
+			delta_idle += jiffies_to_usecs(cur_nice_jiffies);
+		}
+
+		if (delta_idle > delta_time)
+			load = 0;
+		else
+			load = 100 * (unsigned int)(delta_time - delta_idle) / (unsigned int)delta_time;
+
+		if (load > max_load)
+			max_load = load;
+		//printk(KERN_ERR "LOAD-UPDATE1 %d\n", load);
+	}
+	//printk(KERN_ERR "LOAD-UPDATE2 %d\n", load);
+	return max_load;
+
+}
+
+unsigned int get_cpu_usage_yoyo(struct cpufreq_policy *policy)
+{
+	unsigned int load = 0;
+	unsigned int max_load = 0;
+	unsigned int j;
+
+	for_each_cpu(j, policy->cpus) {
+		struct cpu_dbs_info_s *j_dbs_info;
+		cputime64_t cur_wall_time, cur_idle_time;
+		unsigned int idle_time, wall_time;
+
+		j_dbs_info = &per_cpu(cs_cpu_dbs_info, j);
+
+		cur_idle_time = get_cpu_idle_time(j, &cur_wall_time);
+
+		wall_time = (unsigned int) cputime64_sub(cur_wall_time,
+				j_dbs_info->prev_cpu_wall);
+		j_dbs_info->prev_cpu_wall = cur_wall_time;
+
+		idle_time = (unsigned int) cputime64_sub(cur_idle_time,
+				j_dbs_info->prev_cpu_idle);
+		j_dbs_info->prev_cpu_idle = cur_idle_time;
+
+		if (dbs_tuners_ins.ignore_nice) {
+			cputime64_t cur_nice;
+			unsigned long cur_nice_jiffies;
+
+			cur_nice = cputime64_sub(kstat_cpu(j).cpustat.nice,
+					 j_dbs_info->prev_cpu_nice);
+			/*
+			 * Assumption: nice time between sampling periods will
+			 * be less than 2^32 jiffies for 32 bit sys
+			 */
+			cur_nice_jiffies = (unsigned long)
+					cputime64_to_jiffies64(cur_nice);
+
+			j_dbs_info->prev_cpu_nice = kstat_cpu(j).cpustat.nice;
+			idle_time += jiffies_to_usecs(cur_nice_jiffies);
+		}
+
+		if (unlikely(!wall_time || wall_time < idle_time))
+			continue;
+
+		load = 100 * (wall_time - idle_time) / wall_time;
+
+		if (load > max_load)
+			max_load = load;
+	}
+	return max_load;
 }
 
 static void hotplug_offline_work_fn(struct work_struct *work)
