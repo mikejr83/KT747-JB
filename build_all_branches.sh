@@ -1,3 +1,27 @@
+echo "Switch to JellyBean AOSP 4.2"
+git checkout mr1
+
+echo "Make Clean"
+make clean
+echo "Make Mrproper"
+make mrproper
+./build_d2att_aosp.sh
+echo "Make Clean"
+make clean
+echo "Make Mrproper"
+make mrproper
+./build_d2spr_aosp.sh
+echo "Make Clean"
+make clean
+echo "Make Mrproper"
+make mrproper
+./build_d2vzw_aosp.sh
+echo "Make Clean"
+make clean
+echo "Make Mrproper"
+make mrproper
+./build_d2usc_aosp.sh
+
 echo "Switch to JellyBean AOSP 4.1.2"
 git checkout jellybean
 
@@ -55,5 +79,5 @@ echo "Make Mrproper"
 make mrproper
 ./build_d2vzw_sammy.sh
 
-echo "Switch to JellyBean"
-git checkout jellybean
+echo "Switch to JellyBean 4.2"
+git checkout mr1
