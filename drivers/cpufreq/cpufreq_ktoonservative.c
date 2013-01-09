@@ -448,26 +448,21 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	if (dbs_tuners_ins.freq_step == 0)
 		return;
 
-	/* Check for frequency increase is greater than hotplug value */
+	/* Check for load increase is greater than hotplug value */
 	if (max_load > dbs_tuners_ins.up_threshold_hotplug) {
 		if (num_online_cpus() < 2)
 		{
 			if (dbs_tuners_ins.use_yoyo_cpuload)
 			{
-			if (Lcpu_up_block_cycles > dbs_tuners_ins.cpu_down_block_cycles)
-			{
-				schedule_work_on(0, &hotplug_online_work);
-				Lcpu_up_block_cycles = 0;
-			}
-			Lcpu_up_block_cycles++;
+				if (Lcpu_up_block_cycles > dbs_tuners_ins.cpu_down_block_cycles)
+				{
+					schedule_work_on(0, &hotplug_online_work);
+					Lcpu_up_block_cycles = 0;
+				}
+				Lcpu_up_block_cycles++;
 			}
 			else
 				schedule_work_on(0, &hotplug_online_work);
-			//printk(KERN_ERR "CPU_UP %d - %d\n", max_load, dbs_tuners_ins.up_threshold_hotplug);
-			//if (!(delayed_work_pending(&hotplug_online_work)))
-			//{
-			//}
-			//cpu_up(1);
 		}
 	}
 
@@ -494,6 +489,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		return;
 	}
 
+	/* Check for load decrease is less than hotplug value */
 	if (max_load < (dbs_tuners_ins.down_threshold_hotplug)) {
 		if (num_online_cpus() > 1)
 		{
@@ -534,6 +530,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		return;
 	}
 	
+	/* If use_yoyo_cpuload is OFF and we are not increasing Mhz update time_in_idle */
 	if (!dbs_tuners_ins.use_yoyo_cpuload)
 	{
 		if (old_freq > 0 && old_freq < policy->max)
