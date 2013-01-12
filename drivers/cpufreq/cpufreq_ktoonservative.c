@@ -450,7 +450,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 	/* Check for load increase is greater than hotplug value */
 	if (max_load > dbs_tuners_ins.up_threshold_hotplug) {
-		if (num_online_cpus() < 2)
+		if (num_online_cpus() < 2 && policy->cur != policy->min)
 		{
 			if (dbs_tuners_ins.use_yoyo_cpuload)
 			{
