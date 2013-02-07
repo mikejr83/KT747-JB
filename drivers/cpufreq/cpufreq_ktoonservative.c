@@ -751,6 +751,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 	switch (event) {
 	case CPUFREQ_GOV_START:
+		ktoonservative_is_active(true);
 		if ((!cpu_online(cpu)) || (!policy->cur))
 			return -EINVAL;
 
@@ -812,6 +813,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		break;
 
 	case CPUFREQ_GOV_STOP:
+		ktoonservative_is_active(false);
 		dbs_timer_exit(this_dbs_info);
 		
 		this_dbs_info->idle_exit_time = 0;
