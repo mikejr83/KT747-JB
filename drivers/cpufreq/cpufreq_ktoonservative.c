@@ -51,7 +51,7 @@ static unsigned int min_sampling_rate;
 static unsigned int Lcpu_down_block_cycles = 0;
 static unsigned int Lcpu_up_block_cycles = 0;
 static bool screen_is_on = true;
-
+static unsigned int block_from_boost = 0;
 extern void ktoonservative_is_active(bool val);
 extern void ktoonservative_is_active_batt(bool val, unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high);
 
@@ -568,7 +568,10 @@ static struct attribute_group dbs_attr_group = {
 void boostpulse_relay_kt()
 {
 	if (num_online_cpus() < 2 && dbs_tuners_ins.boost_turn_on_2nd_core)
+	{
+		block_from_boost = 22;
 		schedule_work_on(0, &hotplug_online_work);
+	}
 }
 
 /************************** sysfs end ************************/
@@ -653,7 +656,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 	/* Check for load decrease is less than hotplug value */
 	if (max_load < (dbs_tuners_ins.down_threshold_hotplug) && (!dbs_tuners_ins.disable_hotpluging || screen_is_on == false)) {
-		if (num_online_cpus() > 1)
+		if (num_online_cpus() > 1 && block_from_boost == 0)
 		{
 			if (Lcpu_down_block_cycles > dbs_tuners_ins.cpu_down_block_cycles)
 			{
@@ -667,6 +670,8 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 			//}
 			//cpu_down(1);
 		}
+		if (block_from_boost > 0)
+			block_from_boost--;
 	}
 
 	/*
