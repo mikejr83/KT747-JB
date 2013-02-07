@@ -106,6 +106,7 @@ static struct dbs_tuners {
 	unsigned int ignore_nice;
 	unsigned int no_2nd_cpu_screen_off;
 	unsigned int boost_turn_on_2nd_core;
+	unsigned int disable_hotpluging;
 	unsigned int use_yoyo_cpuload;
 	unsigned int freq_step;
 } dbs_tuners_ins = {
@@ -118,6 +119,7 @@ static struct dbs_tuners {
 	.ignore_nice = 0,
 	.no_2nd_cpu_screen_off = 1,
 	.boost_turn_on_2nd_core = 1,
+	.disable_hotpluging = 0,
 	.use_yoyo_cpuload = 0,
 	.freq_step = 5,
 };
@@ -213,6 +215,7 @@ show_one(cpu_down_block_cycles, cpu_down_block_cycles);
 show_one(ignore_nice_load, ignore_nice);
 show_one(no_2nd_cpu_screen_off, no_2nd_cpu_screen_off);
 show_one(boost_turn_on_2nd_core, boost_turn_on_2nd_core);
+show_one(disable_hotpluging, disable_hotpluging);
 show_one(use_yoyo_cpuload, use_yoyo_cpuload);
 show_one(freq_step, freq_step);
 
@@ -348,6 +351,19 @@ static ssize_t store_boost_turn_on_2nd_core(struct kobject *a, struct attribute 
 	return count;
 }
 
+static ssize_t store_disable_hotpluging(struct kobject *a, struct attribute *b, const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (input != 0 && input != 1)
+		input = 0;
+
+	dbs_tuners_ins.disable_hotpluging = input;
+	return count;
+}
+
 static ssize_t store_ignore_nice_load(struct kobject *a, struct attribute *b,
 				      const char *buf, size_t count)
 {
@@ -423,6 +439,7 @@ define_one_global_rw(cpu_down_block_cycles);
 define_one_global_rw(ignore_nice_load);
 define_one_global_rw(no_2nd_cpu_screen_off);
 define_one_global_rw(boost_turn_on_2nd_core);
+define_one_global_rw(disable_hotpluging);
 define_one_global_rw(freq_step);
 define_one_global_rw(use_yoyo_cpuload);
 
@@ -437,6 +454,7 @@ static struct attribute *dbs_attributes[] = {
 	&cpu_down_block_cycles.attr,
 	&no_2nd_cpu_screen_off.attr,
 	&boost_turn_on_2nd_core.attr,
+	&disable_hotpluging.attr,
 	&ignore_nice_load.attr,
 	&freq_step.attr,
 	&use_yoyo_cpuload.attr,
@@ -540,7 +558,8 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		{
 			if (Lcpu_down_block_cycles > dbs_tuners_ins.cpu_down_block_cycles)
 			{
-				schedule_work_on(0, &hotplug_offline_work);
+				if (!dbs_tuners_ins.disable_hotpluging)
+					schedule_work_on(0, &hotplug_offline_work);
 				Lcpu_down_block_cycles = 0;
 			}
 			Lcpu_down_block_cycles++;
