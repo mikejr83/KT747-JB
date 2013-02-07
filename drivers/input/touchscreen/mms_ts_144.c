@@ -254,6 +254,8 @@ const struct firmware *fw_mbin[SECTION_NUM];
 static unsigned char g_wr_buf[1024 + 3 + 2];
 #endif
 
+extern void screen_is_on_relay_kt(bool state);
+
 int touch_is_pressed;
 EXPORT_SYMBOL(touch_is_pressed);
 
@@ -573,9 +575,18 @@ extern void request_suspend_state(int);
 bool s2w_enabled = false;
 bool s2w_enabled_plug = false;
 static unsigned int s2w_enabled_req = 0;
+static bool ktoonservative_is_activef = false;
+
+void ktoonservative_is_active(bool val)
+{
+	ktoonservative_is_activef = val;
+}
 
 static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
 {
+	if (ktoonservative_is_activef)
+		screen_is_on_relay_kt(true);
+
 	mutex_lock(&info->lock);
 	if (info->enabled)
 		goto out;
@@ -613,6 +624,9 @@ out:
 
 static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
 {
+	if (ktoonservative_is_activef)
+		screen_is_on_relay_kt(false);
+
 	mutex_lock(&info->lock);
 	if (!info->enabled)
 		goto out;
