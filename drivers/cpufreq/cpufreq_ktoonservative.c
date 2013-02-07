@@ -47,6 +47,9 @@
 #define MIN_SAMPLING_RATE_RATIO			(2)
 
 static unsigned int min_sampling_rate;
+static bool screen_is_on = true;
+
+extern void ktoonservative_is_active(bool val);
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
@@ -57,6 +60,8 @@ static unsigned int min_sampling_rate;
 static void do_dbs_timer(struct work_struct *work);
 
 struct cpu_dbs_info_s {
+	u64 time_in_idle;
+	u64 idle_exit_time;
 	cputime64_t prev_cpu_idle;
 	cputime64_t prev_cpu_wall;
 	cputime64_t prev_cpu_nice;
@@ -89,6 +94,9 @@ static struct dbs_tuners {
 	unsigned int up_threshold_hotplug;
 	unsigned int down_threshold;
 	unsigned int down_threshold_hotplug;
+	unsigned int no_2nd_cpu_screen_off;
+	unsigned int boost_turn_on_2nd_core;
+	unsigned int disable_hotpluging;
 	unsigned int ignore_nice;
 	unsigned int freq_step;
 } dbs_tuners_ins = {
@@ -98,6 +106,9 @@ static struct dbs_tuners {
 	.down_threshold_hotplug = DEF_FREQUENCY_DOWN_THRESHOLD_HOTPLUG,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.ignore_nice = 0,
+	.no_2nd_cpu_screen_off = 1,
+	.boost_turn_on_2nd_core = 1,
+	.disable_hotpluging = 0,
 	.freq_step = 5,
 };
 
@@ -189,6 +200,9 @@ show_one(up_threshold_hotplug, up_threshold_hotplug);
 show_one(down_threshold, down_threshold);
 show_one(down_threshold_hotplug, down_threshold_hotplug);
 show_one(ignore_nice_load, ignore_nice);
+show_one(no_2nd_cpu_screen_off, no_2nd_cpu_screen_off);
+show_one(boost_turn_on_2nd_core, boost_turn_on_2nd_core);
+show_one(disable_hotpluging, disable_hotpluging);
 show_one(freq_step, freq_step);
 
 static ssize_t store_sampling_down_factor(struct kobject *a,
@@ -282,6 +296,45 @@ static ssize_t store_down_threshold_hotplug(struct kobject *a, struct attribute 
 	return count;
 }
 
+static ssize_t store_no_2nd_cpu_screen_off(struct kobject *a, struct attribute *b, const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+	
+	if (input != 0 && input != 1)
+		input = 0;
+		
+	dbs_tuners_ins.no_2nd_cpu_screen_off = input;
+	return count;
+}
+
+static ssize_t store_boost_turn_on_2nd_core(struct kobject *a, struct attribute *b, const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (input != 0 && input != 1)
+		input = 0;
+
+	dbs_tuners_ins.boost_turn_on_2nd_core = input;
+	return count;
+}
+
+static ssize_t store_disable_hotpluging(struct kobject *a, struct attribute *b, const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (input != 0 && input != 1)
+		input = 0;
+
+	dbs_tuners_ins.disable_hotpluging = input;
+	return count;
+}
+
 static ssize_t store_ignore_nice_load(struct kobject *a, struct attribute *b,
 				      const char *buf, size_t count)
 {
@@ -340,6 +393,9 @@ define_one_global_rw(up_threshold_hotplug);
 define_one_global_rw(down_threshold);
 define_one_global_rw(down_threshold_hotplug);
 define_one_global_rw(ignore_nice_load);
+define_one_global_rw(no_2nd_cpu_screen_off);
+define_one_global_rw(boost_turn_on_2nd_core);
+define_one_global_rw(disable_hotpluging);
 define_one_global_rw(freq_step);
 
 static struct attribute *dbs_attributes[] = {
@@ -350,6 +406,9 @@ static struct attribute *dbs_attributes[] = {
 	&up_threshold_hotplug.attr,
 	&down_threshold.attr,
 	&down_threshold_hotplug.attr,
+	&no_2nd_cpu_screen_off.attr,
+	&boost_turn_on_2nd_core.attr,
+	&disable_hotpluging.attr,
 	&ignore_nice_load.attr,
 	&freq_step.attr,
 	NULL
@@ -359,6 +418,12 @@ static struct attribute_group dbs_attr_group = {
 	.attrs = dbs_attributes,
 	.name = "ktoonservative",
 };
+
+void boostpulse_relay_kt()
+{
+	if (num_online_cpus() < 2 && dbs_tuners_ins.boost_turn_on_2nd_core)
+		cpu_up(1);
+}
 
 /************************** sysfs end ************************/
 
@@ -437,7 +502,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 	/* Check for frequency increase is greater than hotplug value */
 	if (max_load > dbs_tuners_ins.up_threshold_hotplug) {
-		if (num_online_cpus() < 2)
+		if (num_online_cpus() < 2 && (dbs_tuners_ins.no_2nd_cpu_screen_off == 0 || (dbs_tuners_ins.no_2nd_cpu_screen_off == 1 && screen_is_on)))
 			cpu_up(1);
 	}
 
@@ -465,7 +530,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	}
 
 	if (max_load < (dbs_tuners_ins.down_threshold_hotplug)) {
-		if (num_online_cpus() > 1)
+		if (num_online_cpus() > 1 && !dbs_tuners_ins.disable_hotpluging)
 			cpu_down(1);
 	}
 
@@ -491,6 +556,11 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 				CPUFREQ_RELATION_H);
 		return;
 	}
+}
+
+void screen_is_on_relay_kt(bool state)
+{
+	screen_is_on = state;
 }
 
 static void do_dbs_timer(struct work_struct *work)
@@ -541,6 +611,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 	switch (event) {
 	case CPUFREQ_GOV_START:
+		ktoonservative_is_active(true);
 		if ((!cpu_online(cpu)) || (!policy->cur))
 			return -EINVAL;
 
@@ -557,7 +628,9 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 				j_dbs_info->prev_cpu_nice =
 						kstat_cpu(j).cpustat.nice;
 			}
+			j_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &j_dbs_info->idle_exit_time);
 		}
+		this_dbs_info->cpu = cpu;
 		this_dbs_info->down_skip = 0;
 		this_dbs_info->requested_freq = policy->cur;
 
@@ -600,8 +673,11 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		break;
 
 	case CPUFREQ_GOV_STOP:
+		ktoonservative_is_active(false);
 		dbs_timer_exit(this_dbs_info);
-
+		
+		this_dbs_info->idle_exit_time = 0;
+		
 		mutex_lock(&dbs_mutex);
 		dbs_enable--;
 		mutex_destroy(&this_dbs_info->timer_mutex);
@@ -632,7 +708,10 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 			__cpufreq_driver_target(
 					this_dbs_info->cur_policy,
 					policy->min, CPUFREQ_RELATION_L);
+		dbs_check_cpu(this_dbs_info);
 		mutex_unlock(&this_dbs_info->timer_mutex);
+
+		this_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &this_dbs_info->idle_exit_time);
 
 		break;
 	}
@@ -651,6 +730,15 @@ struct cpufreq_governor cpufreq_gov_ktoonservative = {
 
 static int __init cpufreq_gov_dbs_init(void)
 {
+	unsigned int i;
+	struct cpu_dbs_info_s *this_dbs_info;
+	/* Initalize per-cpu data: */
+	for_each_possible_cpu(i) {
+		this_dbs_info = &per_cpu(cs_cpu_dbs_info, i);
+		this_dbs_info->time_in_idle = 0;
+		this_dbs_info->idle_exit_time = 0;
+	}
+	
 	return cpufreq_register_governor(&cpufreq_gov_ktoonservative);
 }
 
