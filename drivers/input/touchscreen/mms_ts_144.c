@@ -254,6 +254,9 @@ const struct firmware *fw_mbin[SECTION_NUM];
 static unsigned char g_wr_buf[1024 + 3 + 2];
 #endif
 
+extern void screen_is_on_relay_kt(bool state);
+extern void boostpulse_relay_kt();
+
 int touch_is_pressed;
 EXPORT_SYMBOL(touch_is_pressed);
 
@@ -573,9 +576,18 @@ extern void request_suspend_state(int);
 bool s2w_enabled = false;
 bool s2w_enabled_plug = false;
 static unsigned int s2w_enabled_req = 0;
+static bool ktoonservative_is_activef = false;
+
+void ktoonservative_is_active(bool val)
+{
+	ktoonservative_is_activef = val;
+}
 
 static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
 {
+	if (ktoonservative_is_activef)
+		screen_is_on_relay_kt(true);
+
 	mutex_lock(&info->lock);
 	if (info->enabled)
 		goto out;
@@ -613,6 +625,9 @@ out:
 
 static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
 {
+	if (ktoonservative_is_activef)
+		screen_is_on_relay_kt(false);
+
 	mutex_lock(&info->lock);
 	if (!info->enabled)
 		goto out;
@@ -821,6 +836,8 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 		input_report_abs(info->input_dev, ABS_MT_PALM, palm);
 #if defined(SEC_TSP_DEBUG)
 		if (info->finger_state[id] == 0) {
+			if (ktoonservative_is_activef)
+				boostpulse_relay_kt();
 			info->finger_state[id] = 1;
 			if (s2w_enabled && x < x_lo && isasleep == true)
 			{
