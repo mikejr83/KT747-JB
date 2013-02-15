@@ -925,7 +925,6 @@ static int check_vaddr_bounds(unsigned long start, unsigned long end)
 	if (end < start)
 		goto out;
 
-	
 	vma = find_vma(mm, start);
 	if (vma && vma->vm_start < end) {
 		if (start < vma->vm_start)
@@ -936,7 +935,6 @@ static int check_vaddr_bounds(unsigned long start, unsigned long end)
 	}
 
 out_up:
-	
 out:
 	return ret;
 }
@@ -1559,7 +1557,6 @@ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 				return -EINVAL;
 			}
 		}
-
 		down_read(&mm->mmap_sem);
 		if (check_vaddr_bounds(start, end)) {
 			up_read(&mm->mmap_sem);
@@ -1575,7 +1572,6 @@ static long ion_ioctl(struct file *filp, unsigned int cmd, unsigned long arg)
 					data.vaddr, data.offset, data.length,
 					cmd);
 		up_read(&mm->mmap_sem);
-
 		if (!data.handle)
 			ion_free(client, handle);
 
