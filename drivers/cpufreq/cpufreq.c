@@ -2718,10 +2718,30 @@ static void cpufreq_gov_suspend(struct early_suspend *h){
 	}
 }
 
+unsigned int set_battery_max_level(unsigned int value)
+{
+	struct cpufreq_policy *policy = NULL;
+	policy = cpufreq_cpu_get(0);
+	if (policy->max != value)
+	{
+		if (vfreq_lock == 1)
+		{
+			vfreq_lock = 0;
+			vfreq_lock_tempOFF = true;
+		}
+		cpufreq_set_limit_defered(USER_MAX_START, value);
+		pr_alert("SET_BATTERY_MAX_LEVEL: %u\n", value);
+	}
+	return Lscreen_off_scaling_mhz_orig;
+}
+
+extern unsigned int get_batt_level();
+
 static void cpufreq_gov_resume(struct early_suspend *h){
 
 	struct cpufreq_policy *policy = NULL;
 	unsigned int value;
+	unsigned int mhz_lvl = 0;
 	cpufreq_gov_lcd_status = 1;
 	if (!cpu_is_offline(0) && scaling_governor_screen_off_sel_prev != NULL && scaling_governor_screen_off_sel_prev[0] != '\0')
 	{
@@ -2741,6 +2761,9 @@ static void cpufreq_gov_resume(struct early_suspend *h){
 			vfreq_lock_tempOFF = true;
 		}
 		value = Lscreen_off_scaling_mhz_orig;
+		mhz_lvl = get_batt_level();
+		if (mhz_lvl > 0)
+			value = mhz_lvl;
 		cpufreq_set_limit_defered(USER_MAX_START, value);
 		pr_alert("cpufreq_gov_resume_freq: %u\n", value);
 	}
