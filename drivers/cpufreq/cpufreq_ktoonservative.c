@@ -53,6 +53,7 @@ static unsigned int Lcpu_up_block_cycles = 0;
 static bool screen_is_on = true;
 
 extern void ktoonservative_is_active(bool val);
+extern void ktoonservative_is_active_batt(bool val, unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high);
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
@@ -108,6 +109,10 @@ static struct dbs_tuners {
 	unsigned int boost_turn_on_2nd_core;
 	unsigned int disable_hotpluging;
 	unsigned int use_yoyo_cpuload;
+	unsigned int battery_ctrl_batt_lvl_low;
+	unsigned int battery_ctrl_batt_lvl_high;
+	unsigned int battery_ctrl_mhz_lvl_low;
+	unsigned int battery_ctrl_mhz_lvl_high;
 	unsigned int freq_step;
 } dbs_tuners_ins = {
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
@@ -121,6 +126,10 @@ static struct dbs_tuners {
 	.boost_turn_on_2nd_core = 1,
 	.disable_hotpluging = 0,
 	.use_yoyo_cpuload = 0,
+	.battery_ctrl_batt_lvl_low = 0,
+	.battery_ctrl_batt_lvl_high = 0,
+	.battery_ctrl_mhz_lvl_low = 0,
+	.battery_ctrl_mhz_lvl_high = 0,
 	.freq_step = 5,
 };
 
@@ -217,6 +226,10 @@ show_one(no_2nd_cpu_screen_off, no_2nd_cpu_screen_off);
 show_one(boost_turn_on_2nd_core, boost_turn_on_2nd_core);
 show_one(disable_hotpluging, disable_hotpluging);
 show_one(use_yoyo_cpuload, use_yoyo_cpuload);
+show_one(battery_ctrl_batt_lvl_low, battery_ctrl_batt_lvl_low);
+show_one(battery_ctrl_batt_lvl_high, battery_ctrl_batt_lvl_high);
+show_one(battery_ctrl_mhz_lvl_low, battery_ctrl_mhz_lvl_low);
+show_one(battery_ctrl_mhz_lvl_high, battery_ctrl_mhz_lvl_high);
 show_one(freq_step, freq_step);
 
 static ssize_t store_sampling_down_factor(struct kobject *a,
@@ -429,6 +442,84 @@ static ssize_t store_use_yoyo_cpuload(struct kobject *a, struct attribute *b,
 	return count;
 }
 
+static ssize_t store_battery_ctrl_batt_lvl_low(struct kobject *a, struct attribute *b,
+			       const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+	
+	if (input < 0 || input > 100)
+		input = 0;
+	dbs_tuners_ins.battery_ctrl_batt_lvl_low = input;
+	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
+	return count;
+}
+
+static ssize_t store_battery_ctrl_batt_lvl_high(struct kobject *a, struct attribute *b,
+			       const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+	
+	if (input < 0 || input > 100)
+		input = 0;
+	dbs_tuners_ins.battery_ctrl_batt_lvl_high = input;
+	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
+	return count;
+}
+
+static ssize_t store_battery_ctrl_mhz_lvl_low(struct kobject *a, struct attribute *b,
+			       const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	//struct cpu_dbs_info_s *this_dbs_info = &per_cpu(cs_cpu_dbs_info, 0);
+	//struct cpufreq_policy *policy = this_dbs_info->cur_policy;
+
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+	
+	//pr_alert("BATT_SET_LVL_LOW1: %u-%u-%u\n", input, policy->min, policy->max);
+	
+	if (input < 192000 || input > 2106000)
+		input = 0;
+	//pr_alert("BATT_SET_LVL_LOW2: %u-%u-%u\n", input, policy->min, policy->max);
+	dbs_tuners_ins.battery_ctrl_mhz_lvl_low = input;
+	//pr_alert("BATT_SET_LVL_LOW3: %u-%u-%u\n", dbs_tuners_ins.battery_ctrl_mhz_lvl_low, policy->min, policy->max);
+	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
+	return count;
+}
+
+static ssize_t store_battery_ctrl_mhz_lvl_high(struct kobject *a, struct attribute *b,
+			       const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	//struct cpu_dbs_info_s *this_dbs_info = &per_cpu(cs_cpu_dbs_info, 0);
+	//struct cpufreq_policy *policy = this_dbs_info->cur_policy;
+
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+	
+	if (input < 192000 || input > 2106000)
+		input = 0;
+	dbs_tuners_ins.battery_ctrl_mhz_lvl_high = input;
+	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
+	return count;
+}
+
 define_one_global_rw(sampling_rate);
 define_one_global_rw(sampling_down_factor);
 define_one_global_rw(up_threshold);
@@ -442,6 +533,10 @@ define_one_global_rw(boost_turn_on_2nd_core);
 define_one_global_rw(disable_hotpluging);
 define_one_global_rw(freq_step);
 define_one_global_rw(use_yoyo_cpuload);
+define_one_global_rw(battery_ctrl_batt_lvl_low);
+define_one_global_rw(battery_ctrl_batt_lvl_high);
+define_one_global_rw(battery_ctrl_mhz_lvl_low);
+define_one_global_rw(battery_ctrl_mhz_lvl_high);
 
 static struct attribute *dbs_attributes[] = {
 	&sampling_rate_min.attr,
@@ -458,6 +553,10 @@ static struct attribute *dbs_attributes[] = {
 	&ignore_nice_load.attr,
 	&freq_step.attr,
 	&use_yoyo_cpuload.attr,
+	&battery_ctrl_batt_lvl_low.attr,
+	&battery_ctrl_batt_lvl_high.attr,
+	&battery_ctrl_mhz_lvl_low.attr,
+	&battery_ctrl_mhz_lvl_high.attr,
 	NULL
 };
 
@@ -794,6 +893,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	switch (event) {
 	case CPUFREQ_GOV_START:
 		ktoonservative_is_active(true);
+		ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
 		if ((!cpu_online(cpu)) || (!policy->cur))
 			return -EINVAL;
 
@@ -856,6 +956,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 	case CPUFREQ_GOV_STOP:
 		ktoonservative_is_active(false);
+		ktoonservative_is_active_batt(false, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
 		dbs_timer_exit(this_dbs_info);
 		
 		this_dbs_info->idle_exit_time = 0;
