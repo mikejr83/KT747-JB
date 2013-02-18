@@ -54,6 +54,8 @@ static unsigned int vfreq_lock = 0;
 static bool vfreq_lock_tempOFF = false;
 static char scaling_governor_screen_off_sel[16];
 static char scaling_governor_screen_off_sel_prev[16];
+static char scaling_sched_screen_off_sel[16];
+static char scaling_sched_screen_off_sel_prev[16];
 
 static unsigned int isBooted = 0;
 
@@ -621,6 +623,20 @@ static ssize_t store_scaling_governor_screen_off(struct cpufreq_policy *policy,
 	return count;
 }
 
+static ssize_t show_scaling_sched_screen_off(struct cpufreq_policy *policy, char *buf)
+{
+	return scnprintf(buf, 16, "%s\n",
+				scaling_sched_screen_off_sel);
+}
+
+static ssize_t store_scaling_sched_screen_off(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	ret = sscanf(buf, "%15s", scaling_sched_screen_off_sel);
+	return count;
+}
+
 /**
  * show_scaling_governor - show the current policy for the specified CPU
  */
@@ -1000,6 +1016,7 @@ cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_governor_screen_off);
+cpufreq_freq_attr_rw(scaling_sched_screen_off);
 cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(scaling_booted);
 cpufreq_freq_attr_rw(touch_booster_first_freq_limit);
@@ -1022,6 +1039,7 @@ static struct attribute *default_attrs[] = {
 	&related_cpus.attr,
 	&scaling_governor.attr,
 	&scaling_governor_screen_off.attr,
+	&scaling_sched_screen_off.attr,
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
@@ -2677,6 +2695,14 @@ void set_call_in_progress(bool state)
 	call_in_progress = state;
 }
 
+extern int elevator_change_relay(const char *name);
+
+void set_cur_sched(const char *name)
+{
+	unsigned int ret = -EINVAL;
+	ret = sscanf(name, "%15s", scaling_sched_screen_off_sel_prev);
+}
+
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void cpufreq_gov_suspend(struct early_suspend *h){
 
@@ -2684,6 +2710,7 @@ static void cpufreq_gov_suspend(struct early_suspend *h){
 	unsigned int ret = -EINVAL;
 	unsigned int value;
 	cpufreq_gov_lcd_status = 0;
+
 	if (!cpu_is_offline(0) && scaling_governor_screen_off_sel != NULL && scaling_governor_screen_off_sel[0] != '\0')
 	{
 		policy = cpufreq_cpu_get(0);
@@ -2698,6 +2725,14 @@ static void cpufreq_gov_suspend(struct early_suspend *h){
 	}
 	else
 		pr_alert("cpufreq_gov_suspend_gov_DENIED2: %s\n", scaling_governor_screen_off_sel);
+
+	if (!cpu_is_offline(0) && scaling_sched_screen_off_sel != NULL && scaling_sched_screen_off_sel[0] != '\0')
+	{
+		elevator_change_relay(scaling_sched_screen_off_sel);
+		pr_alert("cpufreq_gov_suspend_gov_SCHED: %s\n", scaling_sched_screen_off_sel);
+	}
+	else
+		pr_alert("cpufreq_gov_suspend_gov_SCHED_DENIED2: %s\n", scaling_sched_screen_off_sel);
 
 	if (!call_in_progress || Ldisable_som_call_in_progress == 0)
 	{
@@ -2743,6 +2778,7 @@ static void cpufreq_gov_resume(struct early_suspend *h){
 	unsigned int value;
 	unsigned int mhz_lvl = 0;
 	cpufreq_gov_lcd_status = 1;
+
 	if (!cpu_is_offline(0) && scaling_governor_screen_off_sel_prev != NULL && scaling_governor_screen_off_sel_prev[0] != '\0')
 	{
 		policy = cpufreq_cpu_get(0);
@@ -2753,6 +2789,17 @@ static void cpufreq_gov_resume(struct early_suspend *h){
 	{
 		pr_alert("cpufreq_gov_resume_gov_DENIED: %s\n", scaling_governor_screen_off_sel_prev);
 	}
+
+	if (!cpu_is_offline(0) && scaling_sched_screen_off_sel_prev != NULL && scaling_sched_screen_off_sel_prev[0] != '\0' && scaling_sched_screen_off_sel != NULL && scaling_sched_screen_off_sel[0] != '\0')
+	{
+		elevator_change_relay(scaling_sched_screen_off_sel_prev);
+		pr_alert("cpufreq_gov_resume_gov_SCHED: %s\n", scaling_sched_screen_off_sel_prev);
+	}
+	else
+	{
+		pr_alert("cpufreq_gov_resume_gov_SCHED_DENIED2: %s\n", scaling_sched_screen_off_sel_prev);
+	}
+
 	if (Lscreen_off_scaling_enable == 1 && (!call_in_progress || Ldisable_som_call_in_progress == 0))
 	{
 		if (vfreq_lock == 1)
