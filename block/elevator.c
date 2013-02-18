@@ -43,6 +43,8 @@
 static DEFINE_SPINLOCK(elv_list_lock);
 static LIST_HEAD(elv_list);
 
+static struct request_queue *globalq[5];
+static unsigned int queue_size = 0;
 /*
  * Merge hash stuff.
  */
@@ -251,6 +253,7 @@ int elevator_init(struct request_queue *q, char *name)
 	q->last_merge = NULL;
 	q->end_sector = 0;
 	q->boundary_rq = NULL;
+	q->index = queue_size;
 
 	if (name) {
 		e = elevator_get(name);
@@ -285,7 +288,11 @@ int elevator_init(struct request_queue *q, char *name)
 		return -ENOMEM;
 	}
 
+	q->index = queue_size;
 	elevator_attach(q, eq, data);
+	globalq[queue_size] = q;
+	pr_alert("ELEVATOR_INIT: %s-%d\n", q->elevator->elevator_type->elevator_name, queue_size);
+	queue_size += 1;
 	return 0;
 }
 EXPORT_SYMBOL(elevator_init);
@@ -1067,12 +1074,34 @@ fail_register:
 	return err;
 }
 
+int elevator_change_relay(const char *name)
+{
+	/*char elevator_name[ELV_NAME_MAX];
+	struct elevator_type *e;
+
+	strlcpy(elevator_name, name, sizeof(elevator_name));
+	e = elevator_get(strstrip(elevator_name));
+	if (!e) {
+		pr_alert(KERN_ERR "ELEVATOR: type %s not found\n", elevator_name);
+		return -EINVAL;
+	}
+	pr_alert("CHANGE_SCHEDULER: %s\n", name);
+	elevator_put(e);
+	return 0;*/
+	int i = 0;
+	for (i = 0; i < queue_size; i++)
+		elevator_change(globalq[i], name);
+	return 0;
+}
+
+extern void set_cur_sched(const char *name);
 /*
  * Switch this queue to the given IO scheduler.
  */
 int elevator_change(struct request_queue *q, const char *name)
 {
 	char elevator_name[ELV_NAME_MAX];
+	int ret = 0;
 	struct elevator_type *e;
 
 	if (!q->elevator)
@@ -1089,8 +1118,11 @@ int elevator_change(struct request_queue *q, const char *name)
 		elevator_put(e);
 		return 0;
 	}
-
-	return elevator_switch(q, e);
+	pr_alert("CHANGE_SCHEDULER1: %s-%s\n", name, q->elevator->elevator_type->elevator_name);
+	ret = elevator_switch(q, e);
+	pr_alert("CHANGE_SCHEDULER2: %s-%s-%d\n", name, q->elevator->elevator_type->elevator_name, ret);
+	
+	return ret;
 }
 EXPORT_SYMBOL(elevator_change);
 
@@ -1103,6 +1135,9 @@ ssize_t elv_iosched_store(struct request_queue *q, const char *name,
 		return count;
 
 	ret = elevator_change(q, name);
+	globalq[q->index] = q;
+	pr_alert("IOSCHED_STORE: %s-%s-%s-%d\n", name, q->elevator->elevator_type->elevator_name, globalq[q->index]->elevator->elevator_type->elevator_name, q->index);
+	set_cur_sched(name);
 	if (!ret)
 		return count;
 
