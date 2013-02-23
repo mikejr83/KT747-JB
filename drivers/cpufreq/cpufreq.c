@@ -2695,7 +2695,7 @@ void set_call_in_progress(bool state)
 	call_in_progress = state;
 }
 
-extern int elevator_change_relay(const char *name);
+extern int elevator_change_relay(const char *name, int screen_status);
 
 void set_cur_sched(const char *name)
 {
@@ -2728,7 +2728,7 @@ static void cpufreq_gov_suspend(struct early_suspend *h){
 
 	if (!cpu_is_offline(0) && scaling_sched_screen_off_sel != NULL && scaling_sched_screen_off_sel[0] != '\0')
 	{
-		elevator_change_relay(scaling_sched_screen_off_sel);
+		elevator_change_relay(scaling_sched_screen_off_sel, 1);
 		pr_alert("cpufreq_gov_suspend_gov_SCHED: %s\n", scaling_sched_screen_off_sel);
 	}
 	else
@@ -2792,7 +2792,7 @@ static void cpufreq_gov_resume(struct early_suspend *h){
 
 	if (!cpu_is_offline(0) && scaling_sched_screen_off_sel_prev != NULL && scaling_sched_screen_off_sel_prev[0] != '\0' && scaling_sched_screen_off_sel != NULL && scaling_sched_screen_off_sel[0] != '\0')
 	{
-		elevator_change_relay(scaling_sched_screen_off_sel_prev);
+		elevator_change_relay(scaling_sched_screen_off_sel_prev, 2);
 		pr_alert("cpufreq_gov_resume_gov_SCHED: %s\n", scaling_sched_screen_off_sel_prev);
 	}
 	else
