@@ -1623,7 +1623,7 @@ unsigned int get_batt_level()
 		if (gbatt_soc <= gbatt_lvl_high)
 			return gmhz_lvl_high;
 	}
-	if (gbatt_lvl_high > 0 && gmhz_lvl_high > 0 && gbatt_soc > gbatt_lvl_high)
+	if ((gbatt_lvl_low > 0 && gbatt_soc > gbatt_lvl_low) || (gmhz_lvl_high > 0 && gbatt_soc > gbatt_lvl_high))
 		return Lscreen_off_scaling_mhz_orig;
 	else
 		return 0;
