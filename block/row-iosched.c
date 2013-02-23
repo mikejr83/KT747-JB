@@ -26,6 +26,7 @@
 #include <linux/compiler.h>
 #include <linux/blktrace_api.h>
 #include <linux/jiffies.h>
+#include "kt_save_sched.h"
 
 /*
  * enum row_queue_prio - Priorities of the ROW queues
@@ -542,9 +543,18 @@ static void *row_init_queue(struct request_queue *q)
 	if (!rdata)
 		return NULL;
 
+	load_prev_screen_on = isload_prev_screen_on();
 	for (i = 0; i < ROWQ_MAX_PRIO; i++) {
 		INIT_LIST_HEAD(&rdata->row_queues[i].fifo);
-		rdata->row_queues[i].disp_quantum = row_queues_def[i].quantum;
+		if (load_prev_screen_on == 2)
+			rdata->row_queues[i].disp_quantum = gsched_vars[i];
+		else
+		{
+			rdata->row_queues[i].disp_quantum = row_queues_def[i].quantum;
+			if (load_prev_screen_on == 0)
+				gsched_vars[i] = row_queues_def[i].quantum;
+		}
+		//pr_alert("ROW_INIT: %d-%d\n", i, gsched_vars[i]);
 		rdata->row_queues[i].rdata = rdata;
 		rdata->row_queues[i].prio = i;
 		rdata->row_queues[i].idle_data.begin_idling = false;
@@ -557,11 +567,26 @@ static void *row_init_queue(struct request_queue *q)
 	 * enable it for write queues also, note that idling frequency will
 	 * be the same in both cases
 	 */
-	rdata->read_idle.idle_time = msecs_to_jiffies(ROW_IDLE_TIME_MSEC);
+	 
+	if (load_prev_screen_on == 2)
+		rdata->read_idle.idle_time = gsched_vars[7];
+	else
+	{
+		rdata->read_idle.idle_time = msecs_to_jiffies(ROW_IDLE_TIME_MSEC);
+		if (load_prev_screen_on == 0)
+			gsched_vars[7] = msecs_to_jiffies(ROW_IDLE_TIME_MSEC);
+	}
 	/* Maybe 0 on some platforms */
 	if (!rdata->read_idle.idle_time)
 		rdata->read_idle.idle_time = 1;
-	rdata->read_idle.freq = ROW_READ_FREQ_MSEC;
+	if (load_prev_screen_on == 2)
+		rdata->read_idle.freq = gsched_vars[8];
+	else
+	{
+		rdata->read_idle.freq = ROW_READ_FREQ_MSEC;
+		if (load_prev_screen_on == 0)
+			gsched_vars[8] = ROW_READ_FREQ_MSEC;
+	}
 	rdata->read_idle.idle_workqueue = alloc_workqueue("row_idle_work",
 					    WQ_MEM_RECLAIM | WQ_HIGHPRI, 0);
 	if (!rdata->read_idle.idle_workqueue)
@@ -696,7 +721,7 @@ SHOW_FUNCTION(row_read_idle_show, rowd->read_idle.idle_time, 0);
 SHOW_FUNCTION(row_read_idle_freq_show, rowd->read_idle.freq, 0);
 #undef SHOW_FUNCTION
 
-#define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
+#define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV, NDX)		\
 static ssize_t __FUNC(struct elevator_queue *e,				\
 		const char *page, size_t count)				\
 {									\
@@ -710,30 +735,31 @@ static ssize_t __FUNC(struct elevator_queue *e,				\
 	else if (__data > (MAX))					\
 		__data = (MAX);						\
 	*(__PTR) = __data;						\
+	gsched_vars[NDX] = __data;					\
 	return ret;							\
 }
 STORE_FUNCTION(row_hp_read_quantum_store,
-&rowd->row_queues[ROWQ_PRIO_HIGH_READ].disp_quantum, 1, INT_MAX, 0);
+&rowd->row_queues[ROWQ_PRIO_HIGH_READ].disp_quantum, 1, INT_MAX, 0, 0);
 STORE_FUNCTION(row_rp_read_quantum_store,
 			&rowd->row_queues[ROWQ_PRIO_REG_READ].disp_quantum,
-			1, INT_MAX, 0);
+			1, INT_MAX, 0, 1);
 STORE_FUNCTION(row_hp_swrite_quantum_store,
 			&rowd->row_queues[ROWQ_PRIO_HIGH_SWRITE].disp_quantum,
-			1, INT_MAX, 0);
+			1, INT_MAX, 0, 2);
 STORE_FUNCTION(row_rp_swrite_quantum_store,
 			&rowd->row_queues[ROWQ_PRIO_REG_SWRITE].disp_quantum,
-			1, INT_MAX, 0);
+			1, INT_MAX, 0, 3);
 STORE_FUNCTION(row_rp_write_quantum_store,
 			&rowd->row_queues[ROWQ_PRIO_REG_WRITE].disp_quantum,
-			1, INT_MAX, 0);
+			1, INT_MAX, 0, 4);
 STORE_FUNCTION(row_lp_read_quantum_store,
 			&rowd->row_queues[ROWQ_PRIO_LOW_READ].disp_quantum,
-			1, INT_MAX, 0);
+			1, INT_MAX, 0, 5);
 STORE_FUNCTION(row_lp_swrite_quantum_store,
 			&rowd->row_queues[ROWQ_PRIO_LOW_SWRITE].disp_quantum,
-			1, INT_MAX, 1);
-STORE_FUNCTION(row_read_idle_store, &rowd->read_idle.idle_time, 1, INT_MAX, 0);
-STORE_FUNCTION(row_read_idle_freq_store, &rowd->read_idle.freq, 1, INT_MAX, 0);
+			1, INT_MAX, 1, 6);
+STORE_FUNCTION(row_read_idle_store, &rowd->read_idle.idle_time, 1, INT_MAX, 0, 7);
+STORE_FUNCTION(row_read_idle_freq_store, &rowd->read_idle.freq, 1, INT_MAX, 0, 8);
 
 #undef STORE_FUNCTION
 

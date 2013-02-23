@@ -63,6 +63,7 @@
 #include <linux/rbtree.h>
 #include <linux/ioprio.h>
 #include "bfq.h"
+#include "kt_save_sched.h"
 
 /* Max number of dispatches in one round of service. */
 static const int bfq_quantum = 4;
@@ -2707,27 +2708,70 @@ static void *bfq_init_queue(struct request_queue *q)
 
 	bfqd->hw_tag = -1;
 
-	bfqd->bfq_max_budget = bfq_default_max_budget;
-
-	bfqd->bfq_quantum = bfq_quantum;
-	bfqd->bfq_fifo_expire[0] = bfq_fifo_expire[0];
-	bfqd->bfq_fifo_expire[1] = bfq_fifo_expire[1];
-	bfqd->bfq_back_max = bfq_back_max;
-	bfqd->bfq_back_penalty = bfq_back_penalty;
-	bfqd->bfq_slice_idle = bfq_slice_idle;
-	bfqd->bfq_class_idle_last_service = 0;
-	bfqd->bfq_max_budget_async_rq = bfq_max_budget_async_rq;
-	bfqd->bfq_timeout[BLK_RW_ASYNC] = bfq_timeout_async;
-	bfqd->bfq_timeout[BLK_RW_SYNC] = bfq_timeout_sync;
-
-	bfqd->low_latency = true;
-
-	bfqd->bfq_raising_coeff = 20;
-	bfqd->bfq_raising_rt_max_time = msecs_to_jiffies(300);
-	bfqd->bfq_raising_max_time = 0;
-	bfqd->bfq_raising_min_idle_time = msecs_to_jiffies(2000);
-	bfqd->bfq_raising_min_inter_arr_async = msecs_to_jiffies(500);
-	bfqd->bfq_raising_max_softrt_rate = 7000;
+	load_prev_screen_on = isload_prev_screen_on();
+	if (load_prev_screen_on == 2)
+	{
+		bfqd->bfq_user_max_budget = gsched_vars[14];
+		bfqd->bfq_max_budget = gsched_vars[15];
+		bfqd->bfq_quantum = gsched_vars[0];
+		bfqd->bfq_fifo_expire[0] = gsched_vars[2];
+		bfqd->bfq_fifo_expire[1] = gsched_vars[1];
+		bfqd->bfq_back_max = gsched_vars[3];
+		bfqd->bfq_back_penalty = gsched_vars[4];
+		bfqd->bfq_slice_idle = gsched_vars[5];
+		bfqd->bfq_class_idle_last_service = 0;
+		bfqd->bfq_max_budget_async_rq = gsched_vars[6];
+		bfqd->bfq_timeout[BLK_RW_ASYNC] = gsched_vars[7];
+		bfqd->bfq_timeout[BLK_RW_SYNC] = bfq_timeout_sync;
+		bfqd->low_latency = gsched_vars[16];
+		bfqd->bfq_raising_coeff = gsched_vars[8];
+		bfqd->bfq_raising_rt_max_time = gsched_vars[10];
+		bfqd->bfq_raising_max_time = gsched_vars[9];
+		bfqd->bfq_raising_min_idle_time = gsched_vars[11];
+		bfqd->bfq_raising_min_inter_arr_async = gsched_vars[12];
+		bfqd->bfq_raising_max_softrt_rate = gsched_vars[13];
+	}
+	else
+	{
+		bfqd->bfq_max_budget = bfq_default_max_budget;
+		bfqd->bfq_quantum = bfq_quantum;
+		bfqd->bfq_fifo_expire[0] = bfq_fifo_expire[0];
+		bfqd->bfq_fifo_expire[1] = bfq_fifo_expire[1];
+		bfqd->bfq_back_max = bfq_back_max;
+		bfqd->bfq_back_penalty = bfq_back_penalty;
+		bfqd->bfq_slice_idle = bfq_slice_idle;
+		bfqd->bfq_class_idle_last_service = 0;
+		bfqd->bfq_max_budget_async_rq = bfq_max_budget_async_rq;
+		bfqd->bfq_timeout[BLK_RW_ASYNC] = bfq_timeout_async;
+		bfqd->bfq_timeout[BLK_RW_SYNC] = bfq_timeout_sync;
+		bfqd->low_latency = true;
+		bfqd->bfq_raising_coeff = 20;
+		bfqd->bfq_raising_rt_max_time = msecs_to_jiffies(300);
+		bfqd->bfq_raising_max_time = 0;
+		bfqd->bfq_raising_min_idle_time = msecs_to_jiffies(2000);
+		bfqd->bfq_raising_min_inter_arr_async = msecs_to_jiffies(500);
+		bfqd->bfq_raising_max_softrt_rate = 7000;
+		if (load_prev_screen_on == 0)
+		{
+			gsched_vars[14] = bfqd->bfq_user_max_budget;
+			gsched_vars[15] = bfqd->bfq_max_budget;
+			gsched_vars[0] = bfqd->bfq_quantum;
+			gsched_vars[2] = bfqd->bfq_fifo_expire[0];
+			gsched_vars[1] = bfqd->bfq_fifo_expire[1];
+			gsched_vars[3] = bfqd->bfq_back_max;
+			gsched_vars[4] = bfqd->bfq_back_penalty;
+			gsched_vars[5] = bfqd->bfq_slice_idle;
+			gsched_vars[6] = bfqd->bfq_max_budget_async_rq;
+			gsched_vars[7] = bfqd->bfq_timeout[BLK_RW_ASYNC];
+			gsched_vars[16] = bfqd->low_latency;
+			gsched_vars[8] = bfqd->bfq_raising_coeff;
+			gsched_vars[10] = bfqd->bfq_raising_rt_max_time;
+			gsched_vars[9] = bfqd->bfq_raising_max_time;
+			gsched_vars[11] = bfqd->bfq_raising_min_idle_time;
+			gsched_vars[12] = bfqd->bfq_raising_min_inter_arr_async;
+			gsched_vars[13] = bfqd->bfq_raising_max_softrt_rate;
+		}
+	}
 
 	/* Initially estimate the device's peak rate as the reference rate */
 	if (blk_queue_nonrot(bfqd->queue)) {
@@ -2857,7 +2901,7 @@ SHOW_FUNCTION(bfq_raising_max_softrt_rate_show,
 	bfqd->bfq_raising_max_softrt_rate, 0);
 #undef SHOW_FUNCTION
 
-#define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV)			\
+#define STORE_FUNCTION(__FUNC, __PTR, MIN, MAX, __CONV, NDX)		\
 static ssize_t								\
 __FUNC(struct elevator_queue *e, const char *page, size_t count)	\
 {									\
@@ -2872,33 +2916,34 @@ __FUNC(struct elevator_queue *e, const char *page, size_t count)	\
 		*(__PTR) = msecs_to_jiffies(__data);			\
 	else								\
 		*(__PTR) = __data;					\
+	gsched_vars[NDX] = __data;					\
 	return ret;							\
 }
-STORE_FUNCTION(bfq_quantum_store, &bfqd->bfq_quantum, 1, INT_MAX, 0);
+STORE_FUNCTION(bfq_quantum_store, &bfqd->bfq_quantum, 1, INT_MAX, 0, 0);
 STORE_FUNCTION(bfq_fifo_expire_sync_store, &bfqd->bfq_fifo_expire[1], 1,
-		INT_MAX, 1);
+		INT_MAX, 1, 1);
 STORE_FUNCTION(bfq_fifo_expire_async_store, &bfqd->bfq_fifo_expire[0], 1,
-		INT_MAX, 1);
-STORE_FUNCTION(bfq_back_seek_max_store, &bfqd->bfq_back_max, 0, INT_MAX, 0);
+		INT_MAX, 1, 2);
+STORE_FUNCTION(bfq_back_seek_max_store, &bfqd->bfq_back_max, 0, INT_MAX, 0, 3);
 STORE_FUNCTION(bfq_back_seek_penalty_store, &bfqd->bfq_back_penalty, 1,
-		INT_MAX, 0);
-STORE_FUNCTION(bfq_slice_idle_store, &bfqd->bfq_slice_idle, 0, INT_MAX, 1);
+		INT_MAX, 0, 4);
+STORE_FUNCTION(bfq_slice_idle_store, &bfqd->bfq_slice_idle, 0, INT_MAX, 1, 5);
 STORE_FUNCTION(bfq_max_budget_async_rq_store, &bfqd->bfq_max_budget_async_rq,
-		1, INT_MAX, 0);
+		1, INT_MAX, 0, 6);
 STORE_FUNCTION(bfq_timeout_async_store, &bfqd->bfq_timeout[BLK_RW_ASYNC], 0,
-		INT_MAX, 1);
+		INT_MAX, 1, 7);
 STORE_FUNCTION(bfq_raising_coeff_store, &bfqd->bfq_raising_coeff, 1,
-		INT_MAX, 0);
+		INT_MAX, 0, 8);
 STORE_FUNCTION(bfq_raising_max_time_store, &bfqd->bfq_raising_max_time, 0,
-		INT_MAX, 1);
+		INT_MAX, 1, 9);
 STORE_FUNCTION(bfq_raising_rt_max_time_store, &bfqd->bfq_raising_rt_max_time, 0,
-		INT_MAX, 1);
+		INT_MAX, 1, 10);
 STORE_FUNCTION(bfq_raising_min_idle_time_store,
-	       &bfqd->bfq_raising_min_idle_time, 0, INT_MAX, 1);
+	       &bfqd->bfq_raising_min_idle_time, 0, INT_MAX, 1, 11);
 STORE_FUNCTION(bfq_raising_min_inter_arr_async_store,
-	       &bfqd->bfq_raising_min_inter_arr_async, 0, INT_MAX, 1);
+	       &bfqd->bfq_raising_min_inter_arr_async, 0, INT_MAX, 1, 12);
 STORE_FUNCTION(bfq_raising_max_softrt_rate_store,
-	       &bfqd->bfq_raising_max_softrt_rate, 0, INT_MAX, 0);
+	       &bfqd->bfq_raising_max_softrt_rate, 0, INT_MAX, 0, 13);
 #undef STORE_FUNCTION
 
 /* do nothing for the moment */
@@ -2934,6 +2979,7 @@ static ssize_t bfq_max_budget_store(struct elevator_queue *e,
 	}
 
 	bfqd->bfq_user_max_budget = __data;
+	gsched_vars[14] = bfqd->bfq_user_max_budget;
 
 	return ret;
 }
@@ -2954,6 +3000,8 @@ static ssize_t bfq_timeout_sync_store(struct elevator_queue *e,
 	if (bfqd->bfq_user_max_budget == 0)
 		bfqd->bfq_max_budget = bfq_estimated_max_budget(bfqd);
 
+	gsched_vars[15] = bfqd->bfq_max_budget;
+
 	return ret;
 }
 
@@ -2967,6 +3015,7 @@ static ssize_t bfq_low_latency_store(struct elevator_queue *e,
 	if (__data > 1)
 		__data = 1;
 	bfqd->low_latency = __data;
+	gsched_vars[16] = bfqd->low_latency;
 
 	return ret;
 }
