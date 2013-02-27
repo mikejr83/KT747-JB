@@ -1174,6 +1174,7 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	map.type = MT_HIGH_VECTORS;
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #else
 	map.type = MT_LOW_VECTORS;
 #endif
@@ -1184,6 +1185,8 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	map.type = MT_LOW_VECTORS;
 #endif
 >>>>>>> 757a94d... Merge "ARM: make vectors page inaccessible from userspace"
+=======
+>>>>>>> f156a13... Revert "ARM: allow the kernel text section to be made read-only"
 	create_mapping(&map);
 
 	if (!vectors_high()) {
