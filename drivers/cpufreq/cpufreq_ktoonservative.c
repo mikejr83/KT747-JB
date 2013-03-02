@@ -48,6 +48,7 @@
 
 static unsigned int min_sampling_rate;
 static bool screen_is_on = true;
+static unsigned int block_from_boost = 0;
 
 extern void ktoonservative_is_active(bool val);
 extern void ktoonservative_is_active_batt(bool val, unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high);
@@ -521,7 +522,10 @@ static struct attribute_group dbs_attr_group = {
 void boostpulse_relay_kt()
 {
 	if (num_online_cpus() < 2 && dbs_tuners_ins.boost_turn_on_2nd_core)
+	{
+		block_from_boost = 22;
 		cpu_up(1);
+	}
 }
 
 /************************** sysfs end ************************/
@@ -629,8 +633,10 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	}
 
 	if (max_load < (dbs_tuners_ins.down_threshold_hotplug)) {
-		if (num_online_cpus() > 1 && (!dbs_tuners_ins.disable_hotpluging || screen_is_on == false))
+		if (num_online_cpus() > 1 && block_from_boost == 0 && (!dbs_tuners_ins.disable_hotpluging || screen_is_on == false))
 			cpu_down(1);
+		if (block_from_boost > 0)
+			block_from_boost--;
 	}
 
 	/*
