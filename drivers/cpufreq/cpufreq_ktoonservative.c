@@ -52,6 +52,9 @@ static unsigned int block_from_boost = 0;
 
 extern void ktoonservative_is_active(bool val);
 extern void ktoonservative_is_active_batt(bool val, unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high);
+extern void kt_is_active_benabled_gpio(bool val);
+extern void kt_is_active_benabled_touchkey(bool val);
+extern void kt_is_active_benabled_power(bool val);
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
@@ -98,6 +101,7 @@ static struct dbs_tuners {
 	unsigned int down_threshold_hotplug;
 	unsigned int no_2nd_cpu_screen_off;
 	unsigned int boost_turn_on_2nd_core;
+	unsigned int boost_2nd_core_on_button;
 	unsigned int disable_hotpluging;
 	unsigned int ignore_nice;
 	unsigned int battery_ctrl_batt_lvl_low;
@@ -114,6 +118,7 @@ static struct dbs_tuners {
 	.ignore_nice = 0,
 	.no_2nd_cpu_screen_off = 1,
 	.boost_turn_on_2nd_core = 1,
+	.boost_2nd_core_on_button = 1,
 	.disable_hotpluging = 0,
 	.battery_ctrl_batt_lvl_low = 0,
 	.battery_ctrl_batt_lvl_high = 0,
@@ -212,6 +217,7 @@ show_one(down_threshold_hotplug, down_threshold_hotplug);
 show_one(ignore_nice_load, ignore_nice);
 show_one(no_2nd_cpu_screen_off, no_2nd_cpu_screen_off);
 show_one(boost_turn_on_2nd_core, boost_turn_on_2nd_core);
+show_one(boost_2nd_core_on_button, boost_2nd_core_on_button);
 show_one(disable_hotpluging, disable_hotpluging);
 show_one(battery_ctrl_batt_lvl_low, battery_ctrl_batt_lvl_low);
 show_one(battery_ctrl_batt_lvl_high, battery_ctrl_batt_lvl_high);
@@ -333,6 +339,26 @@ static ssize_t store_boost_turn_on_2nd_core(struct kobject *a, struct attribute 
 		input = 0;
 
 	dbs_tuners_ins.boost_turn_on_2nd_core = input;
+	return count;
+}
+
+static ssize_t store_boost_2nd_core_on_button(struct kobject *a, struct attribute *b, const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (input != 0 && input != 1)
+		input = 0;
+
+	dbs_tuners_ins.boost_2nd_core_on_button = input;
+	if (dbs_tuners_ins.boost_2nd_core_on_button == 1)
+	{
+		kt_is_active_benabled_gpio(true);
+		kt_is_active_benabled_touchkey(true);
+		kt_is_active_benabled_power(true);
+	}
+	
 	return count;
 }
 
@@ -487,6 +513,7 @@ define_one_global_rw(down_threshold_hotplug);
 define_one_global_rw(ignore_nice_load);
 define_one_global_rw(no_2nd_cpu_screen_off);
 define_one_global_rw(boost_turn_on_2nd_core);
+define_one_global_rw(boost_2nd_core_on_button);
 define_one_global_rw(disable_hotpluging);
 define_one_global_rw(freq_step);
 define_one_global_rw(battery_ctrl_batt_lvl_low);
@@ -504,6 +531,7 @@ static struct attribute *dbs_attributes[] = {
 	&down_threshold_hotplug.attr,
 	&no_2nd_cpu_screen_off.attr,
 	&boost_turn_on_2nd_core.attr,
+	&boost_2nd_core_on_button.attr,
 	&disable_hotpluging.attr,
 	&ignore_nice_load.attr,
 	&freq_step.attr,
@@ -519,7 +547,7 @@ static struct attribute_group dbs_attr_group = {
 	.name = "ktoonservative",
 };
 
-void boostpulse_relay_kt()
+void boostpulse_relay_kt(void)
 {
 	if (num_online_cpus() < 2 && dbs_tuners_ins.boost_turn_on_2nd_core)
 	{
@@ -718,6 +746,13 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	case CPUFREQ_GOV_START:
 		ktoonservative_is_active(true);
 		ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
+		if (dbs_tuners_ins.boost_2nd_core_on_button == 1)
+		{
+			kt_is_active_benabled_gpio(true);
+			kt_is_active_benabled_touchkey(true);
+			kt_is_active_benabled_power(true);
+		}
+		
 		if ((!cpu_online(cpu)) || (!policy->cur))
 			return -EINVAL;
 
@@ -781,6 +816,9 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	case CPUFREQ_GOV_STOP:
 		ktoonservative_is_active(false);
 		ktoonservative_is_active_batt(false, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
+		kt_is_active_benabled_gpio(false);
+		kt_is_active_benabled_touchkey(false);
+		kt_is_active_benabled_power(false);
 		dbs_timer_exit(this_dbs_info);
 		
 		this_dbs_info->idle_exit_time = 0;
