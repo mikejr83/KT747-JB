@@ -45,9 +45,21 @@ struct pmic8xxx_pwrkey {
 	const struct pm8xxx_pwrkey_platform_data *pdata;
 };
 
+extern void boostpulse_relay_kt();
+static bool kt_is_active_benabled = false;
+void kt_is_active_benabled_power(bool val)
+{
+	kt_is_active_benabled = val;
+}
+
 static irqreturn_t pwrkey_press_irq(int irq, void *_pwrkey)
 {
 	struct pmic8xxx_pwrkey *pwrkey = _pwrkey;
+	if (kt_is_active_benabled)
+	{
+		boostpulse_relay_kt();
+		//pr_alert("POWER_KEY_PRESS:\n");
+	}
 	pwrkey->powerkey_state = 1;
 	input_report_key(pwrkey->pwr, KEY_POWER, 1);
 	input_sync(pwrkey->pwr);
