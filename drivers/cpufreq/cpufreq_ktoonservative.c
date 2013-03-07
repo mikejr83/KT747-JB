@@ -54,7 +54,6 @@ extern void ktoonservative_is_active(bool val);
 extern void ktoonservative_is_active_batt(bool val, unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high);
 extern void kt_is_active_benabled_gpio(bool val);
 extern void kt_is_active_benabled_touchkey(bool val);
-extern void kt_is_active_benabled_power(bool val);
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
@@ -356,7 +355,6 @@ static ssize_t store_boost_2nd_core_on_button(struct kobject *a, struct attribut
 	{
 		kt_is_active_benabled_gpio(true);
 		kt_is_active_benabled_touchkey(true);
-		kt_is_active_benabled_power(true);
 	}
 	
 	return count;
@@ -552,7 +550,9 @@ void boostpulse_relay_kt(void)
 	if (num_online_cpus() < 2 && dbs_tuners_ins.boost_turn_on_2nd_core)
 	{
 		block_from_boost = 22;
+		pr_alert("BOOSTPULSE_RELAY_KT1:\n");
 		cpu_up(1);
+		pr_alert("BOOSTPULSE_RELAY_KT2:\n");
 	}
 }
 
@@ -750,7 +750,6 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		{
 			kt_is_active_benabled_gpio(true);
 			kt_is_active_benabled_touchkey(true);
-			kt_is_active_benabled_power(true);
 		}
 		
 		if ((!cpu_online(cpu)) || (!policy->cur))
@@ -818,7 +817,6 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		ktoonservative_is_active_batt(false, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
 		kt_is_active_benabled_gpio(false);
 		kt_is_active_benabled_touchkey(false);
-		kt_is_active_benabled_power(false);
 		dbs_timer_exit(this_dbs_info);
 		
 		this_dbs_info->idle_exit_time = 0;
