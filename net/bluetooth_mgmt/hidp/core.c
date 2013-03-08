@@ -93,6 +93,26 @@ static struct hidp_session *__hidp_get_session(bdaddr_t *bdaddr)
 	return NULL;
 }
 
+static struct device *hidp_get_device(struct hidp_session *session)
+{
+	bdaddr_t *dst = &session->bdaddr;
+
+	struct device *device = NULL;
+	struct hci_dev *hdev;
+
+	hdev = hci_get_route(dst, BDADDR_ANY);
+	if (!hdev)
+		return NULL;
+
+	session->conn = hci_conn_hash_lookup_ba(hdev, ACL_LINK, dst);
+	if (session->conn)
+		device = &session->conn->dev;
+
+	hci_dev_put(hdev);
+
+	return device;
+}
+
 static void __hidp_link_session(struct hidp_session *session)
 {
 	__module_get(THIS_MODULE);
@@ -103,7 +123,10 @@ static void __hidp_link_session(struct hidp_session *session)
 
 static void __hidp_unlink_session(struct hidp_session *session)
 {
-	hci_conn_put_device(session->conn);
+	struct device *dev;
+	dev = hidp_get_device(session);
+	if (dev)
+		hci_conn_put_device(session->conn);
 
 	list_del(&session->list);
 	module_put(THIS_MODULE);
@@ -773,26 +796,6 @@ static int hidp_session(void *arg)
 	kfree(session->rd_data);
 	kfree(session);
 	return 0;
-}
-
-static struct device *hidp_get_device(struct hidp_session *session)
-{
-	bdaddr_t *dst = &session->bdaddr;
-
-	struct device *device = NULL;
-	struct hci_dev *hdev;
-
-	hdev = hci_get_route(dst, BDADDR_ANY);
-	if (!hdev)
-		return NULL;
-
-	session->conn = hci_conn_hash_lookup_ba(hdev, ACL_LINK, dst);
-	if (session->conn)
-		device = &session->conn->dev;
-
-	hci_dev_put(hdev);
-
-	return device;
 }
 
 static int hidp_setup_input(struct hidp_session *session,
