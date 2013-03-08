@@ -777,12 +777,12 @@ static int hidp_session(void *arg)
 
 static struct device *hidp_get_device(struct hidp_session *session)
 {
-	bdaddr_t *src = &bt_sk(session->ctrl_sock->sk)->src;
-	bdaddr_t *dst = &bt_sk(session->ctrl_sock->sk)->dst;
+	bdaddr_t *dst = &session->bdaddr;
+
 	struct device *device = NULL;
 	struct hci_dev *hdev;
 
-	hdev = hci_get_route(dst, src);
+	hdev = hci_get_route(dst, BDADDR_ANY);
 	if (!hdev)
 		return NULL;
 
