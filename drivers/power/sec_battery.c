@@ -67,6 +67,8 @@ unsigned int gbatt_lvl_high = 0;
 unsigned int gmhz_lvl_low = 0;
 unsigned int gmhz_lvl_high = 0;
 unsigned int gbatt_soc = 0;
+unsigned int gbatt_chg = 0;
+unsigned int gdisable_chrg = 0;
 
 extern unsigned int set_battery_max_level(unsigned int value);
 static unsigned int Lscreen_off_scaling_mhz_orig = 0;
@@ -1601,17 +1603,22 @@ static void sec_bat_charging_time_management(struct sec_bat_info *info)
 	return;
 }
 
-void ktoonservative_is_active_batt(bool val, unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high)
+void ktoonservative_is_active_batt(bool val, unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high, unsigned int disable_chrg)
 {
 	ktoonservative_is_active = val;
 	gbatt_lvl_low = batt_lvl_low;
 	gbatt_lvl_high = batt_lvl_high;
 	gmhz_lvl_low = mhz_lvl_low;
 	gmhz_lvl_high = mhz_lvl_high;
+	gdisable_chrg = disable_chrg;
 }
 
 unsigned int get_batt_level(void)
 {
+	//Exit if user disables battery control while plugged in
+	if (gdisable_chrg == 1 && (gbatt_chg == 1 || gbatt_chg == 4))
+		return Lscreen_off_scaling_mhz_orig;
+
 	if (gbatt_lvl_low > 0 && gmhz_lvl_low > 0)
 	{
 		if (gbatt_soc <= gbatt_lvl_low)
@@ -1715,6 +1722,7 @@ static void sec_bat_monitor_work(struct work_struct *work)
 	sec_fg_update_temper(info);
 #endif
 	gbatt_soc = info->batt_soc;
+	gbatt_chg = info->charging_status;
 	//Check for battery level to see if we need to set new policy MAX
 	if (ktoonservative_is_active)
 	{
