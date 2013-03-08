@@ -2478,6 +2478,7 @@ static inline void hci_sched_acl(struct hci_dev *hdev)
 		while (quote-- && (skb = skb_dequeue(&conn->data_q))) {
 			BT_DBG("skb %p len %d", skb, skb->len);
 
+			hci_dev_lock(hdev);
 			hci_conn_enter_active_mode(conn, bt_cb(skb)->force_active);
 
 			hci_send_frame(skb);
@@ -2485,6 +2486,7 @@ static inline void hci_sched_acl(struct hci_dev *hdev)
 
 			hdev->acl_cnt--;
 			conn->sent++;
+			hci_dev_unlock(hdev);
 		}
 	}
 }
