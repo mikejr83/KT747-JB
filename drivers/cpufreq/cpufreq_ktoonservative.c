@@ -52,7 +52,7 @@ static bool screen_is_on = true;
 static unsigned int block_from_boost = 0;
 
 extern void ktoonservative_is_active(bool val);
-extern void ktoonservative_is_active_batt(bool val, unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high);
+extern void ktoonservative_is_active_batt(bool val, unsigned int batt_lvl_low, unsigned int batt_lvl_high, unsigned int mhz_lvl_low, unsigned int mhz_lvl_high, unsigned int disable_chrg);
 extern void kt_is_active_benabled_gpio(bool val);
 extern void kt_is_active_benabled_touchkey(bool val);
 extern void kt_is_active_benabled_power(bool val);
@@ -110,6 +110,7 @@ static struct dbs_tuners {
 	unsigned int battery_ctrl_batt_lvl_high;
 	unsigned int battery_ctrl_mhz_lvl_low;
 	unsigned int battery_ctrl_mhz_lvl_high;
+	unsigned int battery_ctrl_disable_chrg;
 	unsigned int freq_step;
 } dbs_tuners_ins = {
 	.up_threshold = DEF_FREQUENCY_UP_THRESHOLD,
@@ -127,6 +128,7 @@ static struct dbs_tuners {
 	.battery_ctrl_batt_lvl_high = 0,
 	.battery_ctrl_mhz_lvl_low = 0,
 	.battery_ctrl_mhz_lvl_high = 0,
+	.battery_ctrl_disable_chrg = 0,
 	.freq_step = 5,
 };
 
@@ -239,6 +241,7 @@ show_one(battery_ctrl_batt_lvl_low, battery_ctrl_batt_lvl_low);
 show_one(battery_ctrl_batt_lvl_high, battery_ctrl_batt_lvl_high);
 show_one(battery_ctrl_mhz_lvl_low, battery_ctrl_mhz_lvl_low);
 show_one(battery_ctrl_mhz_lvl_high, battery_ctrl_mhz_lvl_high);
+show_one(battery_ctrl_disable_chrg, battery_ctrl_disable_chrg);
 show_one(freq_step, freq_step);
 
 static ssize_t store_sampling_down_factor(struct kobject *a,
@@ -468,7 +471,7 @@ static ssize_t store_battery_ctrl_batt_lvl_low(struct kobject *a, struct attribu
 	if (input < 0 || input > 100)
 		input = 0;
 	dbs_tuners_ins.battery_ctrl_batt_lvl_low = input;
-	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
+	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high, dbs_tuners_ins.battery_ctrl_disable_chrg);
 	return count;
 }
 
@@ -485,7 +488,7 @@ static ssize_t store_battery_ctrl_batt_lvl_high(struct kobject *a, struct attrib
 	if (input < 0 || input > 100)
 		input = 0;
 	dbs_tuners_ins.battery_ctrl_batt_lvl_high = input;
-	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
+	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high, dbs_tuners_ins.battery_ctrl_disable_chrg);
 	return count;
 }
 
@@ -509,7 +512,7 @@ static ssize_t store_battery_ctrl_mhz_lvl_low(struct kobject *a, struct attribut
 	//pr_alert("BATT_SET_LVL_LOW2: %u-%u-%u\n", input, policy->min, policy->max);
 	dbs_tuners_ins.battery_ctrl_mhz_lvl_low = input;
 	//pr_alert("BATT_SET_LVL_LOW3: %u-%u-%u\n", dbs_tuners_ins.battery_ctrl_mhz_lvl_low, policy->min, policy->max);
-	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
+	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high, dbs_tuners_ins.battery_ctrl_disable_chrg);
 	return count;
 }
 
@@ -529,7 +532,24 @@ static ssize_t store_battery_ctrl_mhz_lvl_high(struct kobject *a, struct attribu
 	if (input < 192000 || input > 2106000)
 		input = 0;
 	dbs_tuners_ins.battery_ctrl_mhz_lvl_high = input;
-	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
+	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high, dbs_tuners_ins.battery_ctrl_disable_chrg);
+	return count;
+}
+
+static ssize_t store_battery_ctrl_disable_chrg(struct kobject *a, struct attribute *b,
+			       const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+
+	ret = sscanf(buf, "%u", &input);
+	if (ret != 1)
+		return -EINVAL;
+	
+	if (input != 0 && input != 1)
+		input = 0;
+	dbs_tuners_ins.battery_ctrl_disable_chrg = input;
+	ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high, dbs_tuners_ins.battery_ctrl_disable_chrg);
 	return count;
 }
 
@@ -776,7 +796,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	switch (event) {
 	case CPUFREQ_GOV_START:
 		ktoonservative_is_active(true);
-		ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
+		ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high, dbs_tuners_ins.battery_ctrl_disable_chrg);
 		if (dbs_tuners_ins.boost_2nd_core_on_button == 1)
 		{
 			kt_is_active_benabled_gpio(true);
@@ -846,7 +866,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 	case CPUFREQ_GOV_STOP:
 		ktoonservative_is_active(false);
-		ktoonservative_is_active_batt(false, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high);
+		ktoonservative_is_active_batt(false, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high, dbs_tuners_ins.battery_ctrl_disable_chrg);
 		kt_is_active_benabled_gpio(false);
 		kt_is_active_benabled_touchkey(false);
 		kt_is_active_benabled_power(false);
