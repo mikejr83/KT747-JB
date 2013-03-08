@@ -27,6 +27,8 @@
 
 #include <net/bluetooth/hci.h>
 
+#include <linux/wakelock.h>
+
 /* HCI priority */
 #define HCI_PRIO_MAX	7
 
@@ -343,7 +345,8 @@ struct hci_conn {
 
 	struct work_struct work_add;
 	struct work_struct work_del;
-
+	struct wake_lock idle_lock;
+	
 	struct device	dev;
 	atomic_t	devref;
 
