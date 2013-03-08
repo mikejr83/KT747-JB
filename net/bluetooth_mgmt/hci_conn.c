@@ -368,8 +368,10 @@ static void hci_conn_idle(unsigned long arg)
 	struct hci_conn *conn = (void *) arg;
 
 	BT_DBG("conn %p mode %d", conn, conn->mode);
-
+	
+	hci_dev_lock(conn->hdev);
 	hci_conn_enter_sniff_mode(conn);
+	hci_dev_unlock(conn->hdev);
 }
 
 static void hci_conn_auto_accept(unsigned long arg)
