@@ -1575,7 +1575,7 @@ void ktoonservative_is_active_batt(bool val, unsigned int batt_lvl_low, unsigned
 	gmhz_lvl_high = mhz_lvl_high;
 }
 
-unsigned int get_batt_level()
+unsigned int get_batt_level(void)
 {
 	if (gbatt_lvl_low > 0 && gmhz_lvl_low > 0)
 	{

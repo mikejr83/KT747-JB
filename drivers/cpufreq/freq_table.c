@@ -175,7 +175,7 @@ static DEFINE_PER_CPU(struct cpufreq_frequency_table *, cpufreq_show_table);
 /**
  * show_available_freqs - show available frequencies for the specified CPU
  */
-extern unsigned int get_enable_oc();
+extern unsigned int get_enable_oc(void);
 
 static ssize_t show_available_freqs(struct cpufreq_policy *policy, char *buf)
 {
