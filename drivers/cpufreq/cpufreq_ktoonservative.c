@@ -570,6 +570,7 @@ define_one_global_rw(battery_ctrl_batt_lvl_low);
 define_one_global_rw(battery_ctrl_batt_lvl_high);
 define_one_global_rw(battery_ctrl_mhz_lvl_low);
 define_one_global_rw(battery_ctrl_mhz_lvl_high);
+define_one_global_rw(battery_ctrl_disable_chrg);
 
 static struct attribute *dbs_attributes[] = {
 	&sampling_rate_min.attr,
@@ -590,6 +591,7 @@ static struct attribute *dbs_attributes[] = {
 	&battery_ctrl_batt_lvl_high.attr,
 	&battery_ctrl_mhz_lvl_low.attr,
 	&battery_ctrl_mhz_lvl_high.attr,
+	&battery_ctrl_disable_chrg.attr,
 	NULL
 };
 
