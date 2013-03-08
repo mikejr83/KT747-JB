@@ -2675,8 +2675,8 @@ static inline void hci_acldata_packet(struct hci_dev *hdev, struct sk_buff *skb)
 		if (test_bit(HCI_MGMT, &hdev->dev_flags) &&
 		    !test_and_set_bit(HCI_CONN_MGMT_CONNECTED, &conn->flags))
 			mgmt_device_connected(hdev, &conn->dst, conn->type,
-					      conn->dst_type, 0, NULL, 0,
-					      conn->dev_class);
+					     	conn->dst_type, NULL, 0,
+					      	conn->dev_class);
 		hci_dev_unlock(hdev);
 
 		/* Send to upper protocol */
