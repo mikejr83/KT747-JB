@@ -209,7 +209,11 @@ static struct notifier_block dbs_cpufreq_notifier_block = {
 void set_bluetooth_state_kt(bool val)
 {
 	if (val == true && dbs_tuners_ins.disable_hotplug_bt == 1)
+	{
 		disable_hotplug_bt_active = true;
+		if (num_online_cpus() < 2 && dbs_tuners_ins.boost_turn_on_2nd_core)
+			schedule_work_on(0, &hotplug_online_work);
+	}
 	else
 		disable_hotplug_bt_active = false;
 }
