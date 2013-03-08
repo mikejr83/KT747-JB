@@ -947,7 +947,7 @@ static ssize_t store_freq_lock(struct cpufreq_policy *policy,
 extern ssize_t acpuclk_get_vdd_levels_str(char *buf, int isApp);
 extern void acpuclk_set_vdd(unsigned acpu_khz, int vdd);
 extern void acpuclk_UV_mV_table(int cnt, int vdd_uv[]);
-extern unsigned int get_enable_oc();
+extern unsigned int get_enable_oc(void);
 
 ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf)
 {
@@ -2696,7 +2696,7 @@ unsigned int set_battery_max_level(unsigned int value)
 	return Lscreen_off_scaling_mhz_orig;
 }
 
-extern unsigned int get_batt_level();
+extern unsigned int get_batt_level(void);
 
 static void cpufreq_gov_resume(struct early_suspend *h){
 

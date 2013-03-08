@@ -1865,7 +1865,7 @@ static struct acpuclk_data acpuclk_8960_data = {
 // enable_oc
 static unsigned int isenable_oc = 0;
 
-unsigned int get_enable_oc()
+unsigned int get_enable_oc(void)
 {
 	return isenable_oc;
 }
