@@ -793,7 +793,7 @@ unsigned int get_cpu_usage_normal(struct cpufreq_policy *policy, int *old_freq)
 		now_idle = get_cpu_idle_time_us(cpu, &update_time);
 		if (j_dbs_info->idle_exit_time == 0 || update_time == j_dbs_info->idle_exit_time)
 		{
-			printk(KERN_ERR "LOAD-EXIT1 - %Lx - %Lx\n", update_time, j_dbs_info->idle_exit_time);
+			//printk(KERN_ERR "LOAD-EXIT1 - %Lx - %Lx\n", update_time, j_dbs_info->idle_exit_time);
 			break;
 		}
 	
@@ -803,7 +803,7 @@ unsigned int get_cpu_usage_normal(struct cpufreq_policy *policy, int *old_freq)
 		// If timer ran less than 1ms after short-term sample started, retry.
 		if (delta_time < 1000) {
 			j_dbs_info->time_in_idle = get_cpu_idle_time_us(cpu, &j_dbs_info->idle_exit_time);
-			printk(KERN_ERR "LOAD-EXIT2\n");
+			//printk(KERN_ERR "LOAD-EXIT2\n");
 			break;
 		}
 		if (dbs_tuners_ins.ignore_nice) {

@@ -314,7 +314,7 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	struct mm_struct *mm = &init_mm;
 	unsigned int cpu;
 
-	pr_debug("CPU%u: Booted secondary processor\n", cpu);
+	//pr_debug("CPU%u: Booted secondary processor\n", cpu);
 
 	/*
 	 * The identity mapping is uncached (strongly ordered), so
@@ -333,7 +333,7 @@ asmlinkage void __cpuinit secondary_start_kernel(void)
 	current->active_mm = mm;
 	cpumask_set_cpu(cpu, mm_cpumask(mm));
 
-	printk("CPU%u: Booted secondary processor\n", cpu);
+	//printk("CPU%u: Booted secondary processor\n", cpu);
 
 	cpu_init();
 	preempt_disable();

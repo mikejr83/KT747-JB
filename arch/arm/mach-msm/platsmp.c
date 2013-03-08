@@ -200,7 +200,7 @@ int __cpuinit boot_secondary(unsigned int cpu, struct task_struct *idle)
 */
 void __cpuinit platform_secondary_init(unsigned int cpu)
 {
-	pr_debug("CPU%u: Booted secondary processor\n", cpu);
+	//pr_debug("CPU%u: Booted secondary processor\n", cpu);
 
 	WARN_ON(msm_platform_secondary_init(cpu));
 
