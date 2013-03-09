@@ -772,16 +772,12 @@ static int set_powered(struct sock *sk, u16 index, void *data, u16 len)
 		goto failed;
 	}
 
-	hci_dev_unlock_bh(hdev);
 	if (cp->val)
 		schedule_work(&hdev->power_on);
 	else
 		schedule_work(&hdev->power_off.work);
 
 	err = 0;
-	hci_dev_put(hdev);
-	
-	return err;
 
 failed:
 	hci_dev_unlock_bh(hdev);
