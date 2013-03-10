@@ -322,10 +322,9 @@ static void update_sampling_rate(unsigned int new_rate)
 {
 	int cpu;
 
-	dbs_tuners_ins.sampling_rate = new_rate
-				     = max(new_rate, min_sampling_rate);
+	dbs_tuners_ins.sampling_rate = max(new_rate, min_sampling_rate);
 
-	for_each_online_cpu(cpu) {
+	/*for_each_online_cpu(cpu) {
 		struct cpufreq_policy *policy;
 		struct cpu_dbs_info_s *dbs_info;
 		unsigned long next_sampling, appointed_at;
@@ -358,7 +357,7 @@ static void update_sampling_rate(unsigned int new_rate)
 
 		}
 		mutex_unlock(&dbs_info->timer_mutex);
-	}
+	}*/
 }
 
 static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
