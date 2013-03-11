@@ -48,6 +48,7 @@
 
 static bool disable_hotplug_bt_active = false;
 static unsigned int min_sampling_rate;
+static unsigned int stored_sampling_rate;
 static bool screen_is_on = true;
 static unsigned int block_from_boost = 0;
 
@@ -94,6 +95,7 @@ static DEFINE_MUTEX(dbs_mutex);
 
 static struct dbs_tuners {
 	unsigned int sampling_rate;
+	unsigned int sampling_rate_screen_off;
 	unsigned int sampling_down_factor;
 	unsigned int up_threshold;
 	unsigned int up_threshold_hotplug;
@@ -117,6 +119,7 @@ static struct dbs_tuners {
 	.down_threshold = DEF_FREQUENCY_DOWN_THRESHOLD,
 	.down_threshold_hotplug = DEF_FREQUENCY_DOWN_THRESHOLD_HOTPLUG,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
+	.sampling_rate_screen_off = 45000,
 	.ignore_nice = 0,
 	.no_2nd_cpu_screen_off = 1,
 	.boost_turn_on_2nd_core = 1,
@@ -221,6 +224,7 @@ static ssize_t show_##file_name						\
 	return sprintf(buf, "%u\n", dbs_tuners_ins.object);		\
 }
 show_one(sampling_rate, sampling_rate);
+show_one(sampling_rate_screen_off, sampling_rate_screen_off);
 show_one(sampling_down_factor, sampling_down_factor);
 show_one(up_threshold, up_threshold);
 show_one(up_threshold_hotplug, up_threshold_hotplug);
@@ -265,6 +269,20 @@ static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
 		return -EINVAL;
 
 	dbs_tuners_ins.sampling_rate = max(input, min_sampling_rate);
+	return count;
+}
+
+static ssize_t store_sampling_rate_screen_off(struct kobject *a, struct attribute *b,
+				   const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (ret != 1)
+		return -EINVAL;
+
+	dbs_tuners_ins.sampling_rate_screen_off = max(input, min_sampling_rate);
 	return count;
 }
 
@@ -548,6 +566,7 @@ static ssize_t store_battery_ctrl_disable_chrg(struct kobject *a, struct attribu
 }
 
 define_one_global_rw(sampling_rate);
+define_one_global_rw(sampling_rate_screen_off);
 define_one_global_rw(sampling_down_factor);
 define_one_global_rw(up_threshold);
 define_one_global_rw(up_threshold_hotplug);
@@ -569,6 +588,7 @@ define_one_global_rw(battery_ctrl_disable_chrg);
 static struct attribute *dbs_attributes[] = {
 	&sampling_rate_min.attr,
 	&sampling_rate.attr,
+	&sampling_rate_screen_off.attr,
 	&sampling_down_factor.attr,
 	&up_threshold.attr,
 	&up_threshold_hotplug.attr,
@@ -743,6 +763,17 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 void screen_is_on_relay_kt(bool state)
 {
 	screen_is_on = state;
+	if (state == true)
+	{
+		if (stored_sampling_rate > 0)
+			dbs_tuners_ins.sampling_rate = stored_sampling_rate; //max(input, min_sampling_rate);
+	}
+	else
+	{
+		stored_sampling_rate = dbs_tuners_ins.sampling_rate;
+		dbs_tuners_ins.sampling_rate = dbs_tuners_ins.sampling_rate_screen_off;
+	}
+	
 }
 
 static void do_dbs_timer(struct work_struct *work)
