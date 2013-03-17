@@ -71,6 +71,7 @@
 
 extern void set_bluetooth_state(unsigned int val, __u8	dev_name[248]);
 extern void set_bluetooth_state_kt(bool val);
+static bool bt_conn_state = false;
 
 struct bluesleep_info {
 	unsigned host_wake;
@@ -180,15 +181,17 @@ int bluesleep_can_sleep(void)
 	    ("bluetooth_can_sleep: ext_wake=%d, host_wake=%d, uport=%d, cs=%d",
 	     ext_wake, host_wake, (bsi->uport == NULL ? 0 : 1), cs);
 	
-	if (ext_wake == 1 || host_wake == 1)
+	if ((ext_wake == 1 || host_wake == 1) && bt_conn_state == false)
 	{
 		set_bluetooth_state(1, "");
 		set_bluetooth_state_kt(true);
+		bt_conn_state = true;
 	}
-	else
+	else if (ext_wake == 0 & host_wake == 0 && bt_conn_state == true)
 	{
 		set_bluetooth_state(0, "");
 		set_bluetooth_state_kt(false);
+		bt_conn_state = false;
 	}
 	return cs;
 }
