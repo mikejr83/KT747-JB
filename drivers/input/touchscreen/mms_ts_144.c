@@ -255,7 +255,8 @@ static unsigned char g_wr_buf[1024 + 3 + 2];
 #endif
 
 extern void screen_is_on_relay_kt(bool state);
-extern void boostpulse_relay_kt();
+extern void boostpulse_relay_kt(void);
+extern void hotplugap_boostpulse(void);
 
 int touch_is_pressed;
 EXPORT_SYMBOL(touch_is_pressed);
@@ -836,8 +837,6 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 		input_report_abs(info->input_dev, ABS_MT_PALM, palm);
 #if defined(SEC_TSP_DEBUG)
 		if (info->finger_state[id] == 0) {
-			if (ktoonservative_is_activef)
-				boostpulse_relay_kt();
 			info->finger_state[id] = 1;
 			if (s2w_enabled && x < x_lo && isasleep == true)
 			{
@@ -864,6 +863,9 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 		}
 #else
 		if (info->finger_state[id] == 0) {
+			if (ktoonservative_is_activef)
+				boostpulse_relay_kt();
+			hotplugap_boostpulse();
 			info->finger_state[id] = 1;
 			if (s2w_enabled && x < x_lo && isasleep == true)
 			{
