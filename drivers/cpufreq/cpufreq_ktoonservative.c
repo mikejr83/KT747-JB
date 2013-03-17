@@ -59,6 +59,9 @@ extern void ktoonservative_is_active_batt(bool val, unsigned int batt_lvl_low, u
 extern void kt_is_active_benabled_gpio(bool val);
 extern void kt_is_active_benabled_touchkey(bool val);
 extern void kt_is_active_benabled_power(bool val);
+extern void apenable_auto_hotplug(bool state);
+extern bool apget_enable_auto_hotplug(void);
+static bool prev_apenable;
 
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
@@ -1011,6 +1014,10 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	case CPUFREQ_GOV_START:
 		ktoonservative_is_active(true);
 		ktoonservative_is_active_batt(true, dbs_tuners_ins.battery_ctrl_batt_lvl_low, dbs_tuners_ins.battery_ctrl_batt_lvl_high, dbs_tuners_ins.battery_ctrl_mhz_lvl_low, dbs_tuners_ins.battery_ctrl_mhz_lvl_high, dbs_tuners_ins.battery_ctrl_disable_chrg);
+		
+		prev_apenable = apget_enable_auto_hotplug();
+		apenable_auto_hotplug(false);
+		
 		if (dbs_tuners_ins.boost_2nd_core_on_button == 1)
 		{
 			kt_is_active_benabled_gpio(true);
@@ -1084,6 +1091,9 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 		kt_is_active_benabled_gpio(false);
 		kt_is_active_benabled_touchkey(false);
 		kt_is_active_benabled_power(false);
+
+		apenable_auto_hotplug(prev_apenable);
+
 		dbs_timer_exit(this_dbs_info);
 		
 		this_dbs_info->idle_exit_time = 0;
