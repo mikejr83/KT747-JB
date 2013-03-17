@@ -187,7 +187,7 @@ int bluesleep_can_sleep(void)
 		set_bluetooth_state_kt(true);
 		bt_conn_state = true;
 	}
-	else if (ext_wake == 0 & host_wake == 0 && bt_conn_state == true)
+	else if (ext_wake == 0 && host_wake == 0 && bt_conn_state == true)
 	{
 		set_bluetooth_state(0, "");
 		set_bluetooth_state_kt(false);
