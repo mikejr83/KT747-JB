@@ -56,8 +56,11 @@ static char scaling_governor_screen_off_sel[16];
 static char scaling_governor_screen_off_sel_prev[16];
 static char scaling_sched_screen_off_sel[16];
 static char scaling_sched_screen_off_sel_prev[16];
+static unsigned int Lenable_auto_hotplug = 0;
 
 static unsigned int isBooted = 0;
+
+extern void apenable_auto_hotplug(bool state);
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -817,6 +820,21 @@ static ssize_t store_touch_booster_second_freq_limit(struct cpufreq_policy *poli
 	return count;
 }
 
+static ssize_t show_enable_auto_hotplug(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", Lenable_auto_hotplug);
+}
+static ssize_t store_enable_auto_hotplug(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int val = 0;
+	unsigned int ret;
+	ret = sscanf(buf, "%u", &val);
+	Lenable_auto_hotplug = val;
+	apenable_auto_hotplug((bool) Lenable_auto_hotplug);
+	return count;
+}
+
 static ssize_t show_screen_off_scaling_enable(struct cpufreq_policy *policy, char *buf)
 {
 	return sprintf(buf, "%u\n", Lscreen_off_scaling_enable);
@@ -999,6 +1017,7 @@ cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(scaling_booted);
 cpufreq_freq_attr_rw(touch_booster_first_freq_limit);
 cpufreq_freq_attr_rw(touch_booster_second_freq_limit);
+cpufreq_freq_attr_rw(enable_auto_hotplug);
 cpufreq_freq_attr_rw(screen_off_scaling_enable);
 cpufreq_freq_attr_rw(screen_off_scaling_mhz);
 cpufreq_freq_attr_rw(bluetooth_scaling_mhz);
@@ -1025,6 +1044,7 @@ static struct attribute *default_attrs[] = {
 	&scaling_booted.attr,
 	&touch_booster_first_freq_limit.attr,
 	&touch_booster_second_freq_limit.attr,
+	&enable_auto_hotplug.attr,
 	&screen_off_scaling_enable.attr,
 	&screen_off_scaling_mhz.attr,
 	&bluetooth_scaling_mhz.attr,
