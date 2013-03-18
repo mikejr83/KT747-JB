@@ -603,6 +603,9 @@ out:
 
 static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
 {
+	if (ktoonservative_is_activef)
+		screen_is_on_relay_kt(false);
+
 	mutex_lock(&info->lock);
 	if (!info->enabled)
 		goto out;

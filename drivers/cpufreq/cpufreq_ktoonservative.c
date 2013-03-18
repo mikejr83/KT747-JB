@@ -368,8 +368,8 @@ static ssize_t store_boost_cpu(struct kobject *a, struct attribute *b,
 	if (ret != 1)
 		return -EINVAL;
 
-	if (input * 1000 > 2100000)
-		input = 2100000;
+	if (input * 1000 > 2106000)
+		input = 2106000;
 	if (input * 1000 < 0)
 		input = 0;
 	dbs_tuners_ins.boost_cpu = input * 1000;
