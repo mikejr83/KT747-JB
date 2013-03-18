@@ -68,6 +68,10 @@ extern void apenable_auto_hotplug(bool state);
 extern bool apget_enable_auto_hotplug(void);
 static bool prev_apenable;
 
+extern void kt_is_active_benabled_gpio(bool val);
+extern void kt_is_active_benabled_touchkey(bool val);
+extern void kt_is_active_benabled_power(bool val);
+
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
@@ -116,6 +120,7 @@ static struct dbs_tuners {
 	unsigned int cpu_down_block_cycles;
 	unsigned int boost_cpu;
 	unsigned int boost_turn_on_2nd_core;
+	unsigned int boost_2nd_core_on_button;
 	unsigned int boost_gpu;
 	unsigned int boost_hold_cycles;
 	unsigned int disable_hotplugging;
@@ -130,6 +135,7 @@ static struct dbs_tuners {
 	.cpu_down_block_cycles = DEF_CPU_DOWN_BLOCK_CYCLES,
 	.boost_cpu = DEF_BOOST_CPU,
 	.boost_turn_on_2nd_core = DEF_BOOST_CPU_TURN_ON_2ND_CORE,
+	.boost_2nd_core_on_button = 1,
 	.boost_gpu = DEF_BOOST_GPU,
 	.boost_hold_cycles = DEF_BOOST_HOLD_CYCLES,
 	.disable_hotplugging = DEF_DISABLE_HOTPLUGGING,
@@ -235,6 +241,7 @@ show_one(down_threshold, down_threshold);
 show_one(down_threshold_hotplug, down_threshold_hotplug);
 show_one(cpu_down_block_cycles, cpu_down_block_cycles);
 show_one(boost_turn_on_2nd_core, boost_turn_on_2nd_core);
+show_one(boost_2nd_core_on_button, boost_2nd_core_on_button);
 show_one(boost_gpu, boost_gpu);
 show_one(boost_hold_cycles, boost_hold_cycles);
 show_one(disable_hotplugging, disable_hotplugging);
@@ -448,6 +455,26 @@ static ssize_t store_no_2nd_cpu_screen_off(struct kobject *a, struct attribute *
 	return count;
 }
 
+static ssize_t store_boost_2nd_core_on_button(struct kobject *a, struct attribute *b, const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (input != 0 && input != 1)
+		input = 0;
+
+	dbs_tuners_ins.boost_2nd_core_on_button = input;
+	if (dbs_tuners_ins.boost_2nd_core_on_button == 1)
+	{
+		kt_is_active_benabled_gpio(true);
+		kt_is_active_benabled_touchkey(true);
+		kt_is_active_benabled_power(true);
+	}
+
+	return count;
+}
+
 static ssize_t store_ignore_nice_load(struct kobject *a, struct attribute *b,
 				      const char *buf, size_t count)
 {
@@ -509,6 +536,7 @@ define_one_global_rw(down_threshold_hotplug);
 define_one_global_rw(cpu_down_block_cycles);
 define_one_global_rw(boost_cpu);
 define_one_global_rw(boost_turn_on_2nd_core);
+define_one_global_rw(boost_2nd_core_on_button);
 define_one_global_rw(boost_gpu);
 define_one_global_rw(boost_hold_cycles);
 define_one_global_rw(disable_hotplugging);
@@ -528,6 +556,7 @@ static struct attribute *dbs_attributes[] = {
 	&cpu_down_block_cycles.attr,
 	&boost_cpu.attr,
 	&boost_turn_on_2nd_core.attr,
+	&boost_2nd_core_on_button.attr,
 	&boost_gpu.attr,
 	&boost_hold_cycles.attr,
 	&disable_hotplugging.attr,
@@ -839,6 +868,12 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	switch (event) {
 	case CPUFREQ_GOV_START:
 		ktoonservative_is_active(true);
+		if (dbs_tuners_ins.boost_2nd_core_on_button == 1)
+    		{
+      			kt_is_active_benabled_gpio(true);
+		      	kt_is_active_benabled_touchkey(true);
+      			kt_is_active_benabled_power(true);
+    		}
 		
 		prev_apenable = apget_enable_auto_hotplug();
 		apenable_auto_hotplug(false);
@@ -904,6 +939,9 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 	case CPUFREQ_GOV_STOP:
 		ktoonservative_is_active(false);
+    		kt_is_active_benabled_gpio(false);
+    		kt_is_active_benabled_touchkey(false);
+    		kt_is_active_benabled_power(false);
 		
 		apenable_auto_hotplug(prev_apenable);
 		

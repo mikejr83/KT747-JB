@@ -22,6 +22,7 @@
 
 #include <linux/mfd/pm8xxx/core.h>
 #include <linux/input/pmic8xxx-pwrkey.h>
+#include <linux/slide2wake.h>
 
 #define PON_CNTL_1 0x1C
 #define PON_CNTL_PULL_UP BIT(7)
@@ -40,9 +41,21 @@ struct pmic8xxx_pwrkey {
 	const struct pm8xxx_pwrkey_platform_data *pdata;
 };
 
+extern void boostpulse_relay_kt(void);
+static bool kt_is_active_benabled = false;
+void kt_is_active_benabled_power(bool val)
+{
+	kt_is_active_benabled = val;
+}
+
 static irqreturn_t pwrkey_press_irq(int irq, void *_pwrkey)
 {
 	struct pmic8xxx_pwrkey *pwrkey = _pwrkey;
+	if (kt_is_active_benabled)
+	{
+		boostpulse_relay_kt();
+		//pr_alert("POWER_KEY_PRESS:\n");
+	}
 
 	if (pwrkey->press == true) {
 		pwrkey->press = false;
@@ -146,6 +159,8 @@ static int __devinit pmic8xxx_pwrkey_probe(struct platform_device *pdev)
 	pwr->name = "pmic8xxx_pwrkey";
 	pwr->phys = "pmic8xxx_pwrkey/input0";
 	pwr->dev.parent = &pdev->dev;
+
+	slide2wake_setdev(pwr);
 
 	delay = (pdata->kpd_trigger_delay_us << 6) / USEC_PER_SEC;
 	delay = ilog2(delay);
