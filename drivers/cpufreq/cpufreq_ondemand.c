@@ -69,7 +69,7 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 
 static bool boostpulse_relayf = false;
 static unsigned int boostpulse_relay_sr = 0;
-static unsigned int Lboostpulse_value = 1000000;
+static unsigned int Lboostpulse_value = 1134000;
 
 #ifndef CONFIG_CPU_FREQ_DEFAULT_GOV_ONDEMAND
 static

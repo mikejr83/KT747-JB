@@ -44,7 +44,7 @@
 
 static bool boostpulse_relayf = false;
 static unsigned int boostpulse_relay_sr = 0;
-static unsigned int Lboostpulse_value = 1000000;
+static unsigned int Lboostpulse_value = 1134000;
 
 struct runqueue_data {
 	unsigned int nr_run_avg;
