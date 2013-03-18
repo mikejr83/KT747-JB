@@ -36,6 +36,7 @@
 
 static int active_count;
 static bool ktoonservative_is_activef = false;
+static bool pegasusq_is_activef = false;
 static bool interactive_is_activef = false;
 
 struct cpufreq_interactive_cpuinfo {
@@ -827,11 +828,17 @@ static ssize_t store_boost(struct kobject *kobj, struct attribute *attr,
 
 define_one_global_rw(boost);
 
-extern void boostpulse_relay(void);
+extern void boostpulse_relay_kt(void);
+extern void boostpulse_relay_pq(void);
 
 void ktoonservative_is_active(bool val)
 {
 	ktoonservative_is_activef = val;
+}
+
+void pegasusq_is_active(bool val)
+{
+	pegasusq_is_activef = val;
 }
 
 static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
@@ -846,7 +853,9 @@ static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 
 	boostpulse_endtime = ktime_to_us(ktime_get()) + boostpulse_duration_val;
 	if (ktoonservative_is_activef)
-		boostpulse_relay();
+    		boostpulse_relay_kt();
+	if (pegasusq_is_activef)
+    		boostpulse_relay_pq();
 	
 	if (interactive_is_activef)
 	{
