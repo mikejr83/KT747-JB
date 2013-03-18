@@ -36,7 +36,6 @@
 #include <linux/mfd/pmic8058.h>
 #include <linux/input.h>
 #include <linux/sii9234.h>
-#include <linux/slide2wake.h>
 
 /* FSA9480 I2C registers */
 #define FSA9485_REG_DEVID		0x01
@@ -137,9 +136,7 @@
 #define	ADC_CARDOCK		0x1d
 #define	ADC_OPEN		0x1f
 
-extern int force_fast_charge;
-
-int uart_connecting = 0;
+int uart_connecting;
 EXPORT_SYMBOL(uart_connecting);
 
 int detached_status;
@@ -156,10 +153,7 @@ struct fsa9485_usbsw {
 	struct input_dev	*input;
 	int			previous_key;
 
-	int			dock_ready;
-
 	struct delayed_work	init_work;
-	struct delayed_work	audio_work;
 	struct mutex		mutex;
 	int				adc;
 	int				deskdock;
@@ -638,28 +632,21 @@ static int fsa9485_detect_dev(struct fsa9485_usbsw *usbsw)
 	if (usbsw->dock_attached)
 		pdata->dock_cb(FSA9485_DETACHED_DOCK);
 
-	if (local_usbsw->dock_ready == 1)
-		if (adc == 0x10)
-			val2 = DEV_SMARTDOCK;
-		else if (adc == 0x12)
-			val2 = DEV_AUDIO_DOCK;
+	if (adc == 0x10)
+		val2 = DEV_SMARTDOCK;
+	else if (adc == 0x12)
+		val2 = DEV_AUDIO_DOCK;
 
 	dev_info(&client->dev, "dev1: 0x%x, dev2: 0x%x adc : 0x%x\n", val1, val2, adc);
 
 	/* Attached */
 	if (val1 || val2) {
-		slide2wake_change(11);
 		/* USB */
 		if (val1 & DEV_USB || val2 & DEV_T2_USB_MASK) {
 			dev_info(&client->dev, "usb connect\n");
 
-			if (pdata->usb_cb) {
-				if (pdata->charger_cb && force_fast_charge != 0) {
-					dev_info(&client->dev, "[imoseyon] fastcharge\n");
-					pdata->charger_cb(FSA9485_ATTACHED);
-				} else pdata->usb_cb(FSA9485_ATTACHED);
-			}
-
+			if (pdata->usb_cb)
+				pdata->usb_cb(FSA9485_ATTACHED);
 			if (usbsw->mansw) {
 				ret = i2c_smbus_write_byte_data(client,
 				FSA9485_REG_MANSW1, usbsw->mansw);
@@ -830,18 +817,11 @@ static int fsa9485_detect_dev(struct fsa9485_usbsw *usbsw)
 		}
 	/* Detached */
 	} else {
-		slide2wake_change(10);
 		/* USB */
 		if (usbsw->dev1 & DEV_USB ||
 				usbsw->dev2 & DEV_T2_USB_MASK) {
-			if (pdata->usb_cb) {
-				if (pdata->charger_cb && force_fast_charge != 0) {
-					dev_info(&client->dev, "[imoseyon] fastcharge detached\n");
-					pdata->charger_cb(FSA9485_DETACHED);
-				}
-				else
-					pdata->usb_cb(FSA9485_DETACHED);
-			}
+			if (pdata->usb_cb)
+				pdata->usb_cb(FSA9485_DETACHED);
 		} else if (usbsw->dev1 & DEV_USB_CHG) {
 			if (pdata->usb_cdp_cb)
 				pdata->usb_cdp_cb(FSA9485_DETACHED);
@@ -969,8 +949,8 @@ static int fsa9485_handle_dock_vol_key(struct fsa9485_usbsw *info, int adc)
 {
 	struct input_dev *input = info->input;
 	int pre_key = info->previous_key;
-	unsigned int code;
-	int state;
+	unsigned int code=0;
+	int state=0;
 
 	if (adc == ADC_OPEN) {
 		switch (pre_key) {
@@ -1180,20 +1160,6 @@ static void fsa9485_init_detect(struct work_struct *work)
 				"failed to enable  irq init %s\n", __func__);
 }
 
-static void fsa9485_delayed_audio(struct work_struct *work)
-{
-    struct fsa9485_usbsw *usbsw = container_of(work,
-                    struct fsa9485_usbsw, audio_work.work);
-
-    dev_info(&usbsw->client->dev, "%s\n", __func__);
-
-    local_usbsw->dock_ready = 1;
-
-    mutex_lock(&usbsw->mutex);
-    fsa9485_detect_dev(usbsw);
-    mutex_unlock(&usbsw->mutex);
-}
-
 static int __devinit fsa9485_probe(struct i2c_client *client,
 			 const struct i2c_device_id *id)
 {
@@ -1305,15 +1271,11 @@ static int __devinit fsa9485_probe(struct i2c_client *client,
 	if (usbsw->pdata->set_init_flag)
 		usbsw->pdata->set_init_flag();
 
-	local_usbsw->dock_ready = 0;
 	/* initial cable detection */
 	INIT_DELAYED_WORK(&usbsw->init_work, fsa9485_init_detect);
 	schedule_delayed_work(&usbsw->init_work, msecs_to_jiffies(2700));
 
-	INIT_DELAYED_WORK(&usbsw->audio_work, fsa9485_delayed_audio);
-	schedule_delayed_work(&usbsw->audio_work, msecs_to_jiffies(20000));
 	return 0;
-
 
 err_create_file_reset_switch:
 	device_remove_file(switch_dev, &dev_attr_reset_switch);
@@ -1337,7 +1299,6 @@ static int __devexit fsa9485_remove(struct i2c_client *client)
 	struct fsa9485_usbsw *usbsw = i2c_get_clientdata(client);
 
 	cancel_delayed_work(&usbsw->init_work);
-	cancel_delayed_work(&usbsw->audio_work);
 	if (client->irq) {
 		disable_irq_wake(client->irq);
 		free_irq(client->irq, usbsw);

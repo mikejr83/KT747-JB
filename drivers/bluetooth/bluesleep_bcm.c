@@ -45,7 +45,7 @@
 #include <linux/bitops.h>
 #include <linux/termios.h>
 #include <linux/wakelock.h>
-#include <mach/gpio.h>
+#include <mach/gpio-v1.h>
 #include <linux/serial_core.h>
 #include <mach/msm_serial_hs.h>
 
@@ -68,10 +68,6 @@
 #define BT_ENABLE_IRQ_WAKE 1
 
 #define BT_BLUEDROID_SUPPORT 1
-
-extern void set_bluetooth_state(unsigned int val, __u8	dev_name[248]);
-extern void set_bluetooth_state_kt(bool val);
-static bool bt_conn_state = false;
 
 struct bluesleep_info {
 	unsigned host_wake;
@@ -180,19 +176,6 @@ int bluesleep_can_sleep(void)
 	BT_DBG
 	    ("bluetooth_can_sleep: ext_wake=%d, host_wake=%d, uport=%d, cs=%d",
 	     ext_wake, host_wake, (bsi->uport == NULL ? 0 : 1), cs);
-	
-	if ((ext_wake == 1 || host_wake == 1) && bt_conn_state == false)
-	{
-		set_bluetooth_state(1, "");
-		set_bluetooth_state_kt(true);
-		bt_conn_state = true;
-	}
-	else if (ext_wake == 0 && host_wake == 0 && bt_conn_state == true)
-	{
-		set_bluetooth_state(0, "");
-		set_bluetooth_state_kt(false);
-		bt_conn_state = false;
-	}
 	return cs;
 }
 
@@ -249,7 +232,7 @@ static void bluesleep_sleep_work(struct work_struct *work)
  */
 static void bluesleep_hostwake_task(unsigned long data)
 {
-	BT_DBG("hostwake line change-%ld", data);
+	BT_DBG("hostwake line change");
 
 	spin_lock(&rw_lock);
 	if (gpio_get_value(bsi->host_wake))

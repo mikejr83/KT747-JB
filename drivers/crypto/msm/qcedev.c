@@ -1,6 +1,6 @@
 /* Qualcomm CE device driver.
  *
- * Copyright (c) 2010-2012, Code Aurora Forum. All rights reserved.
+ * Copyright (c) 2010-2012, The Linux Foundation. All rights reserved.
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 and
@@ -1280,7 +1280,6 @@ static int qcedev_pmem_ablk_cipher_max_xfer(struct qcedev_async_req *areq,
 	unsigned long paddr;
 	unsigned long kvaddr;
 	unsigned long len;
-	int ret = 0;
 
 	sg_src = kmalloc((sizeof(struct scatterlist) *
 				areq->cipher_op_req.entries),	GFP_KERNEL);
@@ -1296,10 +1295,8 @@ static int qcedev_pmem_ablk_cipher_max_xfer(struct qcedev_async_req *areq,
 	areq->cipher_req.creq.src = sg_src;
 
 	/* address src */
-	ret = get_pmem_file(areq->cipher_op_req.pmem.fd_src, &paddr,
+	get_pmem_file(areq->cipher_op_req.pmem.fd_src, &paddr,
 					&kvaddr, &len, &file_src);
-	if (ret)
-		pr_err("%s(): get_pmem_file failed\n", __func__);
 
 	for (i = 0; i < areq->cipher_op_req.entries; i++) {
 		sg_set_buf(sg_ndex,
@@ -1327,11 +1324,8 @@ static int qcedev_pmem_ablk_cipher_max_xfer(struct qcedev_async_req *areq,
 		areq->cipher_req.creq.dst = sg_dst;
 		sg_ndex = sg_dst;
 
-		ret = get_pmem_file(areq->cipher_op_req.pmem.fd_dst, &paddr,
+		get_pmem_file(areq->cipher_op_req.pmem.fd_dst, &paddr,
 					&kvaddr, &len, &file_dst);
-		if (ret)
-			pr_err("%s(): get_pmem_file failed\n", __func__);
-
 		for (i = 0; i < areq->cipher_op_req.entries; i++)
 			sg_set_buf(sg_ndex++,
 			((uint8_t *)(areq->cipher_op_req.pmem.dst[i].offset)
@@ -2022,21 +2016,8 @@ static int qcedev_probe(struct platform_device *pdev)
 	struct qcedev_control *podev;
 	struct msm_ce_hw_support *platform_support;
 
-	if (pdev->id >= MAX_QCE_DEVICE) {
-		pr_err("%s: device id %d  exceeds allowed %d\n",
-			__func__, pdev->id, MAX_QCE_DEVICE);
-		return -ENOENT;
-	}
-	podev = &qce_dev[pdev->id];
+	podev = &qce_dev[0];
 
-	platform_support = (struct msm_ce_hw_support *)pdev->dev.platform_data;
-	podev->platform_support.ce_shared = platform_support->ce_shared;
-	podev->platform_support.shared_ce_resource =
-				platform_support->shared_ce_resource;
-	podev->platform_support.hw_key_support =
-				platform_support->hw_key_support;
-	podev->platform_support.bus_scale_table =
-				platform_support->bus_scale_table;
 	podev->ce_lock_count = 0;
 	podev->high_bw_req_count = 0;
 	INIT_LIST_HEAD(&podev->ready_commands);
@@ -2056,11 +2037,26 @@ static int qcedev_probe(struct platform_device *pdev)
 	podev->qce = handle;
 	podev->pdev = pdev;
 	platform_set_drvdata(pdev, podev);
-	rc = qce_hw_support(podev->qce, &podev->ce_support);
-	if (rc) {
-		pr_err("%s: failed qce_hw_support.\n", __func__);
-		rc = -ENODEV;
-		goto err;
+
+	rc = misc_register(&podev->miscdevice);
+	qce_hw_support(podev->qce, &podev->ce_support);
+	if (podev->ce_support.bam) {
+		podev->platform_support.ce_shared = 0;
+		podev->platform_support.shared_ce_resource = 0;
+		podev->platform_support.hw_key_support = 0;
+		podev->platform_support.bus_scale_table = NULL;
+		podev->platform_support.sha_hmac = 1;
+	} else {
+		platform_support =
+			(struct msm_ce_hw_support *)pdev->dev.platform_data;
+		podev->platform_support.ce_shared = platform_support->ce_shared;
+		podev->platform_support.shared_ce_resource =
+				platform_support->shared_ce_resource;
+		podev->platform_support.hw_key_support =
+				platform_support->hw_key_support;
+		podev->platform_support.bus_scale_table =
+				platform_support->bus_scale_table;
+		podev->platform_support.sha_hmac = platform_support->sha_hmac;
 	}
 	if (podev->platform_support.bus_scale_table != NULL) {
 		podev->bus_scale_handle =
@@ -2068,14 +2064,12 @@ static int qcedev_probe(struct platform_device *pdev)
 				(struct msm_bus_scale_pdata *)
 				podev->platform_support.bus_scale_table);
 		if (!podev->bus_scale_handle) {
-			printk(KERN_ERR "%s not able to get bus scale\n",
-								__func__);
+			pr_err("%s not able to get bus scale\n",
+				__func__);
 			rc =  -ENOMEM;
 			goto err;
 		}
 	}
-	rc = misc_register(&podev->miscdevice);
-
 	if (rc >= 0)
 		return 0;
 	else
@@ -2083,10 +2077,12 @@ static int qcedev_probe(struct platform_device *pdev)
 			msm_bus_scale_unregister_client(
 						podev->bus_scale_handle);
 err:
+
+	if (handle)
+		qce_close(handle);
 	platform_set_drvdata(pdev, NULL);
 	podev->qce = NULL;
 	podev->pdev = NULL;
-	qce_close(handle);
 	return rc;
 };
 
@@ -2109,12 +2105,19 @@ static int qcedev_remove(struct platform_device *pdev)
 	return 0;
 };
 
+static struct of_device_id qcedev_match[] = {
+	{	.compatible = "qcom,qcedev",
+	},
+	{}
+};
+
 static struct platform_driver qcedev_plat_driver = {
 	.probe = qcedev_probe,
 	.remove = qcedev_remove,
 	.driver = {
 		.name = "qce",
 		.owner = THIS_MODULE,
+		.of_match_table = qcedev_match,
 	},
 };
 
@@ -2231,9 +2234,7 @@ static void qcedev_exit(void)
 }
 
 MODULE_LICENSE("GPL v2");
-MODULE_AUTHOR("Mona Hossain <mhossain@codeaurora.org>");
 MODULE_DESCRIPTION("Qualcomm DEV Crypto driver");
-MODULE_VERSION("1.26");
 
 module_init(qcedev_init);
 module_exit(qcedev_exit);
