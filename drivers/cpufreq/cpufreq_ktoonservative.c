@@ -34,7 +34,7 @@
 #define DEF_FREQUENCY_DOWN_THRESHOLD		(52)
 #define DEF_FREQUENCY_DOWN_THRESHOLD_HOTPLUG	(35)
 #define DEF_CPU_DOWN_BLOCK_CYCLES		(22)
-#define DEF_BOOST_CPU				(1000000)
+#define DEF_BOOST_CPU				(1134000)
 #define DEF_BOOST_CPU_TURN_ON_2ND_CORE		(1)
 #define DEF_BOOST_GPU				(450)
 #define DEF_BOOST_HOLD_CYCLES			(22)
@@ -744,6 +744,7 @@ void boostpulse_relay_kt(void)
 		boostpulse_relayf = true;
 		boost_hold_cycles_cnt = 0;
 		dbs_tuners_ins.sampling_rate = min_sampling_rate;
+		pr_info("BOOSTPULSE RELAY KT");
 	}
 	else
 	{

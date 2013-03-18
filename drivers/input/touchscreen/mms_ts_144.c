@@ -254,6 +254,15 @@ const struct firmware *fw_mbin[SECTION_NUM];
 static unsigned char g_wr_buf[1024 + 3 + 2];
 #endif
 
+extern void set_screen_on_off_mhz(unsigned long onoff);
+static bool ktoonservative_is_activef = false;
+static bool pegasusq_is_activef = false;
+static bool ondemand_is_activef = false;
+extern void boostpulse_relay_kt(void);
+extern void boostpulse_relay_pq(void);
+extern void boostpulse_relay_od(void);
+extern void screen_is_on_relay_kt(bool state);
+
 int touch_is_pressed;
 EXPORT_SYMBOL(touch_is_pressed);
 
@@ -559,6 +568,56 @@ static void melfas_ta_cb(struct tsp_callbacks *cb, bool ta_status)
 	}
 }
 
+void ktoonservative_is_active(bool val)
+{
+	ktoonservative_is_activef = val;
+}
+void pegasusq_is_active(bool val)
+{
+	pegasusq_is_activef = val;
+}
+void ondemand_is_active(bool val)
+{
+	ondemand_is_activef = val;
+}
+
+static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
+{
+	if (ktoonservative_is_activef)
+		screen_is_on_relay_kt(true);
+
+	mutex_lock(&info->lock);
+	if (info->enabled)
+		goto out;
+	/* wake up the touch controller. */
+	if (wakeupcmd == 1) {
+		i2c_smbus_write_byte_data(info->client, 0, 0);
+		usleep_range(3000, 5000);
+	}
+	info->enabled = true;
+	enable_irq(info->irq);
+out:
+	mutex_unlock(&info->lock);
+	return 0;
+}
+
+static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
+{
+	mutex_lock(&info->lock);
+	if (!info->enabled)
+		goto out;
+	disable_irq(info->irq);
+	if (sleepcmd == 1) {
+		i2c_smbus_write_byte_data(info->client, MMS_MODE_CONTROL, 0);
+		usleep_range(10000, 12000);
+	}
+	info->enabled = false;
+	touch_is_pressed = 0;
+out:
+	mutex_unlock(&info->lock);
+	return 0;
+}
+
 static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 {
 	struct mms_ts_info *info = dev_id;
@@ -701,6 +760,12 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 		}
 #else
 		if (info->finger_state[id] == 0) {
+			if (ktoonservative_is_activef)
+				boostpulse_relay_kt();
+			if (pegasusq_is_activef)
+				boostpulse_relay_pq();
+			if (ondemand_is_activef)
+				boostpulse_relay_od();
 			info->finger_state[id] = 1;
 		}
 #endif
@@ -1761,40 +1826,6 @@ static int get_hw_version(struct mms_ts_info *info)
 	} while (ret < 0 && retries-- > 0);
 
 	return ret;
-}
-
-static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
-{
-	mutex_lock(&info->lock);
-	if (info->enabled)
-		goto out;
-	/* wake up the touch controller. */
-	if (wakeupcmd == 1) {
-		i2c_smbus_write_byte_data(info->client, 0, 0);
-		usleep_range(3000, 5000);
-	}
-	info->enabled = true;
-	enable_irq(info->irq);
-out:
-	mutex_unlock(&info->lock);
-	return 0;
-}
-
-static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
-{
-	mutex_lock(&info->lock);
-	if (!info->enabled)
-		goto out;
-	disable_irq(info->irq);
-	if (sleepcmd == 1) {
-		i2c_smbus_write_byte_data(info->client, MMS_MODE_CONTROL, 0);
-		usleep_range(10000, 12000);
-	}
-	info->enabled = false;
-	touch_is_pressed = 0;
-out:
-	mutex_unlock(&info->lock);
-	return 0;
 }
 
 static int mms_ts_finish_config(struct mms_ts_info *info)

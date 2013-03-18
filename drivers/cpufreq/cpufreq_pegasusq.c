@@ -861,8 +861,8 @@ static ssize_t store_boostpulse_value(struct kobject *a, struct attribute *b,
 	if (ret != 1)
 		return -EINVAL;
 
-	if (input * 1000 > 2100000)
-		input = 2100000;
+	if (input * 1000 > 2106000)
+		input = 2106000;
 
 	Lboostpulse_value = input * 1000;
 	return count;

@@ -35,9 +35,6 @@
 #include <trace/events/cpufreq_interactive.h>
 
 static int active_count;
-static bool ktoonservative_is_activef = false;
-static bool pegasusq_is_activef = false;
-static bool interactive_is_activef = false;
 
 struct cpufreq_interactive_cpuinfo {
 	struct timer_list cpu_timer;
@@ -828,19 +825,6 @@ static ssize_t store_boost(struct kobject *kobj, struct attribute *attr,
 
 define_one_global_rw(boost);
 
-extern void boostpulse_relay_kt(void);
-extern void boostpulse_relay_pq(void);
-
-void ktoonservative_is_active(bool val)
-{
-	ktoonservative_is_activef = val;
-}
-
-void pegasusq_is_active(bool val)
-{
-	pegasusq_is_activef = val;
-}
-
 static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 				const char *buf, size_t count)
 {
@@ -852,16 +836,8 @@ static ssize_t store_boostpulse(struct kobject *kobj, struct attribute *attr,
 		return ret;
 
 	boostpulse_endtime = ktime_to_us(ktime_get()) + boostpulse_duration_val;
-	if (ktoonservative_is_activef)
-    		boostpulse_relay_kt();
-	if (pegasusq_is_activef)
-    		boostpulse_relay_pq();
-	
-	if (interactive_is_activef)
-	{
-		trace_cpufreq_interactive_boost("pulse");
-		cpufreq_interactive_boost();
-	}
+	trace_cpufreq_interactive_boost("pulse");
+	cpufreq_interactive_boost();
 	return count;
 }
 
@@ -940,8 +916,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 
 	switch (event) {
 	case CPUFREQ_GOV_START:
-		interactive_is_activef = true;
-
 		if (!cpu_online(policy->cpu))
 			return -EINVAL;
 
@@ -1001,7 +975,6 @@ static int cpufreq_governor_interactive(struct cpufreq_policy *policy,
 
 	case CPUFREQ_GOV_STOP:
 		mutex_lock(&gov_lock);
-		interactive_is_activef = false;
 		for_each_cpu(j, policy->cpus) {
 			pcpu = &per_cpu(cpuinfo, j);
 			down_write(&pcpu->enable_sem);
