@@ -33,6 +33,24 @@
 #include <trace/events/power.h>
 static char scaling_sched_screen_off_sel[16];
 static char scaling_sched_screen_off_sel_prev[16];
+static unsigned int Lscreen_off_scaling_enable = 0;
+static unsigned int Lscreen_off_scaling_mhz = 1512000;
+static unsigned int Lscreen_off_scaling_mhz_orig = 1512000;
+static unsigned int Lbluetooth_scaling_mhz = 0;
+static unsigned int Lbluetooth_scaling_mhz_orig = 384000;
+static bool bluetooth_scaling_mhz_active = false;
+static bool bluetooth_overwrote_screen_off = false;
+static bool call_in_progress=false;
+static unsigned int Ldisable_som_call_in_progress = 0;
+static unsigned int vfreq_lock = 0;
+static bool vfreq_lock_tempOFF = false;
+static char scaling_governor_screen_off_sel[16];
+static char scaling_governor_screen_off_sel_prev[16];
+static char scaling_sched_screen_off_sel[16];
+static char scaling_sched_screen_off_sel_prev[16];
+static unsigned int Lenable_auto_hotplug = 0;
+
+extern void apenable_auto_hotplug(bool state);
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -621,9 +639,25 @@ static ssize_t show_bios_limit(struct cpufreq_policy *policy, char *buf)
 	return sprintf(buf, "%u\n", policy->cpuinfo.max_freq);
 }
 
+static ssize_t show_enable_auto_hotplug(struct cpufreq_policy *policy, char *buf)
+{
+	return sprintf(buf, "%u\n", Lenable_auto_hotplug);
+}
+static ssize_t store_enable_auto_hotplug(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int val = 0;
+	unsigned int ret;
+	ret = sscanf(buf, "%u", &val);
+	Lenable_auto_hotplug = val;
+	apenable_auto_hotplug((bool) Lenable_auto_hotplug);
+	return count;
+}
+
+
 cpufreq_freq_attr_ro_perm(cpuinfo_cur_freq, 0400);
 cpufreq_freq_attr_ro(cpuinfo_min_freq);
 cpufreq_freq_attr_ro(cpuinfo_max_freq);
+cpufreq_freq_attr_rw(enable_auto_hotplug);
 cpufreq_freq_attr_ro(cpuinfo_transition_latency);
 cpufreq_freq_attr_ro(scaling_available_governors);
 cpufreq_freq_attr_ro(scaling_driver);
@@ -640,6 +674,7 @@ cpufreq_freq_attr_rw(scaling_setspeed);
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
 	&cpuinfo_max_freq.attr,
+	&enable_auto_hotplug.attr,
 	&cpuinfo_transition_latency.attr,
 	&scaling_min_freq.attr,
 	&scaling_max_freq.attr,

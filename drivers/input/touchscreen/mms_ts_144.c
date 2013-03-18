@@ -262,6 +262,7 @@ extern void boostpulse_relay_kt(void);
 extern void boostpulse_relay_pq(void);
 extern void boostpulse_relay_od(void);
 extern void screen_is_on_relay_kt(bool state);
+extern void hotplugap_boostpulse(void);
 
 int touch_is_pressed;
 EXPORT_SYMBOL(touch_is_pressed);
@@ -769,6 +770,7 @@ static irqreturn_t mms_ts_interrupt(int irq, void *dev_id)
 				boostpulse_relay_pq();
 			if (ondemand_is_activef)
 				boostpulse_relay_od();
+			hotplugap_boostpulse();
 			info->finger_state[id] = 1;
 		}
 #endif

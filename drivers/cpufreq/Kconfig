@@ -226,6 +226,9 @@ config CPU_FREQ_GOV_CONSERVATIVE
 config CPU_FREQ_GOV_PEGASUSQ
 	tristate "'pegasusq' cpufreq policy governor"
 
+config CPU_FREQ_GOV_SLP
+	tristate "'slp' cpufreq policy governor"
+
 config CPU_FREQ_GOV_KTOONSERVATIVE
 	tristate "'ktoonservative' cpufreq governor"
 	depends on CPU_FREQ
