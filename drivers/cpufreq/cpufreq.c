@@ -766,11 +766,7 @@ static ssize_t store_scaling_booted(struct cpufreq_policy *policy, const char *b
 	{
 		isBooted = 1;
 		GLOBALKT_MIN_FREQ_LIMIT = 96000;
-#ifdef CONFIG_SUPER_CLOCKED
 		GLOBALKT_MAX_FREQ_LIMIT = 2106000;
-#else
-		GLOBALKT_MAX_FREQ_LIMIT = 1890000;
-#endif
 		cpufreq_get_policy(&new_policy, policy->cpu);
 		new_policy.cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
 		new_policy.cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
