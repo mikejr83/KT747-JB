@@ -52,6 +52,7 @@
  */
 #define MIN_SAMPLING_RATE_RATIO			(2)
 
+static bool disable_hotplug_bt_active = false;
 static unsigned int min_sampling_rate;
 static unsigned int stored_sampling_rate;
 static unsigned int Lcpu_down_block_cycles = 0;
@@ -124,6 +125,7 @@ static struct dbs_tuners {
 	unsigned int boost_gpu;
 	unsigned int boost_hold_cycles;
 	unsigned int disable_hotplugging;
+	unsigned int disable_hotplug_bt;
 	unsigned int no_2nd_cpu_screen_off;
 	unsigned int ignore_nice;
 	unsigned int freq_step;
@@ -139,6 +141,7 @@ static struct dbs_tuners {
 	.boost_gpu = DEF_BOOST_GPU,
 	.boost_hold_cycles = DEF_BOOST_HOLD_CYCLES,
 	.disable_hotplugging = DEF_DISABLE_HOTPLUGGING,
+	.disable_hotplug_bt = 0,
 	.no_2nd_cpu_screen_off = 1,
 	.sampling_down_factor = DEF_SAMPLING_DOWN_FACTOR,
 	.sampling_rate_screen_off = 45000,
@@ -211,6 +214,18 @@ static struct notifier_block dbs_cpufreq_notifier_block = {
 	.notifier_call = dbs_cpufreq_notifier
 };
 
+void set_bluetooth_state_kt(bool val)
+{
+	if (val == true && dbs_tuners_ins.disable_hotplug_bt == 1)
+	{
+		disable_hotplug_bt_active = true;
+		if (num_online_cpus() < 2)
+			schedule_work_on(0, &hotplug_online_work);
+	}
+	else
+		disable_hotplug_bt_active = false;
+}
+
 /************************** sysfs interface ************************/
 static ssize_t show_sampling_rate_min(struct kobject *kobj,
 				      struct attribute *attr, char *buf)
@@ -245,6 +260,7 @@ show_one(boost_2nd_core_on_button, boost_2nd_core_on_button);
 show_one(boost_gpu, boost_gpu);
 show_one(boost_hold_cycles, boost_hold_cycles);
 show_one(disable_hotplugging, disable_hotplugging);
+show_one(disable_hotplug_bt, disable_hotplug_bt);
 show_one(no_2nd_cpu_screen_off, no_2nd_cpu_screen_off);
 show_one(ignore_nice_load, ignore_nice);
 show_one(freq_step, freq_step);
@@ -475,6 +491,19 @@ static ssize_t store_boost_2nd_core_on_button(struct kobject *a, struct attribut
 	return count;
 }
 
+static ssize_t store_disable_hotplug_bt(struct kobject *a, struct attribute *b, const char *buf, size_t count)
+{
+	unsigned int input;
+	int ret;
+	ret = sscanf(buf, "%u", &input);
+
+	if (input != 0 && input != 1)
+		input = 0;
+
+	dbs_tuners_ins.disable_hotplug_bt = input;
+	return count;
+}
+
 static ssize_t store_ignore_nice_load(struct kobject *a, struct attribute *b,
 				      const char *buf, size_t count)
 {
@@ -540,6 +569,7 @@ define_one_global_rw(boost_2nd_core_on_button);
 define_one_global_rw(boost_gpu);
 define_one_global_rw(boost_hold_cycles);
 define_one_global_rw(disable_hotplugging);
+define_one_global_rw(disable_hotplug_bt);
 define_one_global_rw(no_2nd_cpu_screen_off);
 define_one_global_rw(ignore_nice_load);
 define_one_global_rw(freq_step);
@@ -560,6 +590,7 @@ static struct attribute *dbs_attributes[] = {
 	&boost_gpu.attr,
 	&boost_hold_cycles.attr,
 	&disable_hotplugging.attr,
+	&disable_hotplug_bt.attr,
 	&no_2nd_cpu_screen_off.attr,
 	&ignore_nice_load.attr,
 	&freq_step.attr,
@@ -704,7 +735,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		return;
 	}
 
-	if (max_load < dbs_tuners_ins.down_threshold_hotplug && !dbs_tuners_ins.disable_hotplugging) {
+	if (max_load < dbs_tuners_ins.down_threshold_hotplug && !dbs_tuners_ins.disable_hotplugging && disable_hotplug_bt_active == false) {
 		if (num_online_cpus() > 1)
 		{
 			if (Lcpu_down_block_cycles > dbs_tuners_ins.cpu_down_block_cycles)

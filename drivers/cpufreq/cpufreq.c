@@ -437,6 +437,30 @@ show_one(cpu_utilization, util);
 static int __cpufreq_set_policy(struct cpufreq_policy *data,
 				struct cpufreq_policy *policy);
 
+int cpufreq_set_limit_defered(unsigned int flags, unsigned int value)
+{
+	unsigned int ret = -EINVAL;					
+	struct cpufreq_policy new_policy;				
+	struct cpufreq_policy *policy = cpufreq_cpu_get(0);
+	ret = cpufreq_get_policy(&new_policy, policy->cpu);		
+	if (ret)							
+		return -EINVAL;						
+
+	if (flags == USER_MIN_START)
+	{
+		new_policy.min = value;
+		ret = __cpufreq_set_policy(policy, &new_policy);		
+		policy->user_policy.min = policy->min;			
+	}
+	if (flags == USER_MAX_START)
+	{
+		new_policy.max = value;
+		ret = __cpufreq_set_policy(policy, &new_policy);		
+		policy->user_policy.max = policy->max;			
+	}
+	return 0;									
+}
+
 /**
  * cpufreq_per_cpu_attr_write() / store_##file_name() - sysfs write access
  */
@@ -461,8 +485,53 @@ static ssize_t store_##file_name					\
 	return ret ? ret : count;					\
 }
 
-store_one(scaling_min_freq, min);
-store_one(scaling_max_freq, max);
+static ssize_t store_scaling_min_freq(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	unsigned int value = 0;
+
+	ret = sscanf(buf, "%u", &value);
+	if (ret != 1)
+		return -EINVAL;
+
+	if (policy->cpu == BOOT_CPU) {
+		if (value <= GLOBALKT_MIN_FREQ_LIMIT)
+			cpufreq_set_limit_defered(USER_MIN_STOP, value);
+		else if (value <= GLOBALKT_MAX_FREQ_LIMIT)
+			cpufreq_set_limit_defered(USER_MIN_START, value);
+	}
+	Lbluetooth_scaling_mhz_orig = value;
+
+	return count;
+}
+
+static ssize_t store_scaling_max_freq
+	(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	unsigned int value = 0;
+
+	ret = sscanf(buf, "%u", &value);
+	if (ret != 1)
+		return -EINVAL;
+
+	if (vfreq_lock == 0)
+	{
+		if (policy->cpu == BOOT_CPU) {
+			if (value >= GLOBALKT_MAX_FREQ_LIMIT)
+				cpufreq_set_limit_defered(USER_MAX_STOP, value);
+			else if (value >= GLOBALKT_MIN_FREQ_LIMIT)
+				cpufreq_set_limit_defered(USER_MAX_START, value);
+		}
+
+		if (value > GLOBALKT_MAX_FREQ_LIMIT)
+			value = GLOBALKT_MAX_FREQ_LIMIT;
+		if (value < GLOBALKT_MIN_FREQ_LIMIT)
+			value = GLOBALKT_MIN_FREQ_LIMIT;
+		Lscreen_off_scaling_mhz_orig = value;
+	}
+	return count;
+}
 
 /**
  * show_cpuinfo_cur_freq - current CPU frequency as detected by hardware
@@ -653,6 +722,30 @@ static ssize_t store_enable_auto_hotplug(struct cpufreq_policy *policy, const ch
 	return count;
 }
 
+void set_bluetooth_state(unsigned int val)
+{
+	unsigned int value;
+	if (Lbluetooth_scaling_mhz != 0)
+	{
+		if (vfreq_lock == 1)
+		{
+			vfreq_lock = 0;
+			vfreq_lock_tempOFF = true;
+		}
+		if (val == 1)
+		{
+			bluetooth_scaling_mhz_active = true;
+			value = Lbluetooth_scaling_mhz;
+			cpufreq_set_limit_defered(USER_MIN_START, value);
+		}
+		else
+		{
+			bluetooth_scaling_mhz_active = false;
+			value = Lbluetooth_scaling_mhz_orig;
+			cpufreq_set_limit_defered(USER_MIN_START, value);
+		}
+	}
+}
 
 cpufreq_freq_attr_ro_perm(cpuinfo_cur_freq, 0400);
 cpufreq_freq_attr_ro(cpuinfo_min_freq);
