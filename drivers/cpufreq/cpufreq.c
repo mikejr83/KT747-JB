@@ -1985,25 +1985,25 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	ret = cpufreq_driver->verify(policy);
 	if (ret)
 		goto error_out;
-	pr_alert("SET POLICY1-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
+	//pr_alert("SET POLICY1-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
 	//if (isBooted == 0)
 	//{
-		pr_alert("SET POLICY2-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
+		//pr_alert("SET POLICY2-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
 		if (policy->cpuinfo.min_freq != GLOBALKT_MIN_FREQ_LIMIT || policy->cpuinfo.max_freq != GLOBALKT_MAX_FREQ_LIMIT)
 		{
-			pr_alert("SET POLICY3-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
+			//pr_alert("SET POLICY3-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
 			policy->cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
 			policy->cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
 		}
 		if (policy->min < GLOBALKT_MIN_FREQ_LIMIT || policy->max > GLOBALKT_MAX_FREQ_LIMIT)
 		{
-			pr_alert("SET POLICY4-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
+			//pr_alert("SET POLICY4-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
 			policy->min = GLOBALKT_MIN_FREQ_LIMIT;
 			policy->max = GLOBALKT_MAX_FREQ_LIMIT;
 		}
 		if (policy->user_policy.min < GLOBALKT_MIN_FREQ_LIMIT || policy->user_policy.max > GLOBALKT_MAX_FREQ_LIMIT)
 		{
-			pr_alert("SET POLICY5-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
+			//pr_alert("SET POLICY5-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
 			policy->user_policy.min = GLOBALKT_MIN_FREQ_LIMIT;
 			policy->user_policy.max = GLOBALKT_MAX_FREQ_LIMIT;
 		}
@@ -2026,22 +2026,22 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	pr_alert("SET POLICY6-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
 	//if (isBooted == 0)
 	//{
-		pr_alert("SET POLICY7-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
+		//pr_alert("SET POLICY7-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
 		if (policy->cpuinfo.min_freq != GLOBALKT_MIN_FREQ_LIMIT || policy->cpuinfo.max_freq != GLOBALKT_MAX_FREQ_LIMIT)
 		{
-			pr_alert("SET POLICY8-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
+			//pr_alert("SET POLICY8-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
 			policy->cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
 			policy->cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
 		}
 		if (policy->min < GLOBALKT_MIN_FREQ_LIMIT || policy->max > GLOBALKT_MAX_FREQ_LIMIT)
 		{
-			pr_alert("SET POLICY9-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
+			//pr_alert("SET POLICY9-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
 			policy->min = GLOBALKT_MIN_FREQ_LIMIT;
 			policy->max = GLOBALKT_MAX_FREQ_LIMIT;
 		}
 		if (policy->user_policy.min < GLOBALKT_MIN_FREQ_LIMIT || policy->user_policy.max > GLOBALKT_MAX_FREQ_LIMIT)
 		{
-			pr_alert("SET POLICY10-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
+			//pr_alert("SET POLICY10-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
 			policy->user_policy.min = GLOBALKT_MIN_FREQ_LIMIT;
 			policy->user_policy.max = GLOBALKT_MAX_FREQ_LIMIT;
 		}
@@ -2091,7 +2091,7 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 		pr_debug("governor: change or update limits\n");
 		__cpufreq_governor(data, CPUFREQ_GOV_LIMITS);
 	}
-	pr_alert("SET POLICY7-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
+	//pr_alert("SET POLICY7-%d-%d\n", policy->cpuinfo.min_freq, policy->cpuinfo.max_freq);
 
 error_out:
 	return ret;

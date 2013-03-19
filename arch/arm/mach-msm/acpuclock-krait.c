@@ -947,7 +947,7 @@ void cpufreq_table_init(void)
 				freq_table[cpu][freq_cnt].frequency
 					= drv.acpu_freq_tbl[i].speed.khz;
 				freq_cnt++;
-				pr_alert("TABLE INIT-%lu-%d\n", drv.acpu_freq_tbl[i].speed.khz, drv.acpu_freq_tbl[i].vdd_core);
+				//pr_alert("TABLE INIT-%lu-%d\n", drv.acpu_freq_tbl[i].speed.khz, drv.acpu_freq_tbl[i].vdd_core);
 			}
 		}
 		/* freq_table not big enough to store all usable freqs. */
