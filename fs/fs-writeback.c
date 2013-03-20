@@ -1016,8 +1016,8 @@ void wakeup_flusher_threads(long nr_pages, enum wb_reason reason)
 static noinline void block_dump___mark_inode_dirty(struct inode *inode)
 {
 	if (inode->i_ino || strcmp(inode->i_sb->s_id, "bdev")) {
-		struct dentry *dentry;
 		const char *name = "?";
+		struct dentry *dentry;
 
 		dentry = d_find_alias(inode);
 		if (dentry) {

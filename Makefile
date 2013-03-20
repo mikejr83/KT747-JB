@@ -595,6 +595,7 @@ KBUILD_CFLAGS += $(call cc-disable-warning, unused-variable)
 KBUILD_CFLAGS += $(call cc-disable-warning, declaration-after-statement)
 KBUILD_CFLAGS += $(call cc-disable-warning, unused-function)
 KBUILD_CFLAGS += $(call cc-disable-warning, maybe-uninitialized)
+KBUILD_CFLAGS += $(call cc-disable-warning, array-bounds)
 
 ifdef CONFIG_FRAME_POINTER
 KBUILD_CFLAGS	+= -fno-omit-frame-pointer -fno-optimize-sibling-calls
