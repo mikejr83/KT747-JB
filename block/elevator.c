@@ -1047,9 +1047,11 @@ int elevator_change_relay(const char *name, int screen_status)
 {
 	int i = 0;
 	load_prev_screen_on = screen_status;
-	//pr_alert("CHANGE_SCHEDULER0-%d\n", load_prev_screen_on);
-	//for (i = 0; i < queue_size; i++)
-		elevator_change(globalq[i], name);
+	for (i = 0; i < queue_size; i++)
+	{
+		if (i != 1 && i != 2)
+			elevator_change(globalq[i], name);
+	}
 	load_prev_screen_on = 0;
 	return 0;
 }

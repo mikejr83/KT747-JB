@@ -48,8 +48,8 @@ static struct scalable scalable[] __initdata = {
 		.aux_clk_sel = 3,
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x4501,
-		.vreg[VREG_CORE] = { "krait0", 1300000 },
-		.vreg[VREG_MEM]  = { "krait0_mem", 1150000 },
+		.vreg[VREG_CORE] = { "krait0", 1400000 },
+		.vreg[VREG_MEM]  = { "krait0_mem", 1250000 },
 		.vreg[VREG_DIG]  = { "krait0_dig", 1150000 },
 		.vreg[VREG_HFPLL_A] = { "krait0_s8", 2050000 },
 		.vreg[VREG_HFPLL_B] = { "krait0_l23", 1800000 },
@@ -60,8 +60,8 @@ static struct scalable scalable[] __initdata = {
 		.aux_clk_sel = 3,
 		.sec_clk_sel = 2,
 		.l2cpmr_iaddr = 0x5501,
-		.vreg[VREG_CORE] = { "krait1", 1300000 },
-		.vreg[VREG_MEM]  = { "krait1_mem", 1150000 },
+		.vreg[VREG_CORE] = { "krait1", 1400000 },
+		.vreg[VREG_MEM]  = { "krait1_mem", 1250000 },
 		.vreg[VREG_DIG]  = { "krait1_dig", 1150000 },
 		.vreg[VREG_HFPLL_A] = { "krait1_s8", 2050000 },
 		.vreg[VREG_HFPLL_B] = { "krait1_l23", 1800000 },
@@ -121,9 +121,9 @@ static struct l2_level l2_freq_tbl[] __initdata = {
 
 static struct acpu_level acpu_freq_tbl_slow[] __initdata = {
 	{ 1, {    96000, PLL_8, 0, 0x00 }, L2(0),   950000, AVS(0x40001F) },
-	{ 1, {   144000, HFPLL, 2, 0x12 }, L2(0),   950000 },
-	{ 1, {   192000, HFPLL, 2, 0x16 }, L2(0),   950000 },
-	{ 1, {   384000, HFPLL, 2, 0x20 }, L2(0),   950000 },
+	{ 1, {   144000, HFPLL, 0, 0x00 }, L2(0),   950000 },
+	{ 1, {   192000, HFPLL, 0, 0x00 }, L2(0),   950000 },
+	{ 1, {   384000, HFPLL, 0, 0x00 }, L2(0),   950000 },
 	{ 1, {   486000, HFPLL, 2, 0x24 }, L2(6),   975000 },
 	{ 1, {   540000, HFPLL, 2, 0x28 }, L2(6),  1000000 },
 	{ 1, {   594000, HFPLL, 1, 0x16 }, L2(6),  1000000 },
@@ -154,10 +154,10 @@ static struct acpu_level acpu_freq_tbl_slow[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_nom[] __initdata = {
-	{ 1, {    96000, PLL_8, 0, 0x00 }, L2(0),   950000, AVS(0x40007F) },
-	{ 1, {   144000, HFPLL, 2, 0x12 }, L2(0),   950000 },
-	{ 1, {   192000, HFPLL, 2, 0x16 }, L2(0),   950000 },
-	{ 1, {   384000, HFPLL, 2, 0x20 }, L2(0),   950000 },
+	{ 1, {    96000, PLL_8, 0, 0x00 }, L2(0),   900000, AVS(0x40007F) },
+	{ 1, {   144000, HFPLL, 0, 0x00 }, L2(0),   900000 },
+	{ 1, {   192000, HFPLL, 0, 0x00 }, L2(0),   900000 },
+	{ 1, {   384000, HFPLL, 0, 0x00 }, L2(0),   900000 },
 	{ 1, {   486000, HFPLL, 2, 0x24 }, L2(6),   925000 },
 	{ 1, {   540000, HFPLL, 2, 0x28 }, L2(6),   950000 },
 	{ 1, {   594000, HFPLL, 1, 0x16 }, L2(6),   950000 },
@@ -188,10 +188,10 @@ static struct acpu_level acpu_freq_tbl_nom[] __initdata = {
 };
 
 static struct acpu_level acpu_freq_tbl_fast[] __initdata = {
-	{ 1, {    96000, PLL_8, 0, 0x00 }, L2(0),   950000, AVS(0x4000FF) },
-	{ 1, {   144000, HFPLL, 2, 0x12 }, L2(0),   950000 },
-	{ 1, {   192000, HFPLL, 2, 0x16 }, L2(0),   950000 },
-	{ 1, {   384000, HFPLL, 2, 0x20 }, L2(0),   950000 },
+	{ 1, {    96000, PLL_8, 0, 0x00 }, L2(0),   850000, AVS(0x4000FF) },
+	{ 1, {   144000, HFPLL, 0, 0x00 }, L2(0),   850000 },
+	{ 1, {   192000, HFPLL, 0, 0x00 }, L2(0),   850000 },
+	{ 1, {   384000, HFPLL, 0, 0x00 }, L2(0),   850000 },
 	{ 1, {   486000, HFPLL, 2, 0x24 }, L2(6),   875000 },
 	{ 1, {   540000, HFPLL, 2, 0x28 }, L2(6),   900000 },
 	{ 1, {   594000, HFPLL, 1, 0x16 }, L2(6),   900000 },
@@ -221,13 +221,13 @@ static struct acpu_level acpu_freq_tbl_fast[] __initdata = {
 	{ 0, { 0 } }
 };
 
-static struct pvs_table pvs_tables[NUM_SPEED_BINS][NUM_PVS] = {
+static struct pvs_table pvs_tables[NUM_SPEED_BINS][NUM_PVS] __initdata = {
 [0][PVS_SLOW]    = { acpu_freq_tbl_slow, sizeof(acpu_freq_tbl_slow),     0 },
 [0][PVS_NOMINAL] = { acpu_freq_tbl_nom,  sizeof(acpu_freq_tbl_nom),  25000 },
 [0][PVS_FAST]    = { acpu_freq_tbl_fast, sizeof(acpu_freq_tbl_fast), 25000 },
 };
 
-static struct acpuclk_krait_params acpuclk_8960_params = {
+static struct acpuclk_krait_params acpuclk_8960_params __initdata = {
 	.scalable = scalable,
 	.scalable_size = sizeof(scalable),
 	.hfpll_data = &hfpll_data,
@@ -278,13 +278,6 @@ static struct attribute_group acpuclock8960_attr_group = {
 	.attrs = acpuclock8960_attributes,
 	.name = "ktoonsez",
 };
-
-extern void update_krait_data(const struct acpuclk_krait_params *params);
-
-void cpufreq_table_init8960(void)
-{
-	update_krait_data(&acpuclk_8960_params);
-}
 
 static int __init acpuclk_8960_probe(struct platform_device *pdev)
 {

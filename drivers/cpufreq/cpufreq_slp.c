@@ -825,7 +825,7 @@ static struct attribute_group dbs_attr_group = {
 
 /************************** sysfs end ************************/
 
-static void cpu_up_work(struct work_struct *work)
+static void __cpuinit cpu_up_work(struct work_struct *work)
 {
 	int cpu;
 	int online = num_online_cpus();
@@ -1195,8 +1195,6 @@ static inline void dbs_timer_init(struct cpu_dbs_info_s *dbs_info)
 		delay -= jiffies % delay;
 
 	INIT_DELAYED_WORK_DEFERRABLE(&dbs_info->work, do_dbs_timer);
-	INIT_WORK(&dbs_info->up_work, cpu_up_work);
-	INIT_WORK(&dbs_info->down_work, cpu_down_work);
 
 	queue_delayed_work_on(dbs_info->cpu, dvfs_workqueue,
 			      &dbs_info->work, delay + 2 * HZ);
@@ -1403,10 +1401,14 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 static int __init cpufreq_gov_dbs_init(void)
 {
 	int ret;
+	struct cpu_dbs_info_s *dbs_info = &per_cpu(od_cpu_dbs_info, 0);
 
 	ret = init_rq_avg();
 	if (ret)
 		return ret;
+
+	INIT_WORK(&dbs_info->up_work, cpu_up_work);
+	INIT_WORK(&dbs_info->down_work, cpu_down_work);
 
 	hotplug_history = kzalloc(sizeof(struct cpu_usage_history), GFP_KERNEL);
 	if (!hotplug_history) {

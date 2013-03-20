@@ -33,6 +33,8 @@
 
 #define ENABLE_DIAG_IOCTLS	(0)
 
+extern void set_call_in_progress(bool state);
+
 struct a2220_data {
 	struct i2c_client *this_client;
 	struct mutex lock;
@@ -704,15 +706,18 @@ int a2220_set_config(struct a2220_data *a2220, char newid, int mode)
 	case A2220_PATH_INCALL_RECEIVER_NSON:
 		i2c_cmds = phonecall_receiver_nson;
 		size = sizeof(phonecall_receiver_nson);
+		set_call_in_progress(true);
 		break;
 	case A2220_PATH_INCALL_RECEIVER_NSON_WB:
 		i2c_cmds = phonecall_receiver_nson_wb;
 		size = sizeof(phonecall_receiver_nson_wb);
+		set_call_in_progress(true);
 		break;
 	case A2220_PATH_INCALL_RECEIVER_NSOFF:
 		i2c_cmds = phonecall_receiver_nsoff;
 		size = sizeof(phonecall_receiver_nsoff);
-	break;
+		set_call_in_progress(false);
+		break;
 #ifdef AUDIENCE_BYPASS
 	case A2220_PATH_BYPASS_MULTIMEDIA:
 		pr_info("%s:A2220_PATH_BYPASS_MULTIMEDIA\n", __func__);

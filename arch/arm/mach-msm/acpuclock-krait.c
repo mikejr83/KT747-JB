@@ -1137,32 +1137,6 @@ static void __init drv_data_init(struct device *dev,
 	acpuclk_krait_data.wait_for_irq_khz = params->stby_khz;
 }
 
-void update_krait_data(const struct acpuclk_krait_params *params)
-{
-	int i;
-	//struct pvs_table *pvs = select_freq_plan(params->pte_efuse_phys, params->pvs_tables);
-	//drv.acpu_freq_tbl = kmemdup(pvs->table, pvs->size, GFP_KERNEL);
-	//for (i = 0; pvs->table[i].speed.khz != 0
-	//			&& freq_cnt < ARRAY_SIZE(*freq_table); i++) {
-	//	drv.acpu_freq_tbl[i].speed.khz = pvs->table[i].speed.khz;
-	//	drv.acpu_freq_tbl[i].use_for_scaling = pvs->table[i].use_for_scaling;
-	//	drv.acpu_freq_tbl[i].vdd_core = pvs->table[i].vdd_core;
-	//}
-	//cpufreq_table_init();
-	//drv.acpu_freq_tbl[i].vdd_core
-	//reset_num_cpu_freqs();
-	//for (i = 0; drv.acpu_freq_tbl[i].speed.khz != 0; i++)
-	//{
-	//	drv.acpu_freq_tbl[i].vdd_core = 1;
-	//}
-		//if (drv.acpu_freq_tbl[i].use_for_scaling)
-		//	msm_dcvs_register_cpu_freq(
-		//		drv.acpu_freq_tbl[i].speed.khz,
-		//		drv.acpu_freq_tbl[i].vdd_core / 1000);
-	
-	//dcvs_freq_init();
-}
-
 void acpuclk_UV_mV_table(int cnt, int vdd_uv[]) {
 
 	int i;
@@ -1262,7 +1236,7 @@ static void __init hw_init(void)
 	bus_init(l2_level);
 }
 
-int acpuclk_krait_init(struct device *dev,
+int __cpuinit acpuclk_krait_init(struct device *dev,
 			      const struct acpuclk_krait_params *params)
 {
 	drv_data_init(dev, params);

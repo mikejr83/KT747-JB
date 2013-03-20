@@ -601,7 +601,9 @@ static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
 {
 	if (ktoonservative_is_activef)
 		screen_is_on_relay_kt(true);
-
+	
+	set_screen_on_off_mhz(true);
+	
 	mutex_lock(&info->lock);
 	if (info->enabled)
 		goto out;
@@ -641,7 +643,8 @@ static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
 {
 	if (ktoonservative_is_activef)
 		screen_is_on_relay_kt(false);
-
+	set_screen_on_off_mhz(false);
+	
 	mutex_lock(&info->lock);
 	if (!info->enabled)
 		goto out;
