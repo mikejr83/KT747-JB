@@ -511,9 +511,8 @@ static ssize_t store_scaling_min_freq(struct cpufreq_policy *policy, const char 
 
 	if (policy->cpu == BOOT_CPU) {
 		if (value <= GLOBALKT_MIN_FREQ_LIMIT)
-			cpufreq_set_limit_defered(USER_MIN_STOP, value);
-		else if (value <= GLOBALKT_MAX_FREQ_LIMIT)
-			cpufreq_set_limit_defered(USER_MIN_START, value);
+			value = GLOBALKT_MIN_FREQ_LIMIT;
+		cpufreq_set_limit_defered(USER_MIN_START, value);
 	}
 	Lbluetooth_scaling_mhz_orig = value;
 
@@ -534,9 +533,8 @@ static ssize_t store_scaling_max_freq
 	{
 		if (policy->cpu == BOOT_CPU) {
 			if (value >= GLOBALKT_MAX_FREQ_LIMIT)
-				cpufreq_set_limit_defered(USER_MAX_STOP, value);
-			else if (value >= GLOBALKT_MIN_FREQ_LIMIT)
-				cpufreq_set_limit_defered(USER_MAX_START, value);
+				value = GLOBALKT_MAX_FREQ_LIMIT;
+			cpufreq_set_limit_defered(USER_MAX_START, value);
 		}
 
 		if (value > GLOBALKT_MAX_FREQ_LIMIT)
@@ -873,6 +871,11 @@ static ssize_t store_scaling_booted(struct cpufreq_policy *policy, const char *b
 	ret = sscanf(buf, "%u", &value);
 	if (value == 1)
 	{
+		if (vfreq_lock == 1)
+		{
+			vfreq_lock = 0;
+			vfreq_lock_tempOFF = true;
+		}
 		isBooted = 1;
 		GLOBALKT_MIN_FREQ_LIMIT = 96000;
 		GLOBALKT_MAX_FREQ_LIMIT = 2106000;
@@ -2237,6 +2240,9 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 
 	memcpy(&policy->cpuinfo, &data->cpuinfo,
 				sizeof(struct cpufreq_cpuinfo));
+
+	if (vfreq_lock_tempOFF)
+		vfreq_lock = 1;
 
 	if (policy->min > data->max || policy->max < data->min) {
 		ret = -EINVAL;

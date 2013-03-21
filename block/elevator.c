@@ -275,7 +275,7 @@ int elevator_init(struct request_queue *q, char *name)
 
 	q->index = queue_size;
 	globalq[queue_size] = q;
-	//pr_alert("ELEVATOR_INIT: %s-%d\n", q->elevator->type->elevator_name, queue_size);
+	pr_alert("ELEVATOR_INIT:  %s-%d\n", q->elevator->type->elevator_name, queue_size);
 	queue_size += 1;
 	
 	return 0;

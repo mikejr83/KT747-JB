@@ -59,7 +59,6 @@ static unsigned int Lcpu_down_block_cycles = 0;
 static unsigned int Lcpu_up_block_cycles = 0;
 static bool boostpulse_relayf = false;
 static int boost_hold_cycles_cnt = 0;
-static unsigned int boostpulse_relay_sr = 0;
 static bool screen_is_on = true;
 
 extern void ktoonservative_is_active(bool val);
@@ -291,7 +290,7 @@ static ssize_t store_sampling_rate(struct kobject *a, struct attribute *b,
 		return -EINVAL;
 
 	dbs_tuners_ins.sampling_rate = max(input, min_sampling_rate);
-	stored_sampling_rate = dbs_tuners_ins.sampling_rate;
+	stored_sampling_rate = max(input, min_sampling_rate);
 	return count;
 }
 
@@ -618,8 +617,8 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 
 	if (boostpulse_relayf)
 	{
-		if (boostpulse_relay_sr != 0)
-			dbs_tuners_ins.sampling_rate = boostpulse_relay_sr;
+		if (stored_sampling_rate != 0 && screen_is_on)
+			dbs_tuners_ins.sampling_rate = stored_sampling_rate;
 		if (boost_hold_cycles_cnt >= dbs_tuners_ins.boost_hold_cycles)
 		{
 			boostpulse_relayf = false;
@@ -778,11 +777,13 @@ void screen_is_on_relay_kt(bool state)
 	{
 		if (stored_sampling_rate > 0)
 			dbs_tuners_ins.sampling_rate = stored_sampling_rate; //max(input, min_sampling_rate);
+		//pr_alert("SCREEN_IS_ON1: %d-%d\n", dbs_tuners_ins.sampling_rate, stored_sampling_rate);
 	}
 	else
 	{
 		stored_sampling_rate = dbs_tuners_ins.sampling_rate;
 		dbs_tuners_ins.sampling_rate = dbs_tuners_ins.sampling_rate_screen_off;
+		//pr_alert("SCREEN_IS_ON2: %d-%d\n", dbs_tuners_ins.sampling_rate, stored_sampling_rate);
 	}
 	
 }
@@ -804,8 +805,6 @@ void boostpulse_relay_kt(void)
 		else if (dbs_tuners_ins.boost_turn_on_2nd_core == 0 && dbs_tuners_ins.boost_cpu == 0 && dbs_tuners_ins.boost_gpu == 0)
 			return;
 
-		if (dbs_tuners_ins.sampling_rate != min_sampling_rate)
-			boostpulse_relay_sr = dbs_tuners_ins.sampling_rate;
 		boostpulse_relayf = true;
 		boost_hold_cycles_cnt = 0;
 		dbs_tuners_ins.sampling_rate = min_sampling_rate;
