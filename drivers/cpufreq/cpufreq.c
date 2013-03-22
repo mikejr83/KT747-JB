@@ -509,6 +509,8 @@ static ssize_t store_scaling_min_freq(struct cpufreq_policy *policy, const char 
 	if (ret != 1)
 		return -EINVAL;
 
+	if (value == 384000)
+		value = 378000;
 	if (policy->cpu == BOOT_CPU) {
 		if (value <= GLOBALKT_MIN_FREQ_LIMIT)
 			value = GLOBALKT_MIN_FREQ_LIMIT;
