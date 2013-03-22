@@ -173,7 +173,7 @@ static inline unsigned long cpufreq_scale(unsigned long old, u_int div, u_int mu
 #define CPUFREQ_GOV_STOP   2
 #define CPUFREQ_GOV_LIMITS 3
 
-extern int GLOBALKT_MIN_FREQ_LIMIT;// = 384000;
+extern int GLOBALKT_MIN_FREQ_LIMIT;// = 378000;
 extern int GLOBALKT_MAX_FREQ_LIMIT;// = 1512000;
 
 struct cpufreq_governor {

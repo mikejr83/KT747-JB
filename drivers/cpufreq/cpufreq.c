@@ -38,7 +38,7 @@ static unsigned int Lscreen_off_scaling_enable = 0;
 static unsigned int Lscreen_off_scaling_mhz = 1512000;
 static unsigned int Lscreen_off_scaling_mhz_orig = 1512000;
 static unsigned int Lbluetooth_scaling_mhz = 0;
-static unsigned int Lbluetooth_scaling_mhz_orig = 384000;
+static unsigned int Lbluetooth_scaling_mhz_orig = 378000;
 static bool bluetooth_scaling_mhz_active = false;
 static bool bluetooth_overwrote_screen_off = false;
 static bool call_in_progress=false;
@@ -64,7 +64,7 @@ static unsigned int isBooted = 0;
 
 extern void apenable_auto_hotplug(bool state);
 
-int GLOBALKT_MIN_FREQ_LIMIT = 384000;
+int GLOBALKT_MIN_FREQ_LIMIT = 378000;
 int GLOBALKT_MAX_FREQ_LIMIT = 1512000;
 
 /**
@@ -877,7 +877,7 @@ static ssize_t store_scaling_booted(struct cpufreq_policy *policy, const char *b
 			vfreq_lock_tempOFF = true;
 		}
 		isBooted = 1;
-		GLOBALKT_MIN_FREQ_LIMIT = 96000;
+		GLOBALKT_MIN_FREQ_LIMIT = 81000;
 		GLOBALKT_MAX_FREQ_LIMIT = 2106000;
 		cpufreq_get_policy(&new_policy, policy->cpu);
 		new_policy.cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
@@ -1031,7 +1031,7 @@ static ssize_t store_battery_ctrl_cpu_mhz_lvl_low(struct cpufreq_policy *policy,
   
   //pr_alert("BATT_SET_LVL_LOW1: %u-%u-%u\n", input, policy->min, policy->max);
   
-  if (input < 96000 || input > 2106000)
+  if (input < 81000 || input > 2106000)
     input = 0;
   //pr_alert("BATT_SET_LVL_LOW2: %u-%u-%u\n", input, policy->min, policy->max);
   mhz_lvl_low = input;
