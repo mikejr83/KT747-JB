@@ -808,7 +808,7 @@ void boostpulse_relay_kt(void)
 		boostpulse_relayf = true;
 		boost_hold_cycles_cnt = 0;
 		dbs_tuners_ins.sampling_rate = min_sampling_rate;
-		pr_info("BOOSTPULSE RELAY KT");
+		//pr_info("BOOSTPULSE RELAY KT");
 	}
 	else
 	{
