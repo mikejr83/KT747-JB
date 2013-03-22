@@ -70,7 +70,9 @@ extern unsigned int system_rev;
 #define PRESS_BIT_MASK		0X08
 #define KEYCODE_BIT_MASK	0X07
 
-#define TOUCHKEY_LOG(k, v) dev_notice(&info->client->dev, "key[%d] %d\n", k, v);
+#if defined(SEC_TOUCHKEY_DEBUG)
+	#define TOUCHKEY_LOG(k, v) dev_notice(&info->client->dev, "key[%d] %d\n", k, v);
+#endif
 #define FUNC_CALLED dev_notice(&info->client->dev, "%s: called.\n", __func__);
 
 #define NUM_OF_RETRY_UPDATE	3
@@ -293,9 +295,9 @@ static int cypress_touchkey_auto_cal(struct cypress_touchkey_info *dev_info)
 
 		count = i2c_smbus_write_i2c_block_data(info->client,
 				CYPRESS_GEN, 4, data);
-		printk(KERN_DEBUG
-				"[TouchKey] data[0]=%x data[1]=%x data[2]=%x data[3]=%x\n",
-				data[0], data[1], data[2], data[3]);
+		//printk(KERN_DEBUG
+		//		"[TouchKey] data[0]=%x data[1]=%x data[2]=%x data[3]=%x\n",
+		//		data[0], data[1], data[2], data[3]);
 
 		msleep(50);
 
