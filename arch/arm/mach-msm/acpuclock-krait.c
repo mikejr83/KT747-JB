@@ -524,6 +524,7 @@ static int acpuclk_krait_set_rate(int cpu, unsigned long rate,
 	vdd_data.vdd_dig  = calculate_vdd_dig(tgt);
 	vdd_data.vdd_core = calculate_vdd_core(tgt);
 	vdd_data.ua_core = tgt->ua_core;
+	//pr_alert("KRAIT SET RATE-%lu-%d-%d-%d-%d\n", tgt->speed.khz, vdd_data.vdd_mem, vdd_data.vdd_dig, vdd_data.vdd_core, vdd_data.ua_core);
 
 	/* Disable AVS before voltage switch */
 	if (reason == SETRATE_CPUFREQ && drv.scalable[cpu].avs_enabled) {
