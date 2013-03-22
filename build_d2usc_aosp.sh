@@ -2,7 +2,7 @@
 export KERNELDIR=`readlink -f .`
 export PARENT_DIR=`readlink -f ..`
 export INITRAMFS_DEST=$KERNELDIR/kernel/usr/initramfs
-export INITRAMFS_SOURCE=`readlink -f ..`/Ramdisks/AOSP_JB_MR1
+export INITRAMFS_SOURCE=`readlink -f ..`/Ramdisks/AOSP_JB_MR1-3.4
 export CONFIG_AOSP_BUILD=y
 export PACKAGEDIR=$PARENT_DIR/Packages/AOSP_JB_MR1_USC
 #Enable FIPS mode
@@ -11,7 +11,7 @@ export ARCH=arm
 # export CROSS_COMPILE=$PARENT_DIR/linaro4.5/bin/arm-eabi-
 # export CROSS_COMPILE=/home/ktoonsez/kernel/siyah/arm-2011.03/bin/arm-none-eabi-
 # export CROSS_COMPILE=/home/ktoonsez/android/system/prebuilt/linux-x86/toolchain/arm-eabi-4.4.3/bin/arm-eabi-
-# export CROSS_COMPILE=/home/ktoonsez/androidjb/system/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-
+# export CROSS_COMPILE=/home/ktoonsez/aokp4.2/prebuilts/gcc/linux-x86/arm/arm-eabi-4.6/bin/arm-eabi-
 export CROSS_COMPILE=$PARENT_DIR/linaro4.7/bin/arm-eabi-
 
 echo "Remove old Package Files"
@@ -71,8 +71,8 @@ if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
 	cp -R ../META-INF .
 	rm ramdisk.gz
 	rm zImage
-	rm ../KT747-Kernel-AOSP-JB-MR1-USC*.zip
-	zip -r ../KT747-Kernel-AOSP-JB-MR1-USC-$curdate.zip .
+	rm ../KT747-AOSP-JB-MR1-3.4-USC*.zip
+	zip -r ../KT747-AOSP-JB-MR1-3.4-USC-$curdate.zip .
 	cd $KERNELDIR
 else
 	echo "KERNEL DID NOT BUILD! no zImage exist"
