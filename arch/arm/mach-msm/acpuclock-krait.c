@@ -65,6 +65,8 @@ static struct drv_data {
 	struct device *dev;
 } drv;
 
+struct acpu_level orig_drv[30];
+
 static unsigned long acpuclk_krait_get_rate(int cpu)
 {
 	return drv.scalable[cpu].cur_speed->khz;
@@ -974,10 +976,11 @@ void dcvs_freq_init(void)
 	reset_num_cpu_freqs();
 
 	for (i = 0; drv.acpu_freq_tbl[i].speed.khz != 0; i++)
+	{
+		orig_drv[i].vdd_core = drv.acpu_freq_tbl[i].vdd_core;
 		if (drv.acpu_freq_tbl[i].use_for_scaling)
-			msm_dcvs_register_cpu_freq(
-				drv.acpu_freq_tbl[i].speed.khz,
-				drv.acpu_freq_tbl[i].vdd_core / 1000);
+			msm_dcvs_register_cpu_freq(drv.acpu_freq_tbl[i].speed.khz, drv.acpu_freq_tbl[i].vdd_core / 1000);
+	}
 }
 
 static int __cpuinit acpuclk_cpu_callback(struct notifier_block *nfb,
@@ -1131,6 +1134,7 @@ static void __init drv_data_init(struct device *dev,
 	BUG_ON(!pvs->table);
 
 	drv.acpu_freq_tbl = kmemdup(pvs->table, pvs->size, GFP_KERNEL);
+	
 	BUG_ON(!drv.acpu_freq_tbl);
 	drv.boost_uv = pvs->boost_uv;
 
@@ -1181,6 +1185,25 @@ ssize_t acpuclk_get_vdd_levels_str(char *buf, int isApp) {
 		{
 			for (i = isApp-1; i >= 0; i--)
 				len += sprintf(buf + len, "%lumhz: %d mV\n", drv.acpu_freq_tbl[i].speed.khz/1000, drv.acpu_freq_tbl[i].vdd_core/1000);
+		}
+	}
+	return len;
+}
+
+ssize_t acpuclk_get_vdd_levels_str_stock(char *buf, int isApp) {
+	int i, len = 0;
+
+	if (buf) {
+		if (isApp == 0)
+		{
+			//for (i = 0; acpu_freq_tbl[i+1].speed.khz; i++)
+			for (i = 0; i < isApp-1; i++)
+				len += sprintf(buf + len, "%lu: %d\n", drv.acpu_freq_tbl[i].speed.khz, orig_drv[i].vdd_core );
+		}
+		else
+		{
+			for (i = isApp-1; i >= 0; i--)
+				len += sprintf(buf + len, "%lumhz: %d mV\n", drv.acpu_freq_tbl[i].speed.khz/1000, orig_drv[i].vdd_core/1000);
 		}
 	}
 	return len;
