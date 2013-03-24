@@ -254,6 +254,9 @@ static unsigned char g_wr_buf[1024 + 3 + 2];
 extern void screen_is_on_relay_kt(bool state);
 extern void boostpulse_relay_kt();
 
+unsigned int Ltrinity_colors = 1;
+extern void trinity_load_colors(unsigned int val);
+
 int touch_is_pressed;
 EXPORT_SYMBOL(touch_is_pressed);
 
@@ -3107,10 +3110,32 @@ static ssize_t slide2wake_plug_store(struct device *dev, struct device_attribute
 	return size;
 }
 
+static ssize_t trinity_colors_show(struct device *dev, struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", Ltrinity_colors);
+}
+
+static ssize_t trinity_colors_store(struct device *dev, struct device_attribute *attr, const char *buf, size_t size)
+{
+	int ret;
+	unsigned int value;
+	
+	ret = sscanf(buf, "%d\n", &value);
+	if (ret != 1)
+		return -EINVAL;
+
+	Ltrinity_colors = value;
+	trinity_load_colors(Ltrinity_colors);
+	
+	return size;
+}
+
 static DEVICE_ATTR(slide2wake, S_IRUGO | S_IWUSR | S_IWGRP,
 	slide2wake_show, slide2wake_store);
 static DEVICE_ATTR(slide2wake_plug, S_IRUGO | S_IWUSR | S_IWGRP,
 	slide2wake_plug_show, slide2wake_plug_store);
+static DEVICE_ATTR(trinity_colors, S_IRUGO | S_IWUSR | S_IWGRP,
+	trinity_colors_show, trinity_colors_store);
 
 static DEVICE_ATTR(close_tsp_test, S_IRUGO, show_close_tsp_test, NULL);
 static DEVICE_ATTR(cmd, S_IWUSR | S_IWGRP, NULL, store_cmd);
@@ -3134,6 +3159,7 @@ static struct attribute *sec_touch_facotry_attributes[] = {
 #endif
 		&dev_attr_slide2wake.attr,
 		&dev_attr_slide2wake_plug.attr,
+		&dev_attr_trinity_colors.attr,
 		NULL,
 };
 
