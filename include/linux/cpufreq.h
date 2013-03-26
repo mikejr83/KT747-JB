@@ -349,9 +349,9 @@ static inline unsigned int cpufreq_quick_get(unsigned int cpu)
 
 #define LOW_MAX_FREQ_LIMIT 1188000
 
-static int GLOBALKT_MIN_FREQ_LIMIT = 384000;
+extern int GLOBALKT_MIN_FREQ_LIMIT;
 //#define MAX_FREQ_LIMIT 1512000
-static int GLOBALKT_MAX_FREQ_LIMIT = 1512000;
+extern int GLOBALKT_MAX_FREQ_LIMIT;
 
 #ifdef CONFIG_SUPER_CLOCKED
 	#define FREQ_TABLE_SIZE		38

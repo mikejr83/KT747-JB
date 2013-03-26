@@ -45,7 +45,7 @@ static unsigned int Lscreen_off_scaling_enable = 0;
 static unsigned int Lscreen_off_scaling_mhz = 1512000;
 static unsigned int Lscreen_off_scaling_mhz_orig = 1512000;
 static unsigned int Lbluetooth_scaling_mhz = 0;
-static unsigned int Lbluetooth_scaling_mhz_orig = 384000;
+static unsigned int Lbluetooth_scaling_mhz_orig = 378000;
 static bool bluetooth_scaling_mhz_active = false;
 static bool bluetooth_overwrote_screen_off = false;
 static bool call_in_progress=false;
@@ -61,6 +61,9 @@ static unsigned int Lenable_auto_hotplug = 0;
 static unsigned int isBooted = 0;
 
 extern void apenable_auto_hotplug(bool state);
+
+int GLOBALKT_MIN_FREQ_LIMIT = 378000;
+int GLOBALKT_MAX_FREQ_LIMIT = 1512000;
 
 /**
  * The "cpufreq driver" - the arch- or hardware-dependent low
@@ -493,7 +496,10 @@ static ssize_t store_scaling_min_freq
 	ret = sscanf(buf, "%u", &value);
 	if (ret != 1)
 		return -EINVAL;
-
+	
+	if (value == 384000)
+		value = 378000;
+		
 	if (policy->cpu == BOOT_CPU) {
 		if (value <= GLOBALKT_MIN_FREQ_LIMIT)
 			cpufreq_set_limit_defered(USER_MIN_STOP, value);
@@ -542,17 +548,22 @@ static ssize_t store_scaling_booted
 	if (value == 1)
 	{
 		isBooted = 1;
-		GLOBALKT_MIN_FREQ_LIMIT = 96000;
+		GLOBALKT_MIN_FREQ_LIMIT = 81000;
 #ifdef CONFIG_SUPER_CLOCKED
 		GLOBALKT_MAX_FREQ_LIMIT = 2106000;
 #else
 		GLOBALKT_MAX_FREQ_LIMIT = 1890000;
 #endif
-		cpufreq_get_policy(&new_policy, policy->cpu);
+		cpufreq_get_policy(&new_policy, 0);
+		pr_alert("store_scaling_booted SET1: %d-%d-%d-%d-%d\n", GLOBALKT_MAX_FREQ_LIMIT, new_policy.min, new_policy.max, new_policy.user_policy.min, new_policy.user_policy.max);
+		new_policy.min = 378000;
+		new_policy.max = 1512000;
 		new_policy.cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
 		new_policy.cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
-		new_policy.user_policy.min = GLOBALKT_MIN_FREQ_LIMIT;
-		new_policy.user_policy.max = GLOBALKT_MAX_FREQ_LIMIT;
+		new_policy.user_policy.min = 378000;
+		new_policy.user_policy.max = 1512000;
+		cpufreq_get_policy(&new_policy, 0);
+		pr_alert("store_scaling_booted SET2: %d-%d-%d-%d-%d\n", GLOBALKT_MAX_FREQ_LIMIT, new_policy.min, new_policy.max, new_policy.user_policy.min, new_policy.user_policy.max);
 		ret = __cpufreq_set_policy(policy, &new_policy);
 		//cpufreq_cpu_put(&new_policy);
 	}
@@ -2170,9 +2181,29 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	}
 
 	/* verify the cpu speed can be set within this limit */
-	ret = 0; //cpufreq_driver->verify(policy);
+	ret = cpufreq_driver->verify(policy);
 	if (ret)
 		goto error_out;
+
+	//Do KT checker
+	if (policy->cpuinfo.min_freq != GLOBALKT_MIN_FREQ_LIMIT || policy->cpuinfo.max_freq != GLOBALKT_MAX_FREQ_LIMIT)
+	{
+		policy->cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
+		policy->cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
+		pr_alert("FUCKED 1\n");
+	}
+	if (policy->min < GLOBALKT_MIN_FREQ_LIMIT || policy->max > GLOBALKT_MAX_FREQ_LIMIT)
+	{
+		policy->min = GLOBALKT_MIN_FREQ_LIMIT;
+		policy->max = GLOBALKT_MAX_FREQ_LIMIT;
+		pr_alert("FUCKED 2\n");
+	}
+	if (policy->user_policy.min < GLOBALKT_MIN_FREQ_LIMIT || policy->user_policy.max > GLOBALKT_MAX_FREQ_LIMIT)
+	{
+		policy->user_policy.min = GLOBALKT_MIN_FREQ_LIMIT;
+		policy->user_policy.max = GLOBALKT_MAX_FREQ_LIMIT;
+		pr_alert("FUCKED 3\n");
+	}
 
 	/* adjust if necessary - all reasons */
 	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
@@ -2184,9 +2215,29 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 
 	/* verify the cpu speed can be set within this limit,
 	   which might be different to the first one */
-	ret = 0; //cpufreq_driver->verify(policy);
+	ret = cpufreq_driver->verify(policy);
 	if (ret)
 		goto error_out;
+
+	//Do KT checker
+	if (policy->cpuinfo.min_freq != GLOBALKT_MIN_FREQ_LIMIT || policy->cpuinfo.max_freq != GLOBALKT_MAX_FREQ_LIMIT)
+	{
+		policy->cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
+		policy->cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
+		pr_alert("FUCKED 4\n");
+	}
+	if (policy->min < GLOBALKT_MIN_FREQ_LIMIT || policy->max > GLOBALKT_MAX_FREQ_LIMIT)
+	{
+		policy->min = GLOBALKT_MIN_FREQ_LIMIT;
+		policy->max = GLOBALKT_MAX_FREQ_LIMIT;
+		pr_alert("FUCKED 5\n");
+	}
+	if (policy->user_policy.min < GLOBALKT_MIN_FREQ_LIMIT || policy->user_policy.max > GLOBALKT_MAX_FREQ_LIMIT)
+	{
+		policy->user_policy.min = GLOBALKT_MIN_FREQ_LIMIT;
+		policy->user_policy.max = GLOBALKT_MAX_FREQ_LIMIT;
+		pr_alert("FUCKED 6\n");
+	}
 
 	/* notification of the new policy */
 	blocking_notifier_call_chain(&cpufreq_policy_notifier_list,
@@ -2233,8 +2284,9 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 		pr_debug("governor: change or update limits\n");
 		__cpufreq_governor(data, CPUFREQ_GOV_LIMITS);
 	}
-
+	//pr_alert("FUCKED7: %d-%d-%d-%d-%d-%d-%d\n", GLOBALKT_MAX_FREQ_LIMIT, data->min, data->max, policy->min, policy->max, policy->user_policy.min, policy->user_policy.max);
 error_out:
+	//pr_alert("FUCKED8: %d-%d-%d-%d-%d-%d-%d\n", GLOBALKT_MAX_FREQ_LIMIT, data->min, data->max, policy->min, policy->max, policy->user_policy.min, policy->user_policy.max);
 	return ret;
 }
 
@@ -2252,9 +2304,9 @@ static DEFINE_SEMAPHORE(cpufreq_defered_lock);
 static DEFINE_MUTEX(set_cpu_freq_lock);
 
 static unsigned long freq_limit_start_flag;
-static unsigned int app_min_freq_limit = 384000;
+static unsigned int app_min_freq_limit = 378000;
 static unsigned int app_max_freq_limit = 1512000;
-static unsigned int user_min_freq_limit = 384000;
+static unsigned int user_min_freq_limit = 378000;
 static unsigned int user_max_freq_limit = 1512000;
 
 static int cpufreq_set_limits_off
