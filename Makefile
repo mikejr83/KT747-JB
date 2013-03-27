@@ -378,6 +378,7 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
+		   -mtune=cortex-a15 \
 		   -fno-delete-null-pointer-checks \
 		   -funswitch-loops -fpredictive-commoning \
 		    $(XX_A9) $(XX_GRAPHITE) $(XX_MODULO)
