@@ -976,6 +976,7 @@ static ssize_t store_freq_lock(struct cpufreq_policy *policy,
 }
 
 extern ssize_t acpuclk_get_vdd_levels_str(char *buf, int isApp);
+extern ssize_t acpuclk_get_vdd_levels_str_stock(char *buf, int isApp);
 extern void acpuclk_set_vdd(unsigned acpu_khz, int vdd);
 extern void acpuclk_UV_mV_table(int cnt, int vdd_uv[]);
 extern unsigned int get_enable_oc(void);
@@ -986,6 +987,14 @@ ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf)
 	if (get_enable_oc() == 0)
 		modu = FREQ_TABLE_SIZE_OFFSET;
 	return acpuclk_get_vdd_levels_str(buf, FREQ_STEPS-modu);
+}
+
+ssize_t show_UV_mV_table_stock(struct cpufreq_policy *policy, char *buf)
+{
+  	int modu = 0;
+  	if (get_enable_oc() == 0)
+    		modu = FREQ_TABLE_SIZE_OFFSET;
+  	return acpuclk_get_vdd_levels_str_stock(buf, FREQ_STEPS-modu);
 }
 
 ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
@@ -1038,6 +1047,7 @@ cpufreq_freq_attr_rw(bluetooth_scaling_mhz);
 cpufreq_freq_attr_rw(disable_som_call_in_progress);
 cpufreq_freq_attr_rw(freq_lock);
 cpufreq_freq_attr_rw(UV_mV_table);
+cpufreq_freq_attr_ro(UV_mV_table_stock);
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -1055,6 +1065,7 @@ static struct attribute *default_attrs[] = {
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
 	&UV_mV_table.attr,
+	&UV_mV_table_stock.attr,
 	&scaling_booted.attr,
 	&touch_booster_first_freq_limit.attr,
 	&touch_booster_second_freq_limit.attr,
