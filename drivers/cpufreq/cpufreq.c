@@ -932,6 +932,9 @@ static ssize_t store_freq_lock(struct cpufreq_policy *policy,
 	ret = sscanf(buf, "%u", &value);
 	if (value > 1)
 		value = 1;
+	if (value == 0)
+		vfreq_lock_tempOFF = false;
+		
 	vfreq_lock = value;
 
 	return count;
