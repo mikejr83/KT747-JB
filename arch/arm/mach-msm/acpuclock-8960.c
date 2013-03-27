@@ -131,6 +131,7 @@ struct acpu_level {
 	struct l2_level		*l2_level;
 	unsigned int		vdd_core;
 };
+struct acpu_level orig_drv[40];
 
 struct scalable {
 	void * __iomem const hfpll_base;
@@ -789,7 +790,7 @@ static struct acpu_level acpu_freq_tbl_8960_kraitv2_slow[] = {
 };
 
 static struct acpu_level acpu_freq_tbl_8960_kraitv2_nom[] = {
-	{ 0, { STBY_KHZ, QSB,   0, 0, 0x00 }, L2(0),   850000 },
+	{ 0, { STBY_KHZ, QSB,   0, 0, 0x00 }, L2(0),   925000 },
 	{ 1, {    81000, PLL_8, 0, 2, 0x00 }, L2(1),   925000 },
 	{ 1, {   135000, HFPLL, 2, 0, 0x0A }, L2(1),   925000 },
 	{ 1, {   189000, HFPLL, 2, 0, 0x0E }, L2(1),   925000 },
@@ -1471,7 +1472,7 @@ ssize_t acpuclk_get_vdd_levels_str(char *buf, int isApp) {
 		{
 			//for (i = 0; acpu_freq_tbl[i+1].speed.khz; i++)
 			for (i = 0; i < isApp-1; i++)
-				len += sprintf(buf + len, "%8u: %8d\n", acpu_freq_tbl[i+1].speed.khz, acpu_freq_tbl[i+1].vdd_core );
+				len += sprintf(buf + len, "%8u: %8d\n", acpu_freq_tbl[i+1].speed.khz, acpu_freq_tbl[i+1].vdd_core);
 		}
 		else
 		{
@@ -1480,7 +1481,30 @@ ssize_t acpuclk_get_vdd_levels_str(char *buf, int isApp) {
 		}
 		mutex_unlock(&driver_lock);
 
+	}
+	return len;
+}
+
+ssize_t acpuclk_get_vdd_levels_str_stock(char *buf, int isApp) {
+	int i, len = 0;
+
+	if (buf) {
+		mutex_lock(&driver_lock);
+
+		if (isApp == 0)
+		{
+			//for (i = 0; acpu_freq_tbl[i+1].speed.khz; i++)
+			for (i = 0; i < isApp-1; i++)
+				len += sprintf(buf + len, "%8u: %8d\n", acpu_freq_tbl[i+1].speed.khz, orig_drv[i+1].vdd_core);
 		}
+		else
+		{
+			for (i = isApp-1; i >= 0; i--)
+				len += sprintf(buf + len, "%dmhz: %d mV\n", acpu_freq_tbl[i+1].speed.khz/1000, orig_drv[i+1].vdd_core/1000);
+		}
+		mutex_unlock(&driver_lock);
+
+	}
 	return len;
 }
 
@@ -1769,7 +1793,8 @@ static void boost_vdd_core(struct acpu_level *tbl)
 static struct acpu_level * __init select_freq_plan(void)
 {
 	struct acpu_level *l, *max_acpu_level = NULL;
-
+	int i;
+	
 	/* Select frequency tables. */
 	if (cpu_is_msm8960()) {
 		uint32_t pte_efuse, pvs, fmax, pvs_leakage;
@@ -1866,6 +1891,9 @@ static struct acpu_level * __init select_freq_plan(void)
 		if (l->use_for_scaling && l->speed.khz==1512000)
 			max_acpu_level = l;
 	}
+	for (i = 0; acpu_freq_tbl[i].speed.khz != 0; i++)
+		orig_drv[i].vdd_core = acpu_freq_tbl[i].vdd_core;
+
 	BUG_ON(!max_acpu_level);
 	pr_alert("Max ACPU freq: %u KHz\n", max_acpu_level->speed.khz);
 
