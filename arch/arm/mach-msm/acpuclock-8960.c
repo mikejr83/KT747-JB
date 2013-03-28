@@ -1745,7 +1745,7 @@ static struct acpu_level * __init select_freq_plan(void)
 		case 0x7:
 			pr_alert("ACPU PVS: Slow\n");
 			v1 = acpu_freq_tbl_8960_kraitv1_slow;
-			v2 = acpu_freq_tbl_8960_kraitv2_slow;
+			v2 = acpu_freq_tbl_8960_kraitv2_nom;
 			break;
 		case 0x1:
 			pr_alert("ACPU PVS: Nominal\n");
@@ -1757,14 +1757,14 @@ static struct acpu_level * __init select_freq_plan(void)
 		case 0x3:
 			pr_alert("ACPU PVS: Fast\n");
 			v1 = acpu_freq_tbl_8960_kraitv1_nom_fast;
-			v2 = acpu_freq_tbl_8960_kraitv2_fast;
+			v2 = acpu_freq_tbl_8960_kraitv2_nom;
 			boost_uv = BOOST_UV;
 			enable_boost = true;
 			break;
 		default:
 			pr_err("ACPU PVS: Unknown. Defaulting to slow.\n");
 			v1 = acpu_freq_tbl_8960_kraitv1_slow;
-			v2 = acpu_freq_tbl_8960_kraitv2_slow;
+			v2 = acpu_freq_tbl_8960_kraitv2_nom;
 			break;
 		}
 
