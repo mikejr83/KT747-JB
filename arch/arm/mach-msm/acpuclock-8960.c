@@ -1834,7 +1834,10 @@ static struct acpu_level * __init select_freq_plan(void)
 	for (l = acpu_freq_tbl; l->speed.khz != 0; l++)
 	{
 		if (l->use_for_scaling && l->speed.khz==1512000)
+		{
 			max_acpu_level = l;
+			break;
+		}
 	}
 	for (i = 0; acpu_freq_tbl[i].speed.khz != 0; i++)
 		orig_drv[i].vdd_core = acpu_freq_tbl[i].vdd_core;
