@@ -50,8 +50,8 @@ static int msm_thermal_get_freq_table(void)
 	while (table[i].frequency != CPUFREQ_TABLE_END)
 		i++;
 
-	limit_idx_low = 0;
-	limit_idx_high = limit_idx = i - 1;
+	limit_idx_low = 3;
+	limit_idx_high = limit_idx = i - 7;
 	BUG_ON(limit_idx_high <= 0 || limit_idx_high <= limit_idx_low);
 fail:
 	return ret;
