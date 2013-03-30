@@ -358,7 +358,7 @@ LDFLAGS_MODULE  =
 CFLAGS_KERNEL	=
 AFLAGS_KERNEL	=
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
-XX_A9		= -marm -mtune=cortex-a9 -mfpu=neon -mfloat-abi=softfp -march=armv7-a \
+XX_A9		= -marm -mfloat-abi=softfp -march=armv7-a \
 		  -funsafe-math-optimizations -funroll-loops -mvectorize-with-neon-quad
 XX_GRAPHITE	= -fgraphite-identity -floop-block -ftree-loop-linear \
 		  -floop-strip-mine -ftree-loop-distribution
@@ -378,6 +378,10 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
+		   -finline-functions \
+		   -fgcse-after-reload \
+		   -ftree-partial-pre \
+		   -fipa-cp-clone \
 		   -mtune=cortex-a15 \
 		   -fno-delete-null-pointer-checks \
 		   -funswitch-loops -fpredictive-commoning \
