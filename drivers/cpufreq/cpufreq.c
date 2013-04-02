@@ -182,7 +182,7 @@ static struct cpufreq_policy *__cpufreq_cpu_get(unsigned int cpu, int sysfs)
 	struct cpufreq_policy *data;
 	unsigned long flags;
 
-	if (cpu >= nr_cpu_ids)
+	if (cpu >= nr_cpu_ids || !cpu_online(cpu))
 		goto err_out;
 
 	/* get the cpufreq driver */
@@ -892,10 +892,12 @@ static ssize_t store_scaling_booted(struct cpufreq_policy *policy, const char *b
 		GLOBALKT_MIN_FREQ_LIMIT = 81000;
 		GLOBALKT_MAX_FREQ_LIMIT = 2106000;
 		cpufreq_get_policy(&new_policy, policy->cpu);
+		new_policy.min = 378000;
+		new_policy.max = 1512000;
 		new_policy.cpuinfo.min_freq = GLOBALKT_MIN_FREQ_LIMIT;
 		new_policy.cpuinfo.max_freq = GLOBALKT_MAX_FREQ_LIMIT;
-		new_policy.user_policy.min = GLOBALKT_MIN_FREQ_LIMIT;
-		new_policy.user_policy.max = GLOBALKT_MAX_FREQ_LIMIT;
+		new_policy.user_policy.min = 378000;
+		new_policy.user_policy.max = 1512000;
 		ret = __cpufreq_set_policy(policy, &new_policy);
 	}
 	else
