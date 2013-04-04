@@ -171,7 +171,7 @@ static struct cpufreq_policy *__cpufreq_cpu_get(unsigned int cpu, int sysfs)
 	struct cpufreq_policy *data;
 	unsigned long flags;
 
-	if (cpu >= nr_cpu_ids)
+	if (cpu >= nr_cpu_ids || !cpu_online(cpu))
 		goto err_out;
 
 	/* get the cpufreq driver */
