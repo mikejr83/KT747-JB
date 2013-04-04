@@ -60,6 +60,11 @@ static unsigned int Lenable_auto_hotplug = 0;
 
 static unsigned int isBooted = 0;
 
+//Global plaeholder for CPU policies
+static struct cpufreq_policy trmlpolicy[10];
+//Kthermal limit holder to stop govs from setting CPU speed higher than the thermal limit
+static unsigned int kthermal_limit;
+
 extern void apenable_auto_hotplug(bool state);
 
 int GLOBALKT_MIN_FREQ_LIMIT = 378000;
@@ -2006,6 +2011,9 @@ int __cpufreq_driver_target(struct cpufreq_policy *policy,
 {
 	int retval = -EINVAL;
 
+	if (kthermal_limit > 0 && target_freq > kthermal_limit)
+		target_freq = kthermal_limit;
+		
 	pr_debug("target for CPU %u: %u kHz, relation %u\n", policy->cpu,
 		target_freq, relation);
 	if (cpu_online(policy->cpu) && cpufreq_driver->target)
@@ -2186,6 +2194,12 @@ int cpufreq_get_policy(struct cpufreq_policy *policy, unsigned int cpu)
 }
 EXPORT_SYMBOL(cpufreq_get_policy);
 
+void do_kthermal(unsigned int cpu, unsigned int freq)
+{
+	kthermal_limit = freq;
+	if (freq > 0)
+		__cpufreq_driver_target(&trmlpolicy[cpu], freq, CPUFREQ_RELATION_H);
+}
 
 /*
  * data   : current policy.
@@ -2202,6 +2216,9 @@ static int __cpufreq_set_policy(struct cpufreq_policy *data,
 	memcpy(&policy->cpuinfo, &data->cpuinfo,
 				sizeof(struct cpufreq_cpuinfo));
 
+	//trmlpolicy[policy->cpu] = policy;
+	memcpy(&trmlpolicy[policy->cpu], policy, sizeof(struct cpufreq_policy));
+	
 	if (policy->min > data->max || policy->max < data->min) {
 		ret = -EINVAL;
 		goto error_out;
