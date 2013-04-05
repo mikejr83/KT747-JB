@@ -10,7 +10,6 @@
 #include <linux/msm_thermal.h>
 #include <linux/platform_device.h>
 #include <linux/of.h>
-#include <mach/cpufreq.h>
 
 static struct msm_thermal_data msm_thermal_pdata = {
 	.sensor_id = 0,
