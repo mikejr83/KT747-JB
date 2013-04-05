@@ -9,7 +9,6 @@
 #include <linux/msm_tsens.h>
 #include <linux/platform_device.h>
 #include <linux/of.h>
-#include <mach/cpufreq.h>
 
 struct kmsm_thermal_data {
 	uint32_t sensor_id;
