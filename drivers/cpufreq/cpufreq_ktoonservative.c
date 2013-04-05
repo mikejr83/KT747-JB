@@ -622,9 +622,9 @@ void boostpulse_relay_kt(void)
 	if (num_online_cpus() < 2 && dbs_tuners_ins.boost_turn_on_2nd_core)
 	{
 		block_from_boost = 22;
-		pr_alert("BOOSTPULSE_RELAY_KT1:\n");
+		//pr_alert("BOOSTPULSE_RELAY_KT1:\n");
 		cpu_up(1);
-		pr_alert("BOOSTPULSE_RELAY_KT2:\n");
+		//pr_alert("BOOSTPULSE_RELAY_KT2:\n");
 	}
 }
 
