@@ -621,7 +621,7 @@ SHOW_FUNCTION(row_lp_read_quantum_show,
 	rowd->row_queues[ROWQ_PRIO_LOW_READ].disp_quantum, 0);
 SHOW_FUNCTION(row_lp_swrite_quantum_show,
 	rowd->row_queues[ROWQ_PRIO_LOW_SWRITE].disp_quantum, 0);
-SHOW_FUNCTION(row_read_idle_show, rowd->read_idle.idle_time, 1);
+SHOW_FUNCTION(row_read_idle_show, rowd->read_idle.idle_time, 0);
 SHOW_FUNCTION(row_read_idle_freq_show, rowd->read_idle.freq, 0);
 #undef SHOW_FUNCTION
 
@@ -661,8 +661,8 @@ STORE_FUNCTION(row_lp_read_quantum_store,
 			1, INT_MAX, 0, 5);
 STORE_FUNCTION(row_lp_swrite_quantum_store,
 			&rowd->row_queues[ROWQ_PRIO_LOW_SWRITE].disp_quantum,
-			1, INT_MAX, 1, 6);
-STORE_FUNCTION(row_read_idle_store, &rowd->read_idle.idle_time, 1, INT_MAX, 1, 7);
+			1, INT_MAX, 0, 6);
+STORE_FUNCTION(row_read_idle_store, &rowd->read_idle.idle_time, 1, INT_MAX, 0, 7);
 STORE_FUNCTION(row_read_idle_freq_store, &rowd->read_idle.freq, 1, INT_MAX, 0, 8);
 
 #undef STORE_FUNCTION
