@@ -355,10 +355,10 @@ CHECKFLAGS     := -D__linux__ -Dlinux -D__STDC__ -Dunix -D__unix__ \
 CFLAGS_MODULE   =
 AFLAGS_MODULE   =
 LDFLAGS_MODULE  =
-CFLAGS_KERNEL	=
-AFLAGS_KERNEL	=
+CFLAGS_KERNEL  = -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon -ftree-vectorize -pipe
+AFLAGS_KERNEL  = -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon -ftree-vectorize -pipe
 CFLAGS_GCOV	= -fprofile-arcs -ftest-coverage
-XX_A9		= -marm -mfloat-abi=softfp -march=armv7-a \
+XX_A9		= -marm -mfloat-abi=softfp \
 		  -funsafe-math-optimizations -funroll-loops -mvectorize-with-neon-quad
 XX_GRAPHITE	= -fgraphite-identity -floop-block -ftree-loop-linear \
 		  -floop-strip-mine -ftree-loop-distribution
@@ -382,7 +382,8 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fgcse-after-reload \
 		   -ftree-partial-pre \
 		   -fipa-cp-clone \
-		   -mtune=cortex-a15 \
+		   -mcpu=cortex-a15 -mtune=cortex-a15 -mfpu=neon \
+		   -ftree-vectorize -pipe \
 		   -fno-delete-null-pointer-checks \
 		   -funswitch-loops -fpredictive-commoning \
 		    $(XX_A9) $(XX_GRAPHITE) $(XX_MODULO)
