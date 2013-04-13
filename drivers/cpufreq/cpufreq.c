@@ -505,7 +505,7 @@ static ssize_t store_##file_name					\
 	return ret ? ret : count;					\
 }
 
-static ssize_t store_scaling_min_freq(struct cpufreq_policy *policy, const char *buf, size_t count)
+static ssize_t __ref store_scaling_min_freq(struct cpufreq_policy *policy, const char *buf, size_t count)
 {
 	unsigned int ret = -EINVAL;
 	unsigned int value = 0;
@@ -533,7 +533,7 @@ static ssize_t store_scaling_min_freq(struct cpufreq_policy *policy, const char 
 	return count;
 }
 
-static ssize_t store_scaling_max_freq
+static ssize_t __ref store_scaling_max_freq
 	(struct cpufreq_policy *policy, const char *buf, size_t count)
 {
 	unsigned int ret = -EINVAL;

@@ -1005,7 +1005,7 @@ static struct attribute_group dbs_attr_group = {
 
 /************************** sysfs end ************************/
 
-static void cpu_up_work(struct work_struct *work)
+static void __ref cpu_up_work(struct work_struct *work)
 {
 	int cpu;
 	int online = num_online_cpus();
