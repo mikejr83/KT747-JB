@@ -604,6 +604,8 @@ static struct attribute_group dbs_attr_group = {
 
 /************************** sysfs end ************************/
 
+extern void do_ktboost(unsigned int cpu, unsigned int freq);
+
 static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 {
 	unsigned int load = 0;
@@ -634,6 +636,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 		this_dbs_info->requested_freq = dbs_tuners_ins.boost_cpu;
 		__cpufreq_driver_target(policy, this_dbs_info->requested_freq,
 			CPUFREQ_RELATION_H);
+		do_ktboost(1, this_dbs_info->requested_freq);
 		return;
 	}
 	

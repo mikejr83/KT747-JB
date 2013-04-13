@@ -2275,6 +2275,12 @@ void do_kthermal(unsigned int cpu, unsigned int freq)
 		__cpufreq_driver_target(&trmlpolicy[cpu], freq, CPUFREQ_RELATION_H);
 }
 
+void do_ktboost(unsigned int cpu, unsigned int freq)
+{
+	if (freq > 0)
+		__cpufreq_driver_target(&trmlpolicy[cpu], freq, CPUFREQ_RELATION_H);
+}
+
 /*
  * data   : current policy.
  * policy : policy to be set.
