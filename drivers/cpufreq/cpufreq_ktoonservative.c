@@ -72,6 +72,8 @@ extern void kt_is_active_benabled_gpio(bool val);
 extern void kt_is_active_benabled_touchkey(bool val);
 extern void kt_is_active_benabled_power(bool val);
 
+extern void do_ktboost(unsigned int cpu, unsigned int freq);
+
 #define LATENCY_MULTIPLIER			(1000)
 #define MIN_LATENCY_MULTIPLIER			(100)
 #define DEF_SAMPLING_DOWN_FACTOR		(1)
@@ -603,8 +605,6 @@ static struct attribute_group dbs_attr_group = {
 };
 
 /************************** sysfs end ************************/
-
-extern void do_ktboost(unsigned int cpu, unsigned int freq);
 
 static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 {
