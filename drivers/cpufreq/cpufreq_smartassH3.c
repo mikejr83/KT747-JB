@@ -729,6 +729,7 @@ static int cpufreq_governor_smartass_h3(struct cpufreq_policy *new_policy,
 
 			pm_idle_old = pm_idle;
 			pm_idle = cpufreq_idle;
+			idle_notifier_register(&cpufreq_idle_nb);
 		}
 
 		if (this_smartass->cur_policy->cur < new_policy->max && !timer_pending(&this_smartass->timer))
@@ -766,6 +767,7 @@ static int cpufreq_governor_smartass_h3(struct cpufreq_policy *new_policy,
 			sysfs_remove_group(cpufreq_global_kobject,
 					   &smartass_attr_group);
 			pm_idle = pm_idle_old;
+			idle_notifier_unregister(&cpufreq_idle_nb);
 		}
 		break;
 	}
