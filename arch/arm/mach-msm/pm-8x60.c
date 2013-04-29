@@ -24,6 +24,7 @@
 #include <linux/smp.h>
 #include <linux/suspend.h>
 #include <linux/tick.h>
+#include <linux/delay.h>
 #include <linux/platform_device.h>
 #include <linux/of_platform.h>
 #include <mach/msm_iomap.h>
@@ -121,6 +122,7 @@ static char *msm_pm_sleep_mode_labels[MSM_PM_SLEEP_MODE_NR] = {
 
 static struct hrtimer pm_hrtimer;
 static struct msm_pm_sleep_ops pm_sleep_ops;
+static struct msm_pm_sleep_status_data *msm_pm_slp_sts;
 /*
  * Write out the attribute.
  */
@@ -955,6 +957,32 @@ int msm_pm_idle_enter(enum msm_pm_sleep_mode sleep_mode)
 
 cpuidle_enter_bail:
 	return 0;
+}
+
+int msm_pm_wait_cpu_shutdown(unsigned int cpu)
+{
+	int timeout = 10;
+
+	if (!msm_pm_slp_sts)
+		return 0;
+	if (!msm_pm_slp_sts[cpu].base_addr)
+		return 0;
+	while (timeout--) {
+		/*
+		 * Check for the SPM of the core being hotplugged to set
+		 * its sleep state.The SPM sleep state indicates that the
+		 * core has been power collapsed.
+		 */
+		int acc_sts = __raw_readl(msm_pm_slp_sts[cpu].base_addr);
+
+		if (acc_sts & msm_pm_slp_sts[cpu].mask)
+			return 0;
+		udelay(100);
+	}
+
+	pr_info("%s(): Timed out waiting for CPU %u SPM to enter sleep state",
+		__func__, cpu);
+	return -EBUSY;
 }
 
 void msm_pm_cpu_enter_lowpower(unsigned int cpu)
