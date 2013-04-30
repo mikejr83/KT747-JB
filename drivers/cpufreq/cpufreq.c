@@ -56,6 +56,12 @@ static char scaling_governor_screen_off_sel[16];
 static char scaling_governor_screen_off_sel_prev[16];
 static char scaling_sched_screen_off_sel[16];
 static char scaling_sched_screen_off_sel_prev[16];
+
+static char scaling_governor_gps_sel[16];
+static char scaling_governor_gps_sel_prev[16];
+static char scaling_sched_gps_sel[16];
+static char scaling_sched_gps_sel_prev[16];
+static bool GPS_override = false;
 static unsigned int Lenable_auto_hotplug = 0;
 
 static unsigned int isBooted = 0;
@@ -638,6 +644,34 @@ static ssize_t store_scaling_sched_screen_off(struct cpufreq_policy *policy,
 	return count;
 }
 
+static ssize_t show_scaling_governor_gps(struct cpufreq_policy *policy, char *buf)
+{
+	return scnprintf(buf, 16, "%s\n",
+				scaling_governor_gps_sel);
+}
+
+static ssize_t store_scaling_governor_gps(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	ret = sscanf(buf, "%15s", scaling_governor_gps_sel);
+	return count;
+}
+
+static ssize_t show_scaling_sched_gps(struct cpufreq_policy *policy, char *buf)
+{
+	return scnprintf(buf, 16, "%s\n",
+				scaling_sched_gps_sel);
+}
+
+static ssize_t store_scaling_sched_gps(struct cpufreq_policy *policy,
+					const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	ret = sscanf(buf, "%15s", scaling_sched_gps_sel);
+	return count;
+}
+
 /**
  * show_scaling_governor - show the current policy for the specified CPU
  */
@@ -1043,6 +1077,8 @@ cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_governor_screen_off);
 cpufreq_freq_attr_rw(scaling_sched_screen_off);
+cpufreq_freq_attr_rw(scaling_governor_gps);
+cpufreq_freq_attr_rw(scaling_sched_gps);
 cpufreq_freq_attr_rw(scaling_setspeed);
 cpufreq_freq_attr_rw(scaling_booted);
 cpufreq_freq_attr_rw(touch_booster_first_freq_limit);
@@ -1068,6 +1104,8 @@ static struct attribute *default_attrs[] = {
 	&scaling_governor.attr,
 	&scaling_governor_screen_off.attr,
 	&scaling_sched_screen_off.attr,
+	&scaling_governor_gps.attr,
+	&scaling_sched_gps.attr,
 	&scaling_driver.attr,
 	&scaling_available_governors.attr,
 	&scaling_setspeed.attr,
@@ -2577,6 +2615,64 @@ no_policy:
 	return ret;
 }
 EXPORT_SYMBOL(cpufreq_update_policy);
+
+void set_gps_status(bool stat)
+{
+	struct cpufreq_policy *policy = NULL;
+	unsigned int ret = -EINVAL;
+
+	if (stat && !GPS_override)
+	{
+		GPS_override = stat;
+		//Set scheduler
+		if (!cpu_is_offline(0) && scaling_sched_gps_sel != NULL && scaling_sched_gps_sel[0] != '\0')
+		{
+			elevator_change_relay(scaling_sched_gps_sel, 1);
+			pr_alert("set_gps_status_SCHED: %s\n", scaling_sched_gps_sel);
+			ret = sscanf(scaling_sched_screen_off_sel_prev, "%15s", scaling_sched_gps_sel_prev);
+		}
+		else
+			pr_alert("set_gps_status_SCHED_DENIED2: %s\n", scaling_sched_gps_sel);
+		
+		//Set governor
+		if (!cpu_is_offline(0) && scaling_governor_gps_sel != NULL && scaling_governor_gps_sel[0] != '\0')
+		{
+			policy = cpufreq_cpu_get(0);
+			ret = sscanf(policy->governor->name, "%15s", scaling_governor_gps_sel_prev);
+			if (ret == 1)
+			{
+				store_scaling_governor(policy, scaling_governor_gps_sel, sizeof(scaling_governor_gps_sel));
+				pr_alert("set_gps_status_gov: %s\n", scaling_governor_gps_sel);
+			}
+			else
+				pr_alert("set_gps_status_gov_DENIED2: %s\n", scaling_governor_gps_sel);
+		}
+		else
+			pr_alert("set_gps_status_gov_DENIED3: %s\n", scaling_governor_gps_sel);
+	}
+	else if (!stat && GPS_override)
+	{
+		GPS_override = stat;
+		//Set scheduler
+		if (!cpu_is_offline(0) && scaling_sched_gps_sel_prev != NULL && scaling_sched_gps_sel_prev[0] != '\0' && scaling_sched_gps_sel != NULL && scaling_sched_gps_sel[0] != '\0')
+		{
+			elevator_change_relay(scaling_sched_gps_sel_prev, 2);
+			pr_alert("set_gps_status_SCHED: %s\n", scaling_sched_gps_sel_prev);
+		}
+		else
+			pr_alert("set_gps_status_SCHED_DENIED4: %s\n", scaling_sched_gps_sel_prev);
+
+		//Set governor
+		if (!cpu_is_offline(0) && scaling_governor_gps_sel_prev != NULL && scaling_governor_gps_sel_prev[0] != '\0')
+		{
+			policy = cpufreq_cpu_get(0);
+			store_scaling_governor(policy, scaling_governor_gps_sel_prev, sizeof(scaling_governor_gps_sel_prev));
+			pr_alert("set_gps_status_GOV: %s\n", scaling_governor_gps_sel_prev);
+		}
+		else
+			pr_alert("set_gps_status_GOV_DENIED5: %s\n", scaling_governor_gps_sel_prev);
+	}
+}
 
 static int __cpuinit cpufreq_cpu_callback(struct notifier_block *nfb,
 					unsigned long action, void *hcpu)
