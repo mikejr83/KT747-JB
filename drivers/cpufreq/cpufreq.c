@@ -72,6 +72,7 @@ static struct cpufreq_policy trmlpolicy[10];
 static unsigned int kthermal_limit;
 
 extern void apenable_auto_hotplug(bool state);
+extern int elevator_change_relay(const char *name, int screen_status);
 
 int GLOBALKT_MIN_FREQ_LIMIT = 378000;
 int GLOBALKT_MAX_FREQ_LIMIT = 1512000;
@@ -2900,8 +2901,6 @@ void set_call_in_progress(bool state)
 {
 	call_in_progress = state;
 }
-
-extern int elevator_change_relay(const char *name, int screen_status);
 
 void set_cur_sched(const char *name)
 {
