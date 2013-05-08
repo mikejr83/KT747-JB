@@ -220,7 +220,8 @@ static int cpufreq_stats_create_table(struct cpufreq_policy *policy,
 	int steps[FREQ_STEPS];
 
 	if (per_cpu(cpufreq_stats_table, cpu))
-		return -EBUSY;
+		return 0;
+
 	stat = kzalloc(sizeof(struct cpufreq_stats), GFP_KERNEL);
 	if ((stat) == NULL)
 		return -ENOMEM;
