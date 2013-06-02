@@ -3117,6 +3117,9 @@ static ssize_t slide2wake_plug_store(struct device *dev, struct device_attribute
 				s2w_enabled_req = 0;
 		}
 	}
+	
+	return size;
+}
 
 static ssize_t panel_colors_show(struct device *dev, struct device_attribute *attr, char *buf)
 {
