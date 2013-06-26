@@ -3917,6 +3917,8 @@ static void vfe32_process_reg_update_irq(
 
 				share_ctrl->liveshot_state =
 					VFE_STATE_STARTED;
+				msm_camera_io_w_mb(1, share_ctrl->vfebase +
+					VFE_REG_UPDATE_CMD);
 			}
 			break;
 		case VFE_STATE_STARTED:
@@ -3937,6 +3939,8 @@ static void vfe32_process_reg_update_irq(
 			break;
 		case VFE_STATE_HW_STOP_REQUESTED:
 			share_ctrl->liveshot_state = VFE_STATE_HW_STOPPED;
+			vfe32_send_isp_msg(&vfe32_ctrl->subdev,
+				share_ctrl->vfeFrameId, MSG_ID_STOP_LS_ACK);
 			break;
 		case VFE_STATE_STOP_REQUESTED:
 			if (share_ctrl->comp_output_mode &
@@ -6771,7 +6775,7 @@ void axi_start(struct msm_cam_media_controller *pmctl,
 		msm_camera_io_w((
 				0x1 << axi_ctrl->share_ctrl->outpath.out2.ch0),
 				axi_ctrl->share_ctrl->vfebase + VFE_BUS_CMD);
-		msm_camera_io_w(1, axi_ctrl->share_ctrl->vfebase +
+		msm_camera_io_w(0x3, axi_ctrl->share_ctrl->vfebase +
 			vfe32_AXI_WM_CFG[axi_ctrl->share_ctrl->
 			outpath.out2.ch0]);
 	}
