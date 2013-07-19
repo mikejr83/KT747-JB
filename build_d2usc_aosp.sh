@@ -41,7 +41,8 @@ rm $PACKAGEDIR/zImage
 rm arch/arm/boot/zImage
 
 echo "Make the kernel"
-make KT747_d2usc_defconfig
+# make KT747_d2usc_defconfig
+make VARIANT_DEFCONFIG=cyanogen_d2-r530_defconfig SELINUX_DEFCONFIG=m2selinux_defconfig KT747_d2_defconfig
 
 HOST_CHECK=`uname -n`
 if [ $HOST_CHECK = 'ktoonsez-VirtualBox' ] || [ $HOST_CHECK = 'task650-Underwear' ]; then
