@@ -2436,7 +2436,6 @@ static int msm_rotator_start(unsigned long arg,
 						info.rotations,
 						info.src_rect.w >>
 							info.downscale_ratio,
-<<<<<<< HEAD
 						dst_w,
 						info.src_rect.h >>
 							info.downscale_ratio,
@@ -2452,23 +2451,6 @@ static int msm_rotator_start(unsigned long arg,
 						dst_h,
 						dst_w,
 						is_planar420);
-=======
-						dst_w,
-						info.src_rect.h >>
-							info.downscale_ratio,
-						dst_h,
-						dst_w,
-						is_planar420);
-			} else {
-				fast_yuv_en = !fast_yuv_invalid_size_checker(
-						info.rotations,
-						info.src.width,
-						dst_w,
-						info.src.height,
-						dst_h,
-						dst_w,
-						is_planar420);
->>>>>>> 05f7e27... Merge tag 'AU_LINUX_ANDROID_JB_2.5.04.02.02.040.421' of git://codeaurora.org/kernel/msm into cm-10.1
 			}
 
 			if (fast_yuv_en && info.downscale_ratio &&
