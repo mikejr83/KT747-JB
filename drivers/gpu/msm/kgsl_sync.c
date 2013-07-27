@@ -230,6 +230,7 @@ static void kgsl_sync_timeline_release_obj(struct sync_timeline *sync_timeline)
 	BUG_ON(sync_timeline && (sync_timeline->destroyed != true));
 }
 static const struct sync_timeline_ops kgsl_sync_timeline_ops = {
+	.driver_name = "kgsl-timeline",
 	.dup = kgsl_sync_pt_dup,
 	.has_signaled = kgsl_sync_pt_has_signaled,
 	.compare = kgsl_sync_pt_compare,
