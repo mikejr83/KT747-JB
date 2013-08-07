@@ -4249,8 +4249,6 @@ static void vfe32_process_reset_irq(
 			 * instead of starting it again, just notify the
 			 * application about the error so that the camera
 			 * application can be gracefully exited. */
-<<<<<<< HEAD
-=======
 			atomic_set(&recovery_active, 0);
 			pr_info("Stop recovery and notify application");
 			v4l2_subdev_notify(&vfe32_ctrl->subdev,
@@ -4263,18 +4261,15 @@ static void vfe32_process_reset_irq(
 
 		pr_info("Recovery restart start\n");
 		if (atomic_read(&fault_recovery) == 1) {
->>>>>>> 927982c... Merge branch 'jb_2.6' of git://codeaurora.org/kernel/msm into cm-10.2
 			atomic_set(&recovery_active, 0);
-			pr_info("Stop recovery and notify application");
-			v4l2_subdev_notify(&vfe32_ctrl->subdev,
-				NOTIFY_VFE_CAMIF_ERROR, (void *)NULL);
+			pr_err("potential page fault occured, stop recovery & send app notification");
+			v4l2_subdev_notify(&vfe32_ctrl->subdev, NOTIFY_VFE_CAMIF_ERROR,
+					(void *)NULL);
 			vfe32_send_isp_msg(&vfe32_ctrl->subdev,
-				vfe32_ctrl->share_ctrl->vfeFrameId,
-				MSG_ID_CAMIF_ERROR);
+					vfe32_ctrl->share_ctrl->vfeFrameId, MSG_ID_CAMIF_ERROR);
 			return;
 		}
 
-		pr_info("Recovery restart start\n");
 		msm_camera_io_w(VFE_RELOAD_ALL_WRITE_MASTERS,
 			vfe32_ctrl->share_ctrl->vfebase + VFE_BUS_CMD);
 		msm_camera_io_w(recover_irq_mask0,
@@ -4417,15 +4412,13 @@ static void vfe32_process_error_irq(
 		 * application of the error. */
 		if ((reg_value & ~0x80000000) &&
 				!atomic_read(&recovery_active)) {
-<<<<<<< HEAD
-=======
 #if 0 ////Erased for bus overflow recovery patch, automatically recover.
->>>>>>> 927982c... Merge branch 'jb_2.6' of git://codeaurora.org/kernel/msm into cm-10.2
 			v4l2_subdev_notify(&axi_ctrl->subdev,
 				NOTIFY_VFE_CAMIF_ERROR, (void *)NULL);
 			pr_err("camifStatus  = 0x%x\n", reg_value);
 			vfe32_send_isp_msg(&axi_ctrl->subdev,
 			axi_ctrl->share_ctrl->vfeFrameId, MSG_ID_CAMIF_ERROR);
+#endif
 		}
 	}
 
