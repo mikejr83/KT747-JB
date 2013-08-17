@@ -58,7 +58,7 @@ cp -a $(find . -name *.ko -print |grep -v initramfs) $PACKAGEDIR/system/lib/modu
 cp 00post-init.sh $PACKAGEDIR/system/etc/init.d/00post-init.sh
 cp enable-oc.sh $PACKAGEDIR/system/etc/init.d/enable-oc.sh
 cp /home/ktoonsez/workspace/com.ktoonsez.KTweakerOLD.apk $PACKAGEDIR/system/app/com.ktoonsez.KTweaker.apk
-cp ../Ramdisks/libsqlite.so $PACKAGEDIR/system/lib/libsqlite.so
+# cp ../Ramdisks/libsqlite.so $PACKAGEDIR/system/lib/libsqlite.so
 
 if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
 	echo "Copy zImage to Package"
@@ -72,8 +72,8 @@ if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
 	cp -R ../META-INF .
 	rm ramdisk.gz
 	rm zImage
-	rm ../KT747-AOSP-JB-MR1-3.4-SPR*.zip
-	zip -r ../KT747-AOSP-JB-MR1-3.4-SPR-$curdate.zip .
+	rm ../KT747-AOSP-JB-MR2-3.4-SPR*.zip
+	zip -r ../KT747-AOSP-JB-MR2-3.4-SPR-$curdate.zip .
 	cd $KERNELDIR
 else
 	echo "KERNEL DID NOT BUILD! no zImage exist"
