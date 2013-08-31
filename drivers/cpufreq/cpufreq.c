@@ -31,6 +31,9 @@
 #include <linux/syscore_ops.h>
 
 #include <trace/events/power.h>
+extern ssize_t get_gpu_vdd_levels_str(char *buf);
+extern void set_gpu_vdd_levels(int uv_tbl[]);
+
 static bool Lonoff = false;
 static unsigned int Lscreen_off_scaling_enable = 0;
 static unsigned int Lscreen_off_scaling_mhz = 1512000;
@@ -590,6 +593,21 @@ static ssize_t store_scaling_governor_screen_off(struct cpufreq_policy *policy,
 {
 	unsigned int ret = -EINVAL;
 	ret = sscanf(buf, "%15s", scaling_governor_screen_off_sel);
+	return count;
+}
+
+ssize_t show_GPU_mV_table(struct cpufreq_policy *policy, char *buf)
+{
+	int modu = 0;
+	return get_gpu_vdd_levels_str(buf);
+}
+
+ssize_t store_GPU_mV_table(struct cpufreq_policy *policy, const char *buf, size_t count)
+{
+	unsigned int ret = -EINVAL;
+	unsigned int u[3];
+	ret = sscanf(buf, "%d %d %d", &u[0], &u[1], &u[2]);
+	set_gpu_vdd_levels(u);
 	return count;
 }
 
@@ -1211,6 +1229,7 @@ cpufreq_freq_attr_rw(disable_som_call_in_progress);
 cpufreq_freq_attr_rw(freq_lock);
 cpufreq_freq_attr_rw(UV_mV_table);
 cpufreq_freq_attr_ro(UV_mV_table_stock);
+cpufreq_freq_attr_rw(GPU_mV_table);
 cpufreq_freq_attr_rw(battery_ctrl_batt_lvl_low);
 cpufreq_freq_attr_rw(battery_ctrl_batt_lvl_high);
 cpufreq_freq_attr_rw(battery_ctrl_cpu_mhz_lvl_low);
@@ -1243,6 +1262,7 @@ static struct attribute *default_attrs[] = {
 	&freq_lock.attr,
 	&UV_mV_table.attr,
 	&UV_mV_table_stock.attr,
+	&GPU_mV_table.attr,
 	&battery_ctrl_batt_lvl_low.attr,
 	&battery_ctrl_batt_lvl_high.attr,
 	&battery_ctrl_cpu_mhz_lvl_low.attr,
