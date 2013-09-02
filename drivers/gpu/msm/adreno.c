@@ -3012,6 +3012,7 @@ int adreno_idle(struct kgsl_device *device)
 	unsigned int prev_reg_val[ft_detect_regs_count];
 
 
+
 	memset(prev_reg_val, 0, sizeof(prev_reg_val));
 
 	kgsl_cffdump_regpoll(device->id,
