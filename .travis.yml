@@ -1,8 +1,8 @@
 language: c
 compiler: gcc
-before-install:
+install:
   - sudo apt-get update
-  - sudo apt-get -y build-essential kernel-package libncurses5-dev bzip2 ia32-libs lib32z1-dev lib32ncurses5-dev gcc-multilib g++-multilib
+  - sudo apt-get build-essential kernel-package libncurses5-dev bzip2 ia32-libs lib32z1-dev lib32ncurses5-dev gcc-multilib g++-multilib
   - mkdir ../Packages
   - mkdir ../Packages/KTweaker
   - mkdir ../META-INF
