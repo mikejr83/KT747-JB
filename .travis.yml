@@ -2,7 +2,7 @@ language: c
 compiler: gcc
 install:
   - sudo apt-get update
-  - sudo apt-get install build-essential kernel-package libncurses5-dev bzip2 gcc-multilib g++-multilib
+  - sudo apt-get install build-essential kernel-package libncurses5-dev bzip2 gcc-multilib g++-multilib zip curl zlib1g-dev
   - mkdir ../Packages
   - mkdir ../Packages/KTweaker
   - mkdir ../META-INF
