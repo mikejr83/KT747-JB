@@ -3,6 +3,7 @@ compiler: gcc
 install:
   - sudo apt-get update
   - sudo apt-get install build-essential kernel-package libncurses5-dev bzip2 zip curl
+  - pwd
   - mkdir ../Packages
   - mkdir ../Packages/KTweaker
   - mkdir ../META-INF
