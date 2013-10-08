@@ -10,7 +10,7 @@ install:
   - wget http://releases.linaro.org/13.01/components/android/toolchain/4.7/android-toolchain-eabi-linaro-4.7-2013.01-1-2013-01-17_01-27-05-linux-x86.tar.bz2
   - tar -jxvf android-toolchain-eabi-linaro-4.7-2013.01-1-2013-01-17_01-27-05-linux-x86.tar.bz2
   - mv android-toolchain-eabi ../linaro4.7
-  - ls -lh ../linaro4.7
+  - ls -lh ../linaro4.7/bin
   - git checkout cherry
 # Change this to your needs
 script: ./build_d2vzw_cherry.sh
