@@ -75,6 +75,8 @@ if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
 	rm ../KT747-AOSP-JB-MR2-3.4-VZW*.zip
 	zip -r ../KT747-AOSP-JB-MR2-3.4-VZW-$curdate.zip .
 	cd $KERNELDIR
+	exit 0
 else
 	echo "KERNEL DID NOT BUILD! no zImage exist"
+	exit 1
 fi;

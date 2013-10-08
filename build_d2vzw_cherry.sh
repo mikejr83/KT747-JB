@@ -6,3 +6,4 @@ make clean
 echo "Make Mrproper"
 make mrproper
 ./build_d2vzw_aosp.sh
+exit
