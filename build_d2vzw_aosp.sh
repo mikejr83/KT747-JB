@@ -16,6 +16,8 @@ export CROSS_COMPILE=$PARENT_DIR/linaro4.7/bin/arm-eabi-
 
 echo "Remove old Package Files"
 rm -rf $PACKAGEDIR/*
+echo "Remove META-INF"
+rm -R $PARENT_DIR/Packages/META-INF
 
 echo "Setup Package Directory"
 mkdir -p $PACKAGEDIR/system/app
@@ -69,7 +71,9 @@ if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
 	./mkbootimg --cmdline 'console = null androidboot.hardware=qcom user_debug=31 zcache' --kernel $PACKAGEDIR/zImage --ramdisk $PACKAGEDIR/ramdisk.gz --base 0x80200000 --pagesize 2048 --ramdiskaddr 0x81500000 --output $PACKAGEDIR/boot.img 
 	export curdate=`date "+%m-%d-%Y"`
 	cd $PACKAGEDIR
-	cp -R ../META-INF .
+	echo "Copy META-INF Directory"
+	cp -r $KERNELDIR/META-INF .
+	find . -type f -name '*~' -exec rm -f '{}' \;
 	rm ramdisk.gz
 	rm zImage
 	rm ../KT747-AOSP-JB-MR2-3.4-VZW*.zip
