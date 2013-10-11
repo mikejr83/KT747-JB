@@ -1924,40 +1924,6 @@ static int get_hw_version(struct mms_ts_info *info)
 	return ret;
 }
 
-static int mms_ts_enable(struct mms_ts_info *info, int wakeupcmd)
-{
-	mutex_lock(&info->lock);
-	if (info->enabled)
-		goto out;
-	/* wake up the touch controller. */
-	if (wakeupcmd == 1) {
-		i2c_smbus_write_byte_data(info->client, 0, 0);
-		usleep_range(3000, 5000);
-	}
-	info->enabled = true;
-	enable_irq(info->irq);
-out:
-	mutex_unlock(&info->lock);
-	return 0;
-}
-
-static int mms_ts_disable(struct mms_ts_info *info, int sleepcmd)
-{
-	mutex_lock(&info->lock);
-	if (!info->enabled)
-		goto out;
-	disable_irq(info->irq);
-	if (sleepcmd == 1) {
-		i2c_smbus_write_byte_data(info->client, MMS_MODE_CONTROL, 0);
-		usleep_range(10000, 12000);
-	}
-	info->enabled = false;
-	touch_is_pressed = 0;
-out:
-	mutex_unlock(&info->lock);
-	return 0;
-}
-
 static int mms_ts_finish_config(struct mms_ts_info *info)
 {
 	struct i2c_client *client = info->client;
