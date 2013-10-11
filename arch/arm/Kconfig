@@ -287,6 +287,14 @@ config ARM_USER_ACCESSIBLE_TIMER_BASE
 	 timer counter page should be mapped by the kernel.  User-space apps
 	 will read directly from the page at this address.
 
+config ARCH_RANDOM
+	bool "SOC specific random number generation"
+	help
+	 Allow the kernel to use an architecture specific implementation for
+	 random number generation
+
+	 If unsure, say N
+
 source "init/Kconfig"
 
 source "kernel/Kconfig.freezer"
@@ -1870,6 +1878,13 @@ config HW_PERF_EVENTS
 	  Enable hardware performance counter support for perf events. If
 	  disabled, perf events will use software events only.
 
+config VMALLOC_RESERVE
+	hex "Reserved vmalloc space"
+	default 0x08000000
+	depends on MMU
+	help
+	  Reserved vmalloc space if not specified on the kernel commandline.
+
 source "mm/Kconfig"
 
 config ARCH_MEMORY_PROBE
@@ -1883,6 +1898,7 @@ config ENABLE_DMM
 
 config DONT_MAP_HOLE_AFTER_MEMBANK0
 	def_bool n
+	depends on SPARSEMEM
 
 config HOLES_IN_ZONE
 	def_bool n
