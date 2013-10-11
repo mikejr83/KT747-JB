@@ -8,6 +8,7 @@ ui_print("setting permissions");
 ui_print("");
 set_perm(0, 0, 0777, "/system/etc/init.d/00post-init.sh");
 set_perm(0, 0, 0755, "/system/etc/init.d/enable-oc.sh");
+run_program("/sbin/busybox", "chmod", "644 /system/lib/modules/*");
 
 ui_print("unmounting system");
 ui_print("");
