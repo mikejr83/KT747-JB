@@ -596,12 +596,12 @@ static int adreno_setup_pt(struct kgsl_device *device,
 <<<<<<< HEAD
 =======
 	if (result)
-		goto unmap_pwron_fixup_desc;
+		goto unmap_memstore_desc;
 
 	result = kgsl_mmu_map_global(pagetable, &device->mmu.setstate_memory);
 >>>>>>> a52d238... Merge "Execute shader on wakeup from power collapse"
 	if (result)
-		goto unmap_memstore_desc;
+		goto unmap_pwron_fixup_desc;
 
 	result = kgsl_mmu_map_global(pagetable, &device->mmu.setstate_memory);
 	if (result)
@@ -621,9 +621,6 @@ unmap_pwron_fixup_desc:
 
 unmap_memstore_desc:
 	kgsl_mmu_unmap(pagetable, &device->memstore);
-
-unmap_pwron_fixup_desc:
-	kgsl_mmu_unmap(pagetable, &adreno_dev->pwron_fixup);
 
 unmap_memptrs_desc:
 	kgsl_mmu_unmap(pagetable, &rb->memptrs_desc);

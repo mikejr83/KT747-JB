@@ -2619,6 +2619,7 @@ int adreno_a3xx_pwron_fixup_init(struct adreno_device *adreno_dev)
 	*cmds++ = cp_type0_packet(A3XX_SP_VS_OUT_REG_7, 1);
 	*cmds++ = 0x00000000;
 	*cmds++ = cp_type0_packet(A3XX_SP_VS_VPC_DST_REG_0, 1);
+<<<<<<< HEAD
 	*cmds++ = 0x00000000;
 	*cmds++ = cp_type0_packet(A3XX_SP_VS_VPC_DST_REG_1, 1);
 	*cmds++ = 0x00000000;
@@ -3452,6 +3453,23 @@ int adreno_a3xx_pwron_fixup_init(struct adreno_device *adreno_dev)
 	*cmds++ = 0x04008001;
 	*cmds++ = cp_type0_packet(A3XX_SP_VS_PVT_MEM_ADDR_REG, 1);
 	*cmds++ = 0x00000000;
+=======
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_type0_packet(A3XX_SP_VS_VPC_DST_REG_1, 1);
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_type0_packet(A3XX_SP_VS_VPC_DST_REG_2, 1);
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_type0_packet(A3XX_SP_VS_VPC_DST_REG_3, 1);
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_type0_packet(A3XX_SP_VS_OBJ_OFFSET_REG, 1);
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_type0_packet(A3XX_SP_VS_OBJ_START_REG, 1);
+	*cmds++ = 0x00000004;
+	*cmds++ = cp_type0_packet(A3XX_SP_VS_PVT_MEM_PARAM_REG, 1);
+	*cmds++ = 0x04008001;
+	*cmds++ = cp_type0_packet(A3XX_SP_VS_PVT_MEM_ADDR_REG, 1);
+	*cmds++ = 0x00000000;
+>>>>>>> 4237ea9... Merge "Revert "msm: kgsl: Submit a draw command on resume""
 	*cmds++ = cp_type0_packet(A3XX_SP_VS_PVT_MEM_SIZE_REG, 1);
 	*cmds++ = 0x00000000;
 	*cmds++ = cp_type0_packet(A3XX_SP_VS_LENGTH_REG, 1);

@@ -118,11 +118,14 @@ struct adreno_device {
 	unsigned int ocmem_base;
 	unsigned int gpu_cycles;
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	struct kgsl_memdesc on_resume_cmd;
 	unsigned int on_resume_ib[3];
 	bool on_resume_issueib;
 >>>>>>> a52d238... Merge "Execute shader on wakeup from power collapse"
+=======
+>>>>>>> 4237ea9... Merge "Revert "msm: kgsl: Submit a draw command on resume""
 	struct kgsl_memdesc pwron_fixup;
 	unsigned int pwron_fixup_dwords;
 };
