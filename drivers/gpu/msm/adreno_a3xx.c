@@ -2465,6 +2465,7 @@ static void a3xx_drawctxt_restore(struct adreno_device *adreno_dev,
 			context->context_gmem_shadow.gmem_restore[2] << 2,
 			true);
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 		adreno_ringbuffer_issuecmds(device, context,
@@ -3285,6 +3286,8 @@ static void a305_create_on_resume_ib(struct adreno_device *adreno_dev)
 		_SET(RB_MRTCONTROL_DITHER_MODE, RB_DITHER_ALWAYS) |
 		_SET(RB_MRTCONTROL_COMPONENT_ENABLE, 0xF);
 >>>>>>> a52d238... Merge "Execute shader on wakeup from power collapse"
+=======
+>>>>>>> 0e9f071... Merge remote-tracking branch 'caf/jb_2.6' into cm-10.2
 
 		adreno_ringbuffer_issuecmds(device, context,
 					KGSL_CMD_FLAGS_PMODE,
@@ -3453,6 +3456,7 @@ int adreno_a3xx_pwron_fixup_init(struct adreno_device *adreno_dev)
 	*cmds++ = 0x04008001;
 	*cmds++ = cp_type0_packet(A3XX_SP_VS_PVT_MEM_ADDR_REG, 1);
 	*cmds++ = 0x00000000;
+<<<<<<< HEAD
 =======
 	*cmds++ = 0x00000000;
 	*cmds++ = cp_type0_packet(A3XX_SP_VS_VPC_DST_REG_1, 1);
@@ -3470,6 +3474,8 @@ int adreno_a3xx_pwron_fixup_init(struct adreno_device *adreno_dev)
 	*cmds++ = cp_type0_packet(A3XX_SP_VS_PVT_MEM_ADDR_REG, 1);
 	*cmds++ = 0x00000000;
 >>>>>>> 4237ea9... Merge "Revert "msm: kgsl: Submit a draw command on resume""
+=======
+>>>>>>> 0e9f071... Merge remote-tracking branch 'caf/jb_2.6' into cm-10.2
 	*cmds++ = cp_type0_packet(A3XX_SP_VS_PVT_MEM_SIZE_REG, 1);
 	*cmds++ = 0x00000000;
 	*cmds++ = cp_type0_packet(A3XX_SP_VS_LENGTH_REG, 1);
@@ -3560,6 +3566,7 @@ int adreno_a3xx_pwron_fixup_init(struct adreno_device *adreno_dev)
 	*cmds++ = 0x00000000;
 	memcpy(cmds, _a3xx_pwron_fixup_fs_instructions, count << 2);
 	cmds += count;
+<<<<<<< HEAD
 
 	*cmds++ = cp_type3_packet(CP_EXEC_CL, 1);
 	*cmds++ = 0x00000000;
@@ -3594,6 +3601,42 @@ int adreno_a3xx_pwron_fixup_init(struct adreno_device *adreno_dev)
 	adreno_dev->pwron_fixup_dwords =
 		(cmds - (unsigned int *)adreno_dev->pwron_fixup.hostptr);
 
+=======
+
+	*cmds++ = cp_type3_packet(CP_EXEC_CL, 1);
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_nop_packet(1);
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_type3_packet(CP_WAIT_FOR_IDLE, 1);
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_type0_packet(A3XX_HLSQ_CL_CONTROL_0_REG, 1);
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_type3_packet(CP_WAIT_FOR_IDLE, 1);
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_type0_packet(A3XX_HLSQ_CONTROL_0_REG, 1);
+	*cmds++ = 0x1E000150;
+	*cmds++ = cp_type3_packet(CP_WAIT_FOR_IDLE, 1);
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_type3_packet(CP_SET_CONSTANT, 2);
+	*cmds++ = CP_REG(A3XX_HLSQ_CONTROL_0_REG);
+	*cmds++ = 0x1E000050;
+	*cmds++ = cp_type3_packet(CP_WAIT_FOR_IDLE, 1);
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_type3_packet(CP_REG_RMW, 3);
+	*cmds++ = A3XX_RBBM_CLOCK_CTL;
+	*cmds++ = 0xFFFCFFFF;
+	*cmds++ = 0x00000000;
+	*cmds++ = cp_type3_packet(CP_WAIT_FOR_IDLE, 1);
+	*cmds++ = 0x00000000;
+
+	/*
+	 * Remember the number of dwords in the command buffer for when we
+	 * program the indirect buffer call in the ringbuffer
+	 */
+	adreno_dev->pwron_fixup_dwords =
+		(cmds - (unsigned int *)adreno_dev->pwron_fixup.hostptr);
+
+>>>>>>> 0e9f071... Merge remote-tracking branch 'caf/jb_2.6' into cm-10.2
 	/* Mark the flag in ->priv to show that we have the fix */
 	set_bit(ADRENO_DEVICE_PWRON_FIXUP, &adreno_dev->priv);
 	return 0;
