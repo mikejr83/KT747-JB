@@ -1,5 +1,12 @@
 language: c
 compiler: gcc
+env:
+  global:
+    - secure: "Ln7i/7E96f4VU1R1VxyXebUxAuwiWiv+5uJnKLkzrHWwtT4W7iiblXjqfJznB4yFMx+VFJxqF2MvwDoNPCNKxqOqHP0Z3GCc7fyCBkfDbZy2qr5laXJywfh/xjRQIsZYpAjAiQisqPql/cYDSeH/t48eleicvwxQLVBo0Ys06wc="
+    - secure: "DwpV8x+ErmOutf/i5rWyKyX4csF0QfZH63/IhGJ5zJD7/01wUJzTwsMGSj+Yx0Jh0lkR7EZm0QzNsCVLkjPAZOZDMSrUJG2gJlHFCgy6YqxlKxUGdfjp6rYfp/9mmsXxdFK8dvFy0Bhy4vZuQ4U+Q9+Pf3ifI7p2xQ1sCBJ2/IQ="
+    - secure: "TnhBxMdmMzksEXIpSnTNBBklgFZ1myHP44f8jupKCvcQhaJabNArqeGv+2ww6DOW7SuiA36ccIXZbERb5kQxM+uYljKPN9BMVuUKLdzUXIJP3WySbo8W0R5wIVb3jGXWvGjxD8ecsMHzyZXHHASTrVXKI5ntE6KSaVmo1cT1qjI="
+    - secure: "MrxVdJetkw8jv2I53lgwW2MMn891UC/vv5OQPThMun5QpLx6WEiKQn5sdQ+B3W58FUuIadbOIz1GjyoqtEJNDU4bQcA0dsKyDRs/bxZgD53gw2DgO5rMPrF2znQs6qtRCcXL0bLUoSfrz6HWnFVuMEPjOtzQ/Y9G4Nc5wAPxlLA="
+    - secure: "D6zm5NNnrH6yKGT3HbuhOHYZlzyFffnsuqyo8dChYytNyA0aElmRXUFJ8UlPE7ozUspigf9+6Y3ikFcWhPZrUDXiRExuYYgbmclIEqsLLw0jPlstV/tkaYRLq017Rpx49mhFC0NSwhp9ImeSVvDFGzbLZ6QoBVBxVomBwMhSevE="
 install:
   - sudo apt-get update
   - sudo apt-get install build-essential kernel-package bzip2 zip curl gcc-multilib libz-dev libc6:i386 libgcc1:i386 gcc-4.6-base:i386 libstdc++5:i386 libstdc++6:i386 lib32z1 libreadline6-dev:i386 libncurses5-dev:i386
@@ -12,5 +19,8 @@ install:
   - sudo mv linaro4.7 /home/travis/build/mikejr83/
   - ls -lh /home/travis/build/mikejr83/linaro4.7
   - ls -lh /home/travis/build/mikejr83/linaro4.7/bin
+after_success:
+  - chmod +x ./upload.sh
+  - ./upload.sh
 # Change this to your needs
 script: ./Build_d2vzw.sh
