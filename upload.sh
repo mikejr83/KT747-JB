@@ -9,4 +9,4 @@ echo "OAUTH_ACCESS_TOKEN_SECRET="$OAUTH_ACCESS_TOKEN_SECRET >> ~/.dropbox_upload
 
 chmod +x dropbox_uploader.sh
 
-./dropbox_uploader.sh ../Packages/KT747* Public/
+sh ./dropbox_uploader.sh ../Packages/KT747* Public/
