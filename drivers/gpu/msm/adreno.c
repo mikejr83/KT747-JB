@@ -597,23 +597,10 @@ static int adreno_setup_pt(struct kgsl_device *device,
 		goto unmap_memptrs_desc;
 
 	result = kgsl_mmu_map_global(pagetable, &adreno_dev->pwron_fixup);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 0e9f071... Merge remote-tracking branch 'caf/jb_2.6' into cm-10.2
 	if (result)
 		goto unmap_memstore_desc;
 
 	result = kgsl_mmu_map_global(pagetable, &device->mmu.setstate_memory);
-<<<<<<< HEAD
->>>>>>> a52d238... Merge "Execute shader on wakeup from power collapse"
-	if (result)
-		goto unmap_pwron_fixup_desc;
-
-	result = kgsl_mmu_map_global(pagetable, &device->mmu.setstate_memory);
-=======
->>>>>>> 0e9f071... Merge remote-tracking branch 'caf/jb_2.6' into cm-10.2
 	if (result)
 		goto unmap_pwron_fixup_desc;
 
@@ -3075,6 +3062,7 @@ int adreno_idle(struct kgsl_device *device)
 	unsigned long wait_time;
 	unsigned long wait_time_part;
 	unsigned int prev_reg_val[FT_DETECT_REGS_COUNT];
+
 
 	memset(prev_reg_val, 0, sizeof(prev_reg_val));
 

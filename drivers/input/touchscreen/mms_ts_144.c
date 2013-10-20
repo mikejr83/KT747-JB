@@ -3209,10 +3209,10 @@ static int __devinit mms_ts_probe(struct i2c_client *client,
 		max_x = 720;
 		max_y = 1280;
 	}
-	x_lo = info->max_x / 10;
-	x_onethird = (info->max_x / 10) * 3;
-	x_twothird = (info->max_x / 10) * 6;
-	x_hi = (info->max_x / 10) * 9;
+	x_lo = info->pdata->max_x / 10;
+	x_onethird = (info->pdata->max_x / 10) * 3;
+	x_twothird = (info->pdata->max_x / 10) * 6;
+	x_hi = (info->pdata->max_x / 10) * 9;
 
 	i2c_set_clientdata(client, info);
 
