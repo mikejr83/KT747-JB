@@ -20,7 +20,6 @@ install:
   - ls -lh /home/travis/build/mikejr83/linaro4.7
   - ls -lh /home/travis/build/mikejr83/linaro4.7/bin
 after_success:
-  - chmod +x ./upload.sh
   - ./upload.sh
 # Change this to your needs
 script: ./Build_d2vzw.sh
