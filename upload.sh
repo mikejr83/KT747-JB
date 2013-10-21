@@ -14,7 +14,7 @@ export curdate=`date "+%m-%d-%Y"`
 
 cp ../Packages/KT747-AOSP-JB-MR2-3.4-VZW-$curdate.zip ../Packages/KT747-AOSP-JB-MR2-3.4-VZW-$curdate-DropBox.zip
 
-./dropbox_uploader.sh ../Packages/KT747-AOSP-JB-MR2-3.4-VZW-$curdate-DropBox.zip Public/
+./dropbox_uploader.sh upload ../Packages/KT747-AOSP-JB-MR2-3.4-VZW-$curdate-DropBox.zip Public/
 
 #  - touch ~/.dropbox_uploader
 #  - echo "APPKEY="$APPKEY >> ~/.dropbox_uploader
