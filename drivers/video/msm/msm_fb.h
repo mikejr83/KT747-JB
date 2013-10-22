@@ -40,10 +40,6 @@
 #include <linux/switch.h>
 #include <linux/msm_mdp.h>
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-#undef CONFIG_HAS_EARLYSUSPEND
-#endif
-
 #include "msm_fb_panel.h"
 #include "mdp.h"
 
