@@ -7,5 +7,5 @@ echo "make mrproper"
 make mrproper
 
 echo "Building..."
-./build_d2vzw_aosp.sh
+./build_d2vzw_aosp_ci.sh
 
