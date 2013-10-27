@@ -8,6 +8,7 @@ env:
     - secure: "MrxVdJetkw8jv2I53lgwW2MMn891UC/vv5OQPThMun5QpLx6WEiKQn5sdQ+B3W58FUuIadbOIz1GjyoqtEJNDU4bQcA0dsKyDRs/bxZgD53gw2DgO5rMPrF2znQs6qtRCcXL0bLUoSfrz6HWnFVuMEPjOtzQ/Y9G4Nc5wAPxlLA="
     - secure: "D6zm5NNnrH6yKGT3HbuhOHYZlzyFffnsuqyo8dChYytNyA0aElmRXUFJ8UlPE7ozUspigf9+6Y3ikFcWhPZrUDXiRExuYYgbmclIEqsLLw0jPlstV/tkaYRLq017Rpx49mhFC0NSwhp9ImeSVvDFGzbLZ6QoBVBxVomBwMhSevE="
 install:
+  - git clone --branch=master https://github.com/mikejr83/KT747-JB-RAMDISKS.git ../KT747-JB-RAMDISKS
   - sudo apt-get update
   - sudo apt-get install build-essential kernel-package bzip2 zip curl gcc-multilib libz-dev libc6:i386 libgcc1:i386 gcc-4.6-base:i386 libstdc++5:i386 libstdc++6:i386 lib32z1 libreadline6-dev:i386 libncurses5-dev:i386
   - mkdir ../Packages
