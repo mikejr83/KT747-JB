@@ -12,7 +12,7 @@ export curdate=`date "+%m-%d-%Y"`
 
 #chmod +x dropbox_uploader.sh
 
-cp ../Packages/KT747-AOSP-JB-MR2-3.4-VZW-$curdate.zip ../Packages/KT747-AOSP-JB-MR2-3.4-VZW-$curdate-DropBox.zip
+cp ../Packages/KT747-AOSP-JB-MR2-3.4-VZW-$curdate.zip ../Packages/KT747-AOSP-JB-MR2-3.4-VZW-$curdate-$TRAVIS_BRANCH.zip
 
 ./dropbox_uploader.sh upload ../Packages/KT747-AOSP-JB-MR2-3.4-VZW-$curdate-$TRAVIS_BRANCH.zip Public/
 
