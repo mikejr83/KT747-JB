@@ -2,7 +2,7 @@
 export KERNELDIR=`readlink -f .`
 export PARENT_DIR=`readlink -f ..`
 export INITRAMFS_DEST=$KERNELDIR/kernel/usr/initramfs
-export INITRAMFS_SOURCE=`readlink -f ..`/Ramdisks/AOSP_JB_MR2-3.4
+export INITRAMFS_SOURCE=`readlink -f ..`/Ramdisks/AOSP_JB_4.4
 export CONFIG_AOSP_BUILD=y
 export PACKAGEDIR=$PARENT_DIR/Packages/AOSP_JB_MR1_VZW
 #Enable FIPS mode
@@ -72,8 +72,8 @@ if [ -e $KERNELDIR/arch/arm/boot/zImage ]; then
 	cp -R ../META-INF .
 	rm ramdisk.gz
 	rm zImage
-	rm ../KT747-AOSP-JB-MR2-3.4-VZW*.zip
-	zip -r ../KT747-AOSP-JB-MR2-3.4-VZW-$curdate.zip .
+	rm ../KT747-AOSP-KK-VZW*.zip
+	zip -r ../KT747-AOSP-KK-VZW-$curdate.zip .
 	cd $KERNELDIR
 else
 	echo "KERNEL DID NOT BUILD! no zImage exist"
