@@ -1078,6 +1078,7 @@ static void msm_hs_stop_rx_locked(struct uart_port *uport)
 {
 	struct msm_hs_port *msm_uport = UARTDM_TO_MSM(uport);
 <<<<<<< HEAD
+<<<<<<< HEAD
 	unsigned int data;
 
 	/* disable dlink */
@@ -1085,6 +1086,8 @@ static void msm_hs_stop_rx_locked(struct uart_port *uport)
 	data &= ~UARTDM_RX_DM_EN_BMSK;
 	msm_hs_write(uport, UARTDM_DMEN_ADDR, data);
 =======
+=======
+>>>>>>> 991de6b... Merge "Merge "Merge "net: rmnet_usb: Add support for aligned QOS header"""
 	unsigned long data;
 
 	if (msm_uport->clk_state == MSM_HS_CLK_OFF)
@@ -2184,7 +2187,10 @@ static int msm_hs_startup(struct uart_port *uport)
 	msm_hs_start_rx_locked(uport);
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
+=======
+>>>>>>> 991de6b... Merge "Merge "Merge "net: rmnet_usb: Add support for aligned QOS header"""
 	/* Enable Auto Ready for recieving */
 	data = msm_hs_read(uport, UARTDM_MR1_ADDR);
 	data |= UARTDM_MR1_RX_RDY_CTL_BMSK;
