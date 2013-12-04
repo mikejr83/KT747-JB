@@ -111,6 +111,23 @@ include/linux/utsrelease.h
 include/linux/bounds.h
 include/generated
 
+arch/arm/include/generated/asm/auxvec.h
+arch/arm/include/generated/asm/bitsperlong.h
+arch/arm/include/generated/asm/cputime.h
+arch/arm/include/generated/asm/emergency-restart.h
+arch/arm/include/generated/asm/errno.h
+arch/arm/include/generated/asm/ioctl.h
+arch/arm/include/generated/asm/irq_regs.h
+arch/arm/include/generated/asm/kdebug.h
+arch/arm/include/generated/asm/local.h
+arch/arm/include/generated/asm/local64.h
+arch/arm/include/generated/asm/percpu.h
+arch/arm/include/generated/asm/poll.h
+arch/arm/include/generated/asm/resource.h
+arch/arm/include/generated/asm/sections.h
+arch/arm/include/generated/asm/siginfo.h
+arch/arm/include/generated/asm/sizes.h
+
 # stgit generated dirs
 patches-*
 
