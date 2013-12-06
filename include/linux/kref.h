@@ -94,6 +94,10 @@ static inline int kref_put(struct kref *kref, void (*release)(struct kref *kref)
 	return kref_sub(kref, 1, release);
 }
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> c5b6ec8... Merge "kref: Implement kref_get_unless_zero v3"
 /**
  * kref_get_unless_zero - Increment refcount for object unless it is zero.
  * @kref: object.
