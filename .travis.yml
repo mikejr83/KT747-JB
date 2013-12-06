@@ -11,7 +11,7 @@ install:
   - git clone --branch=master https://github.com/mikejr83/KT747-JB-RAMDISKS.git ../KT747-JB-RAMDISKS
   - sudo apt-get update
 #  - sudo apt-get install build-essential kernel-package bzip2 zip curl gcc-multilib libz-dev libc6:i386 libgcc1:i386 gcc-4.6-base:i386 libstdc++5:i386 libstdc++6:i386 lib32z1 libreadline6-dev:i386 libncurses5-dev:i386
-  - sudo apt-get install build-essential kernel-package bzip2 zip curl gcc-multilib libz-dev libc6 lib32z1 libreadline6-dev:i386 libncurses5-dev:i386
+  - sudo apt-get install build-essential kernel-package bzip2 zip curl gcc-multilib libz-dev libc6 lib32z1
   - mkdir ../Packages
   - mkdir ../Packages/KTweaker
   - mkdir ../linaro4.7
