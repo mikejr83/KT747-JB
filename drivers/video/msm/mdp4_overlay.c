@@ -1027,8 +1027,12 @@ void mdp4_overlay_vg_setup(struct mdp4_overlay_pipe *pipe)
 
 	/* TILE frame size */
 	if (pipe->frame_format != MDP4_FRAME_FORMAT_LINEAR) {
+<<<<<<< HEAD
 		if ((ctrl->panel_mode & MDP4_PANEL_DSI_CMD && pipe->mixer_num == 0) ||
 			(ctrl->panel_mode & MDP4_PANEL_WRITEBACK && pipe->mixer_num == 2))
+=======
+		if (ctrl->panel_mode & MDP4_PANEL_DSI_CMD)
+>>>>>>> 0c22793... Merge remote-tracking branch 'caf/kk_2.7.1' into cm-11.0
 			outpdw(vg_base + 0x0048, frame_size);
 		else
 			pipe->frame_size = frame_size;
