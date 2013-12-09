@@ -1105,6 +1105,18 @@ int elevator_change(struct request_queue *q, const char *name)
 
 	return ret;
 }
+
+int elevator_change(struct request_queue *q, const char *name)
+{
+	int ret;
+
+	/* Protect q->elevator from elevator_init() */
+	mutex_lock(&q->sysfs_lock);
+	ret = __elevator_change(q, name);
+	mutex_unlock(&q->sysfs_lock);
+
+	return ret;
+}
 EXPORT_SYMBOL(elevator_change);
 
 ssize_t elv_iosched_store(struct request_queue *q, const char *name,
@@ -1116,10 +1128,13 @@ ssize_t elv_iosched_store(struct request_queue *q, const char *name,
 		return count;
 
 	ret = __elevator_change(q, name);
+<<<<<<< HEAD
 	globalq[q->index] = q;
 	//pr_alert("IOSCHED_STORE: %s-%s-%s-%d\n", name, q->elevator->type->elevator_name, globalq[q->index]->elevator->type->elevator_name, q->index);
 	set_cur_sched(name);
 	
+=======
+>>>>>>> aaf1b35... Merge remote-tracking branch 'korg/linux-3.4.y' into cm-11.0
 	if (!ret)
 		return count;
 
