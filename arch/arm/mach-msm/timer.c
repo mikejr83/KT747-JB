@@ -1174,6 +1174,10 @@ static void __init msm_timer_init(void)
 		}
 	}
 
+<<<<<<< HEAD
+=======
+#ifdef ARCH_HAS_READ_CURRENT_TIMER
+>>>>>>> f2cfed6... Merge "kernel: gtod: Add MSM-specific user-accessible timers"
 	if (is_smp()) {
 		__raw_writel(1,
 			msm_clocks[MSM_CLOCK_DGT].regbase + TIMER_ENABLE);
