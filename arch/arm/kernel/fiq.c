@@ -149,7 +149,11 @@ EXPORT_SYMBOL(disable_fiq);
 
 void __init init_FIQ(int start)
 {
+<<<<<<< HEAD
 	unsigned offset = FIQ_OFFSET;
 	no_fiq_insn = *(unsigned long *)(0xffff0000 + offset);
+=======
+	no_fiq_insn = *(unsigned long *)0xffff001c;
+>>>>>>> 6b4c833... Merge "ARM: fiq: change FIQ_START to a variable"
 	fiq_start = start;
 }
