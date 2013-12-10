@@ -864,6 +864,10 @@ void __init early_trap_init(void *vectors_base)
 	 */
 	memcpy((void *)vectors, __vectors_start, __vectors_end - __vectors_start);
 	memcpy((void *)vectors + 0x1000, __stubs_start, __stubs_end - __stubs_start);
+<<<<<<< HEAD
+=======
+	memcpy((void *)vectors + 0x1000 - kuser_sz, __kuser_helper_start, kuser_sz);
+>>>>>>> dc6be2d... Merge "ARM: move vector stubs"
 
 	kuser_init(vectors_base);
 
