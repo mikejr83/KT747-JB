@@ -761,6 +761,7 @@ do_notify_resume(struct pt_regs *regs, unsigned int thread_flags, int syscall)
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 struct page *get_signal_page(void)
 {
 	unsigned long ptr;
@@ -792,34 +793,39 @@ struct page *get_signal_page(void)
 =======
 static struct page *signal_page;
 
+=======
+>>>>>>> 1e74f4f... Merge "ARM: fix a cockup in 48be69a02 (ARM: move signal handlers into a vdso-like page)"
 struct page *get_signal_page(void)
 {
-	if (!signal_page) {
-		unsigned long ptr;
-		unsigned offset;
-		void *addr;
+	unsigned long ptr;
+	unsigned offset;
+	struct page *page;
+	void *addr;
 
-		signal_page = alloc_pages(GFP_KERNEL, 0);
+	page = alloc_pages(GFP_KERNEL, 0);
 
-		if (!signal_page)
-			return NULL;
+	if (!page)
+		return NULL;
 
-		addr = page_address(signal_page);
+	addr = page_address(page);
 
-		/* Give the signal return code some randomness */
-		offset = 0x200 + (get_random_int() & 0x7fc);
-		signal_return_offset = offset;
+	/* Give the signal return code some randomness */
+	offset = 0x200 + (get_random_int() & 0x7fc);
+	signal_return_offset = offset;
 
-		/*
-		 * Copy signal return handlers into the vector page, and
-		 * set sigreturn to be a pointer to these.
-		 */
-		memcpy(addr + offset, sigreturn_codes, sizeof(sigreturn_codes));
+	/*
+	 * Copy signal return handlers into the vector page, and
+	 * set sigreturn to be a pointer to these.
+	 */
+	memcpy(addr + offset, sigreturn_codes, sizeof(sigreturn_codes));
 
-		ptr = (unsigned long)addr + offset;
-		flush_icache_range(ptr, ptr + sizeof(sigreturn_codes));
-	}
+	ptr = (unsigned long)addr + offset;
+	flush_icache_range(ptr, ptr + sizeof(sigreturn_codes));
 
+<<<<<<< HEAD
 	return signal_page;
 >>>>>>> 74cc77e... Merge "ARM: move signal handlers into a vdso-like page"
+=======
+	return page;
+>>>>>>> 1e74f4f... Merge "ARM: fix a cockup in 48be69a02 (ARM: move signal handlers into a vdso-like page)"
 }
