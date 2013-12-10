@@ -798,7 +798,10 @@ ENDPROC(__switch_to)
 	.endr
 	.endm
 
+<<<<<<< HEAD
 #ifdef CONFIG_KUSER_HELPERS
+=======
+>>>>>>> 850bd2f... Merge "ARM: poison memory between kuser helpers"
 	.align	5
 	.globl	__kuser_helper_start
 __kuser_helper_start:
