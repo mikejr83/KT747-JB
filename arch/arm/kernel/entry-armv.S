@@ -799,9 +799,13 @@ ENDPROC(__switch_to)
 	.endm
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #ifdef CONFIG_KUSER_HELPERS
 =======
 >>>>>>> 850bd2f... Merge "ARM: poison memory between kuser helpers"
+=======
+#ifdef CONFIG_KUSER_HELPERS
+>>>>>>> 9e22815... Merge "ARM: allow kuser helpers to be removed from the vector page"
 	.align	5
 	.globl	__kuser_helper_start
 __kuser_helper_start:
