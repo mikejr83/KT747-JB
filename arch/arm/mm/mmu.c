@@ -1173,11 +1173,17 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 #ifdef CONFIG_KUSER_HELPERS
 	map.type = MT_HIGH_VECTORS;
 <<<<<<< HEAD
+<<<<<<< HEAD
 #else
 	map.type = MT_LOW_VECTORS;
 #endif
 =======
 >>>>>>> bbc319b... Merge "Revert "ARM: allow the kernel text section to be made read-only""
+=======
+#else
+	map.type = MT_LOW_VECTORS;
+#endif
+>>>>>>> 757a94d... Merge "ARM: make vectors page inaccessible from userspace"
 	create_mapping(&map);
 
 	if (!vectors_high()) {
