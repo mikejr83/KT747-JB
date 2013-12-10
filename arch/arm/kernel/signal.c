@@ -481,12 +481,18 @@ setup_return(struct pt_regs *regs, struct k_sigaction *ka,
 			retcode = mm->context.sigpage + signal_return_offset +
 				  (idx << 2) + thumb;
 <<<<<<< HEAD
+<<<<<<< HEAD
 		} else
 #endif
 		{
 =======
 		} else {
 >>>>>>> 74cc77e... Merge "ARM: move signal handlers into a vdso-like page"
+=======
+		} else
+#endif
+		{
+>>>>>>> 9035dbd... Merge "ARM: fix nommu builds with 48be69a02 (ARM: move signal handlers into a vdso-like page)"
 			/*
 			 * Ensure that the instruction cache sees
 			 * the return code written onto the stack.
