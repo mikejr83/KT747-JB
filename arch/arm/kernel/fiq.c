@@ -85,6 +85,7 @@ int show_fiq_list(struct seq_file *p, int prec)
 void set_fiq_handler(void *start, unsigned int length)
 {
 <<<<<<< HEAD
+<<<<<<< HEAD
 	void *base = vectors_page;
 	unsigned offset = FIQ_OFFSET;
 
@@ -97,15 +98,21 @@ void set_fiq_handler(void *start, unsigned int length)
 #if defined(CONFIG_CPU_USE_DOMAINS)
 	void *base = (void *)0xffff0000;
 #else
+=======
+>>>>>>> 7e315c0... Merge "ARM: Fix FIQ code on VIVT CPUs"
 	void *base = vectors_page;
-#endif
 	unsigned offset = FIQ_OFFSET;
 
 	memcpy(base + offset, start, length);
+	if (!cache_is_vipt_nonaliasing())
+		flush_icache_range(base + offset, offset + length);
 	flush_icache_range(0xffff0000 + offset, 0xffff0000 + offset + length);
+<<<<<<< HEAD
 	if (!vectors_high())
 		flush_icache_range(offset, offset + length);
 >>>>>>> 6003695... Merge "ARM: update FIQ support for relocation of vectors"
+=======
+>>>>>>> 7e315c0... Merge "ARM: Fix FIQ code on VIVT CPUs"
 }
 
 int claim_fiq(struct fiq_handler *f)
