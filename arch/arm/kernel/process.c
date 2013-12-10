@@ -709,10 +709,14 @@ int in_gate_area_no_mm(unsigned long addr)
 	return in_gate_area(NULL, addr);
 }
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define is_gate_vma(vma)	((vma) == &gate_vma)
 =======
 #define is_gate_vma(vma)	((vma) = &gate_vma)
 >>>>>>> 757a94d... Merge "ARM: make vectors page inaccessible from userspace"
+=======
+#define is_gate_vma(vma)	((vma) == &gate_vma)
+>>>>>>> df75145... Merge "ARM: Fix the world famous typo with is_gate_vma()"
 #else
 #define is_gate_vma(vma)	0
 #endif
