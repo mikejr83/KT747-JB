@@ -1278,11 +1278,17 @@ vector_fiq:
 	.word	msm_krait_need_wfe_fixup
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 	.globl	vector_fiq_offset
 	.equ	vector_fiq_offset, vector_fiq
 
 =======
 >>>>>>> dc6be2d... Merge "ARM: move vector stubs"
+=======
+	.globl	vector_fiq_offset
+	.equ	vector_fiq_offset, vector_fiq
+
+>>>>>>> 6003695... Merge "ARM: update FIQ support for relocation of vectors"
 	.section .vectors, "ax", %progbits
 __vectors_start:
 	W(b)	vector_rst
