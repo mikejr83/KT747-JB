@@ -869,7 +869,14 @@ void __init early_trap_init(void *vectors_base)
 	memcpy((void *)vectors + 0x1000 - kuser_sz, __kuser_helper_start, kuser_sz);
 >>>>>>> dc6be2d... Merge "ARM: move vector stubs"
 
+<<<<<<< HEAD
 	kuser_init(vectors_base);
+=======
+	/*
+	 * Do processor specific fixups for the kuser helpers
+	 */
+	kuser_get_tls_init(vectors);
+>>>>>>> 74cc77e... Merge "ARM: move signal handlers into a vdso-like page"
 
 	flush_icache_range(vectors, vectors + PAGE_SIZE * 2);
 	modify_domain(DOMAIN_USER, DOMAIN_CLIENT);
