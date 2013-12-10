@@ -839,6 +839,11 @@ void __init early_trap_init(void *vectors_base)
 	unsigned long vectors = (unsigned long)vectors_base;
 	extern char __stubs_start[], __stubs_end[];
 	extern char __vectors_start[], __vectors_end[];
+<<<<<<< HEAD
+=======
+	extern char __kuser_helper_start[], __kuser_helper_end[];
+	int kuser_sz = __kuser_helper_end - __kuser_helper_start;
+>>>>>>> 8383902... Merge "ARM: poison the vectors page"
 	unsigned i;
 
 	vectors_page = vectors_base;
