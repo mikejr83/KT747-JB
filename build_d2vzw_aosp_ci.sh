@@ -2,7 +2,7 @@
 export KERNELDIR=`readlink -f .`
 export PARENT_DIR=`readlink -f ..`
 export INITRAMFS_DEST=$KERNELDIR/kernel/usr/initramfs
-export INITRAMFS_SOURCE=`readlink -f ..`/KT747-JB-RAMDISKS/AOSP_JB_MR2-3.4
+export INITRAMFS_SOURCE=`readlink -f ..`/KT747-JB-RAMDISKS/AOSP_JB_4.4
 export CONFIG_AOSP_BUILD=y
 export PACKAGEDIR=$PARENT_DIR/Packages/AOSP_JB_MR1_VZW
 #Enable FIPS mode
