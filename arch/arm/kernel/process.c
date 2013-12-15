@@ -711,6 +711,7 @@ int in_gate_area_no_mm(unsigned long addr)
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define is_gate_vma(vma)	((vma) == &gate_vma)
 =======
 #define is_gate_vma(vma)	((vma) = &gate_vma)
@@ -721,6 +722,9 @@ int in_gate_area_no_mm(unsigned long addr)
 =======
 #define is_gate_vma(vma)	((vma) == &gate_vma)
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+#define is_gate_vma(vma)	((vma) == &gate_vma)
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 #else
 #define is_gate_vma(vma)	0
 #endif
@@ -740,6 +744,7 @@ const char *arch_vma_name(struct vm_area_struct *vma)
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 static struct page *signal_page;
 =======
 >>>>>>> 74cc77e... Merge "ARM: move signal handlers into a vdso-like page"
@@ -749,6 +754,9 @@ static struct page *signal_page;
 =======
 static struct page *signal_page;
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+static struct page *signal_page;
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 extern struct page *get_signal_page(void);
 
 int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
@@ -757,14 +765,18 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 	unsigned long addr;
 	int ret;
 
 	if (!signal_page)
 		signal_page = get_signal_page();
 	if (!signal_page)
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 	struct page *page;
@@ -784,6 +796,8 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 >>>>>>> 1e74f4f... Merge "ARM: fix a cockup in 48be69a02 (ARM: move signal handlers into a vdso-like page)"
 =======
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 		return -ENOMEM;
 
 	down_write(&mm->mmap_sem);
@@ -798,6 +812,7 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		&signal_page);
 =======
 		&page);
@@ -808,6 +823,9 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 =======
 		&signal_page);
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+		&signal_page);
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 
 	if (ret == 0)
 		mm->context.sigpage = addr;

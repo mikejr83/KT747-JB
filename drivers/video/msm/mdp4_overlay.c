@@ -1030,6 +1030,7 @@ void mdp4_overlay_vg_setup(struct mdp4_overlay_pipe *pipe)
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		if ((ctrl->panel_mode & MDP4_PANEL_DSI_CMD && pipe->mixer_num == 0) ||
 			(ctrl->panel_mode & MDP4_PANEL_WRITEBACK && pipe->mixer_num == 2))
 =======
@@ -1043,6 +1044,10 @@ void mdp4_overlay_vg_setup(struct mdp4_overlay_pipe *pipe)
 		if ((ctrl->panel_mode & MDP4_PANEL_DSI_CMD && pipe->mixer_num == 0) ||
 			(ctrl->panel_mode & MDP4_PANEL_WRITEBACK && pipe->mixer_num == 2))
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+		if ((ctrl->panel_mode & MDP4_PANEL_DSI_CMD && pipe->mixer_num == 0) ||
+			(ctrl->panel_mode & MDP4_PANEL_WRITEBACK && pipe->mixer_num == 2))
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 			outpdw(vg_base + 0x0048, frame_size);
 		else
 			pipe->frame_size = frame_size;

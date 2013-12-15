@@ -133,15 +133,19 @@ extern unsigned long arch_randomize_brk(struct mm_struct *mm);
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 9035dbd... Merge "ARM: fix nommu builds with 48be69a02 (ARM: move signal handlers into a vdso-like page)"
 =======
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 #ifdef CONFIG_MMU
 #define ARCH_HAS_SETUP_ADDITIONAL_PAGES 1
 struct linux_binprm;
 int arch_setup_additional_pages(struct linux_binprm *, int);
 #endif
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -153,5 +157,7 @@ int arch_setup_additional_pages(struct linux_binprm *, int);
 >>>>>>> 9035dbd... Merge "ARM: fix nommu builds with 48be69a02 (ARM: move signal handlers into a vdso-like page)"
 =======
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 
 #endif

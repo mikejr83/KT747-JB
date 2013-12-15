@@ -828,6 +828,7 @@ config KUSER_HELPERS
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	  See Documentation/arm/kernel_user_helpers.txt for details.
 
 =======
@@ -840,6 +841,10 @@ config KUSER_HELPERS
 	  See Documentation/arm/kernel_user_helpers.txt for details.
 
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+	  See Documentation/arm/kernel_user_helpers.txt for details.
+
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 	  However, the fixed address nature of these helpers can be used
 	  by ROP (return orientated programming) authors when creating
 	  exploits.
@@ -849,14 +854,18 @@ config KUSER_HELPERS
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> ae0c3aa... Merge "ARM: 7816/1: CONFIG_KUSER_HELPERS: fix help text"
 =======
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 	  these helpers, then you can turn this option off to hinder
 	  such exploits. However, in that case, if a binary or library
 	  relying on those helpers is run, it will receive a SIGILL signal,
 	  which will terminate the program.
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 =======
@@ -868,6 +877,8 @@ config KUSER_HELPERS
 >>>>>>> ae0c3aa... Merge "ARM: 7816/1: CONFIG_KUSER_HELPERS: fix help text"
 =======
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 
 	  Say N here only if you are absolutely certain that you do not
 	  need these helpers; otherwise, the safe option is to say Y.

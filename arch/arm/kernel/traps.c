@@ -829,6 +829,7 @@ static void __init kuser_init(void *vectors)
 		memcpy(vectors + 0xfe0, vectors + 0xfe8, 4);
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 }
@@ -846,6 +847,13 @@ static void __init kuser_init(void *vectors)
 >>>>>>> 9e22815... Merge "ARM: allow kuser helpers to be removed from the vector page"
 =======
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+}
+#else
+static void __init kuser_init(void *vectors)
+{
+}
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 #endif
 
 void __init early_trap_init(void *vectors_base)
@@ -853,6 +861,7 @@ void __init early_trap_init(void *vectors_base)
 	unsigned long vectors = (unsigned long)vectors_base;
 	extern char __stubs_start[], __stubs_end[];
 	extern char __vectors_start[], __vectors_end[];
+<<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
@@ -864,6 +873,8 @@ void __init early_trap_init(void *vectors_base)
 >>>>>>> 9e22815... Merge "ARM: allow kuser helpers to be removed from the vector page"
 =======
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 	unsigned i;
 
 	vectors_page = vectors_base;
@@ -887,6 +898,7 @@ void __init early_trap_init(void *vectors_base)
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	memcpy((void *)vectors + 0x1000 - kuser_sz, __kuser_helper_start, kuser_sz);
 >>>>>>> dc6be2d... Merge "ARM: move vector stubs"
@@ -907,6 +919,10 @@ void __init early_trap_init(void *vectors_base)
 
 	kuser_init(vectors_base);
 >>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
+=======
+
+	kuser_init(vectors_base);
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 
 	flush_icache_range(vectors, vectors + PAGE_SIZE * 2);
 	modify_domain(DOMAIN_USER, DOMAIN_CLIENT);

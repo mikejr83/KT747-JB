@@ -210,6 +210,7 @@ SMC_outw(u16 val, void __iomem *ioaddr, int reg)
 #define RPC_LSB_DEFAULT		RPC_LED_100_10
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 #elif	defined(CONFIG_ARCH_VERSATILE)
 
 #define SMC_CAN_USE_8BIT	1
@@ -243,6 +244,8 @@ SMC_outw(u16 val, void __iomem *ioaddr, int reg)
 
 =======
 >>>>>>> 5ee54c2... net: smc91: fix crash regression on the versatile
+=======
+>>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 #elif defined(CONFIG_MN10300)
 
 /*
