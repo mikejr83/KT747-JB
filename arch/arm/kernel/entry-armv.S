@@ -800,12 +800,16 @@ ENDPROC(__switch_to)
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #ifdef CONFIG_KUSER_HELPERS
 =======
 >>>>>>> 850bd2f... Merge "ARM: poison memory between kuser helpers"
 =======
 #ifdef CONFIG_KUSER_HELPERS
 >>>>>>> 9e22815... Merge "ARM: allow kuser helpers to be removed from the vector page"
+=======
+#ifdef CONFIG_KUSER_HELPERS
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 	.align	5
 	.globl	__kuser_helper_start
 __kuser_helper_start:
@@ -1283,6 +1287,7 @@ vector_fiq:
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	.globl	vector_fiq_offset
 	.equ	vector_fiq_offset, vector_fiq
 
@@ -1293,6 +1298,11 @@ vector_fiq:
 	.equ	vector_fiq_offset, vector_fiq
 
 >>>>>>> 6003695... Merge "ARM: update FIQ support for relocation of vectors"
+=======
+	.globl	vector_fiq_offset
+	.equ	vector_fiq_offset, vector_fiq
+
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 	.section .vectors, "ax", %progbits
 __vectors_start:
 	W(b)	vector_rst

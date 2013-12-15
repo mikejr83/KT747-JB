@@ -828,11 +828,15 @@ static void __init kuser_init(void *vectors)
 	if (tls_emu || has_tls_reg)
 		memcpy(vectors + 0xfe0, vectors + 0xfe8, 4);
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 }
 #else
 static void __init kuser_init(void *vectors)
 {
 }
+<<<<<<< HEAD
 =======
 }
 #else
@@ -840,6 +844,8 @@ static void __init kuser_init(void *vectors)
 {
 }
 >>>>>>> 9e22815... Merge "ARM: allow kuser helpers to be removed from the vector page"
+=======
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 #endif
 
 void __init early_trap_init(void *vectors_base)
@@ -849,12 +855,15 @@ void __init early_trap_init(void *vectors_base)
 	extern char __vectors_start[], __vectors_end[];
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	extern char __kuser_helper_start[], __kuser_helper_end[];
 	int kuser_sz = __kuser_helper_end - __kuser_helper_start;
 >>>>>>> 8383902... Merge "ARM: poison the vectors page"
 =======
 >>>>>>> 9e22815... Merge "ARM: allow kuser helpers to be removed from the vector page"
+=======
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 	unsigned i;
 
 	vectors_page = vectors_base;
@@ -877,6 +886,7 @@ void __init early_trap_init(void *vectors_base)
 	memcpy((void *)vectors + 0x1000, __stubs_start, __stubs_end - __stubs_start);
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 	memcpy((void *)vectors + 0x1000 - kuser_sz, __kuser_helper_start, kuser_sz);
 >>>>>>> dc6be2d... Merge "ARM: move vector stubs"
@@ -893,6 +903,10 @@ void __init early_trap_init(void *vectors_base)
 
 	kuser_init(vectors_base);
 >>>>>>> 9e22815... Merge "ARM: allow kuser helpers to be removed from the vector page"
+=======
+
+	kuser_init(vectors_base);
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 
 	flush_icache_range(vectors, vectors + PAGE_SIZE * 2);
 	modify_domain(DOMAIN_USER, DOMAIN_CLIENT);

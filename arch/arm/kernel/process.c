@@ -710,6 +710,7 @@ int in_gate_area_no_mm(unsigned long addr)
 }
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #define is_gate_vma(vma)	((vma) == &gate_vma)
 =======
 #define is_gate_vma(vma)	((vma) = &gate_vma)
@@ -717,6 +718,9 @@ int in_gate_area_no_mm(unsigned long addr)
 =======
 #define is_gate_vma(vma)	((vma) == &gate_vma)
 >>>>>>> df75145... Merge "ARM: Fix the world famous typo with is_gate_vma()"
+=======
+#define is_gate_vma(vma)	((vma) == &gate_vma)
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 #else
 #define is_gate_vma(vma)	0
 #endif
@@ -735,12 +739,16 @@ const char *arch_vma_name(struct vm_area_struct *vma)
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 static struct page *signal_page;
 =======
 >>>>>>> 74cc77e... Merge "ARM: move signal handlers into a vdso-like page"
 =======
 static struct page *signal_page;
 >>>>>>> 1e74f4f... Merge "ARM: fix a cockup in 48be69a02 (ARM: move signal handlers into a vdso-like page)"
+=======
+static struct page *signal_page;
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 extern struct page *get_signal_page(void);
 
 int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
@@ -748,12 +756,16 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 	struct mm_struct *mm = current->mm;
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 	unsigned long addr;
 	int ret;
 
 	if (!signal_page)
 		signal_page = get_signal_page();
 	if (!signal_page)
+<<<<<<< HEAD
 =======
 	struct page *page;
 	unsigned long addr;
@@ -770,6 +782,8 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 		signal_page = get_signal_page();
 	if (!signal_page)
 >>>>>>> 1e74f4f... Merge "ARM: fix a cockup in 48be69a02 (ARM: move signal handlers into a vdso-like page)"
+=======
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 		return -ENOMEM;
 
 	down_write(&mm->mmap_sem);
@@ -783,6 +797,7 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 		VM_READ | VM_EXEC | VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC,
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		&signal_page);
 =======
 		&page);
@@ -790,6 +805,9 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 =======
 		&signal_page);
 >>>>>>> 1e74f4f... Merge "ARM: fix a cockup in 48be69a02 (ARM: move signal handlers into a vdso-like page)"
+=======
+		&signal_page);
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 
 	if (ret == 0)
 		mm->context.sigpage = addr;

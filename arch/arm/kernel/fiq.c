@@ -86,6 +86,9 @@ void set_fiq_handler(void *start, unsigned int length)
 {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 	void *base = vectors_page;
 	unsigned offset = FIQ_OFFSET;
 
@@ -94,6 +97,7 @@ void set_fiq_handler(void *start, unsigned int length)
 		flush_icache_range((unsigned long)base + offset, offset +
 				   length);
 	flush_icache_range(0xffff0000 + offset, 0xffff0000 + offset + length);
+<<<<<<< HEAD
 =======
 #if defined(CONFIG_CPU_USE_DOMAINS)
 	void *base = (void *)0xffff0000;
@@ -114,6 +118,8 @@ void set_fiq_handler(void *start, unsigned int length)
 >>>>>>> 6003695... Merge "ARM: update FIQ support for relocation of vectors"
 =======
 >>>>>>> 7e315c0... Merge "ARM: Fix FIQ code on VIVT CPUs"
+=======
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 }
 
 int claim_fiq(struct fiq_handler *f)
@@ -173,6 +179,7 @@ void __init init_FIQ(int start)
 {
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 	unsigned offset = FIQ_OFFSET;
 	no_fiq_insn = *(unsigned long *)(0xffff0000 + offset);
 =======
@@ -182,5 +189,9 @@ void __init init_FIQ(int start)
 	unsigned offset = FIQ_OFFSET;
 	no_fiq_insn = *(unsigned long *)(0xffff0000 + offset);
 >>>>>>> 6003695... Merge "ARM: update FIQ support for relocation of vectors"
+=======
+	unsigned offset = FIQ_OFFSET;
+	no_fiq_insn = *(unsigned long *)(0xffff0000 + offset);
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 	fiq_start = start;
 }

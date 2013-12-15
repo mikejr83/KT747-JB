@@ -778,6 +778,7 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 	policy = this_dbs_info->cur_policy;
 	if(policy == NULL)
 		return;
+<<<<<<< HEAD
 
 	if (boostpulse_relayf)
 	{
@@ -791,6 +792,8 @@ static void dbs_check_cpu(struct cpu_dbs_info_s *this_dbs_info)
 			CPUFREQ_RELATION_H);
 		return;
 	}
+=======
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 
 	/*
 	 * Every sampling_rate, we check, if current idle time is less

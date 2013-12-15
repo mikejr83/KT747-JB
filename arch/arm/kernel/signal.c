@@ -482,6 +482,7 @@ setup_return(struct pt_regs *regs, struct k_sigaction *ka,
 				  (idx << 2) + thumb;
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 		} else
 #endif
 		{
@@ -493,6 +494,11 @@ setup_return(struct pt_regs *regs, struct k_sigaction *ka,
 #endif
 		{
 >>>>>>> 9035dbd... Merge "ARM: fix nommu builds with 48be69a02 (ARM: move signal handlers into a vdso-like page)"
+=======
+		} else
+#endif
+		{
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 			/*
 			 * Ensure that the instruction cache sees
 			 * the return code written onto the stack.
@@ -768,6 +774,9 @@ do_notify_resume(struct pt_regs *regs, unsigned int thread_flags, int syscall)
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 struct page *get_signal_page(void)
 {
 	unsigned long ptr;
@@ -796,6 +805,7 @@ struct page *get_signal_page(void)
 	flush_icache_range(ptr, ptr + sizeof(sigreturn_codes));
 
 	return page;
+<<<<<<< HEAD
 =======
 static struct page *signal_page;
 
@@ -834,4 +844,6 @@ struct page *get_signal_page(void)
 =======
 	return page;
 >>>>>>> 1e74f4f... Merge "ARM: fix a cockup in 48be69a02 (ARM: move signal handlers into a vdso-like page)"
+=======
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 }

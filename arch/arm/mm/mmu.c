@@ -1175,6 +1175,7 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 <<<<<<< HEAD
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 #else
 	map.type = MT_LOW_VECTORS;
 #endif
@@ -1187,6 +1188,11 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 >>>>>>> 757a94d... Merge "ARM: make vectors page inaccessible from userspace"
 =======
 >>>>>>> f156a13... Revert "ARM: allow the kernel text section to be made read-only"
+=======
+#else
+	map.type = MT_LOW_VECTORS;
+#endif
+>>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 	create_mapping(&map);
 
 	if (!vectors_high()) {
