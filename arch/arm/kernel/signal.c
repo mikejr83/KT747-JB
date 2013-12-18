@@ -480,31 +480,9 @@ setup_return(struct pt_regs *regs, struct k_sigaction *ka,
 			 */
 			retcode = mm->context.sigpage + signal_return_offset +
 				  (idx << 2) + thumb;
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 		} else
 #endif
 		{
-=======
-		} else {
->>>>>>> 74cc77e... Merge "ARM: move signal handlers into a vdso-like page"
-=======
-		} else
-#endif
-		{
->>>>>>> 9035dbd... Merge "ARM: fix nommu builds with 48be69a02 (ARM: move signal handlers into a vdso-like page)"
-=======
-		} else
-#endif
-		{
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
-=======
-		} else
-#endif
-		{
->>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 			/*
 			 * Ensure that the instruction cache sees
 			 * the return code written onto the stack.
@@ -778,14 +756,6 @@ do_notify_resume(struct pt_regs *regs, unsigned int thread_flags, int syscall)
 	}
 }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
-=======
->>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 struct page *get_signal_page(void)
 {
 	unsigned long ptr;
@@ -814,48 +784,4 @@ struct page *get_signal_page(void)
 	flush_icache_range(ptr, ptr + sizeof(sigreturn_codes));
 
 	return page;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-static struct page *signal_page;
-
-=======
->>>>>>> 1e74f4f... Merge "ARM: fix a cockup in 48be69a02 (ARM: move signal handlers into a vdso-like page)"
-struct page *get_signal_page(void)
-{
-	unsigned long ptr;
-	unsigned offset;
-	struct page *page;
-	void *addr;
-
-	page = alloc_pages(GFP_KERNEL, 0);
-
-	if (!page)
-		return NULL;
-
-	addr = page_address(page);
-
-	/* Give the signal return code some randomness */
-	offset = 0x200 + (get_random_int() & 0x7fc);
-	signal_return_offset = offset;
-
-	/*
-	 * Copy signal return handlers into the vector page, and
-	 * set sigreturn to be a pointer to these.
-	 */
-	memcpy(addr + offset, sigreturn_codes, sizeof(sigreturn_codes));
-
-	ptr = (unsigned long)addr + offset;
-	flush_icache_range(ptr, ptr + sizeof(sigreturn_codes));
-
-<<<<<<< HEAD
-	return signal_page;
->>>>>>> 74cc77e... Merge "ARM: move signal handlers into a vdso-like page"
-=======
-	return page;
->>>>>>> 1e74f4f... Merge "ARM: fix a cockup in 48be69a02 (ARM: move signal handlers into a vdso-like page)"
-=======
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
-=======
->>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 }

@@ -1235,16 +1235,7 @@ static int mmc_blk_err_check(struct mmc_card *card,
 	 */
 	if (!mmc_host_is_spi(card->host) && rq_data_dir(req) != READ) {
 		u32 status;
-<<<<<<< HEAD
-<<<<<<< HEAD
-		unsigned long timeout;
 
-		timeout = jiffies + msecs_to_jiffies(MMC_BLK_TIMEOUT_MS);
-=======
-
-=======
-
->>>>>>> aaf1b35... Merge remote-tracking branch 'korg/linux-3.4.y' into cm-11.0
 		/* Check stop command response */
 		if (brq->stop.resp[0] & R1_ERROR) {
 			pr_err("%s: %s: general error sending stop command, stop cmd response %#x\n",
@@ -1253,10 +1244,6 @@ static int mmc_blk_err_check(struct mmc_card *card,
 			gen_err = 1;
 		}
 
-<<<<<<< HEAD
->>>>>>> 98048d9... mmc: block: fix a bug of error handling in MMC driver
-=======
->>>>>>> aaf1b35... Merge remote-tracking branch 'korg/linux-3.4.y' into cm-11.0
 		do {
 			int err = get_card_status(card, &status, 5);
 			if (err) {
@@ -1265,19 +1252,6 @@ static int mmc_blk_err_check(struct mmc_card *card,
 				return MMC_BLK_CMD_ERR;
 			}
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-			/* Timeout if the device never becomes ready for data
-			 * and never leaves the program state.
-			 */
-			if (time_after(jiffies, timeout)) {
-				pr_err("%s: Card stuck in programming state!"\
-					" %s %s\n", mmc_hostname(card->host),
-					req->rq_disk->disk_name, __func__);
-
-				return MMC_BLK_CMD_ERR;
-			}
-=======
 			if (status & R1_ERROR) {
 				pr_err("%s: %s: general error sending status command, card status %#x\n",
 				       req->rq_disk->disk_name, __func__,
@@ -1285,16 +1259,6 @@ static int mmc_blk_err_check(struct mmc_card *card,
 				gen_err = 1;
 			}
 
->>>>>>> 98048d9... mmc: block: fix a bug of error handling in MMC driver
-=======
-			if (status & R1_ERROR) {
-				pr_err("%s: %s: general error sending status command, card status %#x\n",
-				       req->rq_disk->disk_name, __func__,
-				       status);
-				gen_err = 1;
-			}
-
->>>>>>> aaf1b35... Merge remote-tracking branch 'korg/linux-3.4.y' into cm-11.0
 			/*
 			 * Some cards mishandle the status bits,
 			 * so make sure to check both the busy
@@ -2955,4 +2919,3 @@ module_exit(mmc_blk_exit);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Multimedia Card (MMC) block device driver");
-

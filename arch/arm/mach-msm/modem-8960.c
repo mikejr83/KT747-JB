@@ -30,16 +30,10 @@
 #include <mach/socinfo.h>
 #include <mach/msm_smsm.h>
 #include "sysmon.h"
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0c22793... Merge remote-tracking branch 'caf/kk_2.7.1' into cm-11.0
 
 #ifdef CONFIG_SEC_DEBUG
 #include <mach/sec_debug.h>
 #endif
-=======
->>>>>>> 991de6b... Merge "Merge "Merge "net: rmnet_usb: Add support for aligned QOS header"""
 
 #include "smd_private.h"
 #include "modem_notifier.h"

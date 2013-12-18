@@ -827,33 +827,11 @@ static void __init kuser_init(void *vectors)
 	 */
 	if (tls_emu || has_tls_reg)
 		memcpy(vectors + 0xfe0, vectors + 0xfe8, 4);
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
 }
 #else
 static void __init kuser_init(void *vectors)
 {
 }
-<<<<<<< HEAD
-=======
-}
-#else
-static void __init kuser_init(void *vectors)
-{
-}
->>>>>>> 9e22815... Merge "ARM: allow kuser helpers to be removed from the vector page"
-=======
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
-=======
-}
-#else
-static void __init kuser_init(void *vectors)
-{
-}
->>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 #endif
 
 void __init early_trap_init(void *vectors_base)
@@ -861,20 +839,6 @@ void __init early_trap_init(void *vectors_base)
 	unsigned long vectors = (unsigned long)vectors_base;
 	extern char __stubs_start[], __stubs_end[];
 	extern char __vectors_start[], __vectors_end[];
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	extern char __kuser_helper_start[], __kuser_helper_end[];
-	int kuser_sz = __kuser_helper_end - __kuser_helper_start;
->>>>>>> 8383902... Merge "ARM: poison the vectors page"
-=======
->>>>>>> 9e22815... Merge "ARM: allow kuser helpers to be removed from the vector page"
-=======
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
-=======
->>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 	unsigned i;
 
 	vectors_page = vectors_base;
@@ -895,34 +859,8 @@ void __init early_trap_init(void *vectors_base)
 	 */
 	memcpy((void *)vectors, __vectors_start, __vectors_end - __vectors_start);
 	memcpy((void *)vectors + 0x1000, __stubs_start, __stubs_end - __stubs_start);
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-	memcpy((void *)vectors + 0x1000 - kuser_sz, __kuser_helper_start, kuser_sz);
->>>>>>> dc6be2d... Merge "ARM: move vector stubs"
-
-<<<<<<< HEAD
-	kuser_init(vectors_base);
-=======
-	/*
-	 * Do processor specific fixups for the kuser helpers
-	 */
-	kuser_get_tls_init(vectors);
->>>>>>> 74cc77e... Merge "ARM: move signal handlers into a vdso-like page"
-=======
 
 	kuser_init(vectors_base);
->>>>>>> 9e22815... Merge "ARM: allow kuser helpers to be removed from the vector page"
-=======
-
-	kuser_init(vectors_base);
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
-=======
-
-	kuser_init(vectors_base);
->>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 
 	flush_icache_range(vectors, vectors + PAGE_SIZE * 2);
 	modify_domain(DOMAIN_USER, DOMAIN_CLIENT);

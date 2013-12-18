@@ -1236,25 +1236,7 @@ static int crypt_decode_key(u8 *key, char *hex, unsigned int size)
 	return 0;
 }
 
-<<<<<<< HEAD
-/*
- * Encode key into its hex representation
- */
-static void crypt_encode_key(char *hex, u8 *key, unsigned int size)
-{
-	unsigned int i;
-
-	for (i = 0; i < size; i++) {
-		sprintf(hex, "%02x", *key);
-		hex += 2;
-		key++;
-	}
-}
-
-static void crypt_free_tfms(struct crypt_config *cc, int cpu)
-=======
 static void crypt_free_tfms(struct crypt_config *cc)
->>>>>>> aaf1b35... Merge remote-tracking branch 'korg/linux-3.4.y' into cm-11.0
 {
 	unsigned i;
 

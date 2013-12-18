@@ -798,22 +798,7 @@ ENDPROC(__switch_to)
 	.endr
 	.endm
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 #ifdef CONFIG_KUSER_HELPERS
-=======
->>>>>>> 850bd2f... Merge "ARM: poison memory between kuser helpers"
-=======
-#ifdef CONFIG_KUSER_HELPERS
->>>>>>> 9e22815... Merge "ARM: allow kuser helpers to be removed from the vector page"
-=======
-#ifdef CONFIG_KUSER_HELPERS
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
-=======
-#ifdef CONFIG_KUSER_HELPERS
->>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 	.align	5
 	.globl	__kuser_helper_start
 __kuser_helper_start:
@@ -1289,30 +1274,9 @@ vector_fiq:
 .krait_fixup:
 	.word	msm_krait_need_wfe_fixup
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	.globl	vector_fiq_offset
 	.equ	vector_fiq_offset, vector_fiq
 
-=======
->>>>>>> dc6be2d... Merge "ARM: move vector stubs"
-=======
-	.globl	vector_fiq_offset
-	.equ	vector_fiq_offset, vector_fiq
-
->>>>>>> 6003695... Merge "ARM: update FIQ support for relocation of vectors"
-=======
-	.globl	vector_fiq_offset
-	.equ	vector_fiq_offset, vector_fiq
-
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
-=======
-	.globl	vector_fiq_offset
-	.equ	vector_fiq_offset, vector_fiq
-
->>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 	.section .vectors, "ax", %progbits
 __vectors_start:
 	W(b)	vector_rst

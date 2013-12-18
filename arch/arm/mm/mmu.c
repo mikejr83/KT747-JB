@@ -1172,33 +1172,9 @@ static void __init devicemaps_init(struct machine_desc *mdesc)
 	map.length = PAGE_SIZE;
 #ifdef CONFIG_KUSER_HELPERS
 	map.type = MT_HIGH_VECTORS;
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 #else
 	map.type = MT_LOW_VECTORS;
 #endif
-=======
->>>>>>> bbc319b... Merge "Revert "ARM: allow the kernel text section to be made read-only""
-=======
-#else
-	map.type = MT_LOW_VECTORS;
-#endif
->>>>>>> 757a94d... Merge "ARM: make vectors page inaccessible from userspace"
-=======
->>>>>>> f156a13... Revert "ARM: allow the kernel text section to be made read-only"
-=======
-#else
-	map.type = MT_LOW_VECTORS;
-#endif
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
-=======
-#else
-	map.type = MT_LOW_VECTORS;
-#endif
->>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 	create_mapping(&map);
 
 	if (!vectors_high()) {

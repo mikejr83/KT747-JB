@@ -84,14 +84,6 @@ int show_fiq_list(struct seq_file *p, int prec)
 
 void set_fiq_handler(void *start, unsigned int length)
 {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
-=======
->>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 	void *base = vectors_page;
 	unsigned offset = FIQ_OFFSET;
 
@@ -100,32 +92,6 @@ void set_fiq_handler(void *start, unsigned int length)
 		flush_icache_range((unsigned long)base + offset, offset +
 				   length);
 	flush_icache_range(0xffff0000 + offset, 0xffff0000 + offset + length);
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-#if defined(CONFIG_CPU_USE_DOMAINS)
-	void *base = (void *)0xffff0000;
-#else
-=======
->>>>>>> 7e315c0... Merge "ARM: Fix FIQ code on VIVT CPUs"
-	void *base = vectors_page;
-	unsigned offset = FIQ_OFFSET;
-
-	memcpy(base + offset, start, length);
-	if (!cache_is_vipt_nonaliasing())
-		flush_icache_range((unsigned long)base + offset, offset +
-				   length);
-	flush_icache_range(0xffff0000 + offset, 0xffff0000 + offset + length);
-<<<<<<< HEAD
-	if (!vectors_high())
-		flush_icache_range(offset, offset + length);
->>>>>>> 6003695... Merge "ARM: update FIQ support for relocation of vectors"
-=======
->>>>>>> 7e315c0... Merge "ARM: Fix FIQ code on VIVT CPUs"
-=======
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
-=======
->>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 }
 
 int claim_fiq(struct fiq_handler *f)
@@ -183,26 +149,7 @@ EXPORT_SYMBOL(disable_fiq);
 
 void __init init_FIQ(int start)
 {
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
 	unsigned offset = FIQ_OFFSET;
 	no_fiq_insn = *(unsigned long *)(0xffff0000 + offset);
-=======
-	no_fiq_insn = *(unsigned long *)0xffff001c;
->>>>>>> 6b4c833... Merge "ARM: fiq: change FIQ_START to a variable"
-=======
-	unsigned offset = FIQ_OFFSET;
-	no_fiq_insn = *(unsigned long *)(0xffff0000 + offset);
->>>>>>> 6003695... Merge "ARM: update FIQ support for relocation of vectors"
-=======
-	unsigned offset = FIQ_OFFSET;
-	no_fiq_insn = *(unsigned long *)(0xffff0000 + offset);
->>>>>>> 0ccb4b7... Merge remote-tracking branch 'caf/kk_2.7_rb1.16' into cm-11.0
-=======
-	unsigned offset = FIQ_OFFSET;
-	no_fiq_insn = *(unsigned long *)(0xffff0000 + offset);
->>>>>>> d10c865... Merge branch 'nardtest2' of remote branch
 	fiq_start = start;
 }

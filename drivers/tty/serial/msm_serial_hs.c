@@ -1077,24 +1077,8 @@ static void msm_hs_stop_tx_locked(struct uart_port *uport)
 static void msm_hs_stop_rx_locked(struct uart_port *uport)
 {
 	struct msm_hs_port *msm_uport = UARTDM_TO_MSM(uport);
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-	unsigned int data;
-
-	/* disable dlink */
-	data = msm_hs_read(uport, UARTDM_DMEN_ADDR);
-	data &= ~UARTDM_RX_DM_EN_BMSK;
-	msm_hs_write(uport, UARTDM_DMEN_ADDR, data);
-=======
-=======
->>>>>>> 991de6b... Merge "Merge "Merge "net: rmnet_usb: Add support for aligned QOS header"""
 	unsigned long data;
 
-=======
-	unsigned long data;
-
->>>>>>> 0c22793... Merge remote-tracking branch 'caf/kk_2.7.1' into cm-11.0
 	if (msm_uport->clk_state == MSM_HS_CLK_OFF)
 		return;
 
@@ -1110,10 +1094,6 @@ static void msm_hs_stop_rx_locked(struct uart_port *uport)
 
 	/* Allow to receive all pending data from UART RX FIFO */
 	udelay(100);
-<<<<<<< HEAD
->>>>>>> d5d1122... Merge "Merge "net: rmnet_usb: Add support for aligned QOS header""
-=======
->>>>>>> 0c22793... Merge remote-tracking branch 'caf/kk_2.7.1' into cm-11.0
 
 	/* calling DMOV or CLOCK API. Hence mb() */
 	mb();
@@ -2194,24 +2174,12 @@ static int msm_hs_startup(struct uart_port *uport)
 
 	msm_hs_start_rx_locked(uport);
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
-=======
->>>>>>> 991de6b... Merge "Merge "Merge "net: rmnet_usb: Add support for aligned QOS header"""
-=======
->>>>>>> 0c22793... Merge remote-tracking branch 'caf/kk_2.7.1' into cm-11.0
 	/* Enable Auto Ready for recieving */
 	data = msm_hs_read(uport, UARTDM_MR1_ADDR);
 	data |= UARTDM_MR1_RX_RDY_CTL_BMSK;
 	msm_hs_write(uport, UARTDM_MR1_ADDR, data);
 	mb();
 
-<<<<<<< HEAD
->>>>>>> d5d1122... Merge "Merge "net: rmnet_usb: Add support for aligned QOS header""
-=======
->>>>>>> 0c22793... Merge remote-tracking branch 'caf/kk_2.7.1' into cm-11.0
 	spin_unlock_irqrestore(&uport->lock, flags);
 
 	pm_runtime_enable(uport->dev);
