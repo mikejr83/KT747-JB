@@ -228,6 +228,15 @@ struct bam_mux_hdr {
 	uint16_t pkt_len;
 };
 
+struct bam_mux_hdr {
+	uint16_t magic_num;
+	uint8_t reserved;
+	uint8_t cmd;
+	uint8_t pad_len;
+	uint8_t ch_id;
+	uint16_t pkt_len;
+};
+
 static void notify_all(int event, unsigned long data);
 static void bam_mux_write_done(struct work_struct *work);
 static void handle_bam_mux_cmd(struct work_struct *work);
