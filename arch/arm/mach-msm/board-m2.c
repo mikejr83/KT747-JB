@@ -2093,9 +2093,9 @@ static struct platform_device opt_gp2a = {
 	/* compass */
 	static struct ext_slave_platform_data inv_mpu_ak8963_data = {
 	.bus		= EXT_SLAVE_BUS_PRIMARY,
-	.orientation = {-1, 0, 0,
-			0, 1, 0,
-			0, 0, -1},
+	.orientation = {0, 1, 0,
+			-1, 1, 0,
+			0, 0, 1},
 	};
 
     struct mpu_platform_data mpu6050_data_spr = {
