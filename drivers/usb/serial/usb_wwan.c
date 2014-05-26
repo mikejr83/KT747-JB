@@ -858,14 +858,13 @@ int usb_wwan_resume(struct usb_serial *serial)
 	}
 
 	spin_lock_irq(&intfdata->susp_lock);
-	intfdata->suspended = 0;
 	for (i = 0; i < serial->num_ports; i++) {
 		/* walk all ports */
 		port = serial->port[i];
 		portdata = usb_get_serial_port_data(port);
 
 		/* skip closed ports */
-		if (!portdata->opened)
+		if (!portdata || !portdata->opened)
 			continue;
 
 		for (j = 0; j < N_IN_URB; j++) {
@@ -879,18 +878,16 @@ int usb_wwan_resume(struct usb_serial *serial)
 			usb_anchor_urb(urb, &portdata->submitted);
 			err = usb_submit_urb(urb, GFP_ATOMIC);
 			if (err < 0) {
-				err("%s: Error %d for bulk URB[%d]:%p %d",
-				    __func__, err, j, urb, i);
-				usb_unanchor_urb(urb);
-				intfdata->suspended = 1;
+				err("%s: Error %d for bulk URB %d",
+				    __func__, err, i);
 				spin_unlock_irq(&intfdata->susp_lock);
 				goto err_out;
 			}
 		}
 		play_delayed(port);
 	}
+	intfdata->suspended = 0;
 	spin_unlock_irq(&intfdata->susp_lock);
-
 err_out:
 	return err;
 }
